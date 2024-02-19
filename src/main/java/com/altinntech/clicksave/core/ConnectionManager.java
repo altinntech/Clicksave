@@ -50,7 +50,8 @@ public class ConnectionManager {
         this.ALLOW_EXPANSION = defaultProperties.getAllowConnectionsPoolExpansion();
 
         Properties properties = new Properties();
-        properties.setProperty("user", defaultProperties.getUsername());
+        properties.setProperty("user", USER);
+        properties.setProperty("password", PASSWORD);
         this.dataSource = new ClickHouseDataSource(URL, properties);
         try {
             for (int i = 0; i < INITIAL_POOL_SIZE; i++) {
