@@ -10,12 +10,31 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * The {@code PartParser} class parses query methods by breaking down the method name into its constituent parts.
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 public class PartParser {
 
+    /**
+     * The list of parts parsed from the method name.
+     */
     List<Part> parts = new ArrayList<>();
+
+    /**
+     * The list of service parts extracted from the method name.
+     */
     List<CommonPart> serviceParts = new ArrayList<>();
+
+    /**
+     * The regular expression pattern used to split field parts.
+     */
     String fieldPartSplitPattern;
 
+    /**
+     * Constructs a new PartParser instance.
+     */
     public PartParser() {
         StringJoiner joiner = new StringJoiner("|");
         for (CommonPart part : CommonPart.values()) {
@@ -26,6 +45,11 @@ public class PartParser {
         this.fieldPartSplitPattern = "(" + joiner.toString() + ")";
     }
 
+    /**
+     * Parses the method name and extracts its parts.
+     *
+     * @param methodName the method name representing the query
+     */
     public void parse(String methodName) {
         List<String> fieldParts = new ArrayList<>(Arrays.stream(methodName.split(fieldPartSplitPattern)).toList());
         fieldParts.set(0, removeServiceParts(fieldParts.getFirst()));
@@ -44,10 +68,20 @@ public class PartParser {
         }
     }
 
+    /**
+     * Retrieves the parsed parts.
+     *
+     * @return the parsed parts
+     */
     public List<Part> getParts() {
         return parts;
     }
 
+    /**
+     * Retrieves the extracted service parts.
+     *
+     * @return the extracted service parts
+     */
     public List<CommonPart> getServiceParts() {
         return serviceParts;
     }

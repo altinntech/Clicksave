@@ -7,6 +7,14 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * The {@code ClassDataCache} class is a DTO used to store metadata about an entity class.
+ * It holds information such as the table name, fields, ID field, and batching annotation.
+ *
+ * <p>This class is used to cache metadata about entity classes.</p>
+ *
+ * @author Fyodor Plotnikov
+ */
 @Data
 @NoArgsConstructor
 public class ClassDataCache {
@@ -16,7 +24,13 @@ public class ClassDataCache {
     private FieldDataCache idField;
     private Batching batchingAnnotation;
 
+    /**
+     * Retrieves the optional batching annotation associated with the class.
+     *
+     * @return the optional batching annotation
+     */
     public Optional<Batching> getBatchingAnnotationOptional() {
         return Optional.ofNullable(batchingAnnotation);
     }
 }
+

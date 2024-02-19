@@ -27,13 +27,38 @@ import java.util.Random;
 
 import static com.altinntech.clicksave.log.CSLogger.error;
 
+/**
+ * The {@code CSUtils} class provides various utility methods for common operations.
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 public class CSUtils {
 
+    /**
+     * Constructs a new CSUtils instance.
+     * This class only provides static utility methods and cannot be instantiated.
+     */
+    private CSUtils() {
+        // Private constructor to prevent instantiation
+    }
+
+    /**
+     * Builds a snake-case table name from the given class name.
+     *
+     * @param clazz the class
+     * @return the snake-case table name
+     */
     static String buildTableName(Class<?> clazz) {
         String className = clazz.getSimpleName();
         return toSnakeCase(className);
     }
 
+    /**
+     * Converts the input string to snake case.
+     *
+     * @param input the input string
+     * @return the string converted to snake case
+     */
     @NotNull
     public static String toSnakeCase(String input) {
         StringBuilder result = new StringBuilder();
@@ -51,6 +76,14 @@ public class CSUtils {
         return result.toString();
     }
 
+    /**
+     * Retrieves and initializes the data of fields for the given class and stores it in the provided ClassDataCache.
+     *
+     * @param clazz          the class
+     * @param classDataCache the class data cache
+     * @return the list of field data caches
+     * @throws FieldInitializationException if there is an issue initializing the fields
+     */
     static List<FieldDataCache> getFieldsData(Class<?> clazz, ClassDataCache classDataCache) throws FieldInitializationException {
         Field[] fields = clazz.getDeclaredFields();
         List<FieldDataCache> result = new ArrayList<>();
@@ -103,7 +136,15 @@ public class CSUtils {
         return result;
     }
 
-    // todo: need to refactor
+    /**
+     * Sets the value of the given field on the entity object.
+     *
+     * @param entity    the entity object
+     * @param field     the field to set the value for
+     * @param value     the value to set
+     * @param fieldData the field data cache
+     * @throws IllegalAccessException if there is an issue accessing the field
+     */
     static void setFieldValue(Object entity, Field field, Object value, FieldDataCache fieldData) throws IllegalAccessException {
         Class<?> fieldType = fieldData.getType();
         field.setAccessible(true);
@@ -168,6 +209,15 @@ public class CSUtils {
         }
     }
 
+    /**
+     * Retrieves an enum constant by its ID.
+     *
+     * @param <T>       the type parameter
+     * @param enumClass the enum class
+     * @param id        the ID of the enum constant
+     * @return the enum constant with the specified ID
+     * @throws IllegalArgumentException if no enum constant with the specified ID is found
+     */
     static <T extends EnumId> T getEnumById(Class<T> enumClass, Long id) throws IllegalArgumentException {
         T[] enumConstants = enumClass.getEnumConstants();
         for (T enumValue : enumConstants) {
@@ -178,6 +228,13 @@ public class CSUtils {
         throw new IllegalArgumentException("No enum constant with id: " + id);
     }
 
+    /**
+     * Finds the FieldDataCache object by field name in the ClassDataCache.
+     *
+     * @param fieldName      the name of the field to find
+     * @param classDataCache the ClassDataCache containing field data
+     * @return the FieldDataCache object corresponding to the field name, or null if not found
+     */
     private static FieldDataCache findFieldDataCache(String fieldName, ClassDataCache classDataCache) {
         List<FieldDataCache> fetchedEntityFieldsData = classDataCache.getFields();
         return fetchedEntityFieldsData.stream()
@@ -186,6 +243,16 @@ public class CSUtils {
                 .orElse(null);
     }
 
+    /**
+     * Creates a DTO entity object from a ResultSet.
+     *
+     * @param <T>            the type parameter
+     * @param returnType     the return type of the DTO entity
+     * @param resultSet      the ResultSet containing data
+     * @param classDataCache the ClassDataCache containing field metadata
+     * @return the DTO entity object created from the ResultSet
+     * @throws SQLException the SQL exception
+     */
     public static <T> T createDtoEntityFromResultSet(Class<T> returnType, ResultSet resultSet, ClassDataCache classDataCache) throws SQLException {
         T entity = null;
         ProjectionClassDataCache projectionClassDataCache = ProjectionClassDataCache.getInstance();
@@ -223,6 +290,17 @@ public class CSUtils {
         return entity;
     }
 
+    /**
+     * Creates an entity object from a ResultSet.
+     *
+     * @param <T>            the type parameter
+     * @param entityClass    the entity class
+     * @param resultSet      the ResultSet containing data
+     * @param classDataCache the ClassDataCache containing field metadata
+     * @return the entity object created from the ResultSet
+     * @throws SQLException             the SQL exception
+     * @throws IllegalArgumentException the illegal argument exception
+     */
     public static <T> T createEntityFromResultSet(Class<T> entityClass, ResultSet resultSet, ClassDataCache classDataCache) throws SQLException, IllegalArgumentException {
         T entity = null;
         try {
@@ -241,6 +319,13 @@ public class CSUtils {
         return entity;
     }
 
+    /**
+     * Gets a random enum constant from the specified enum class.
+     *
+     * @param <T>       the type parameter
+     * @param enumClass the enum class
+     * @return a random enum constant from the specified enum class
+     */
     public static <T extends Enum<?>> T getRandomEnum(Class<T> enumClass) {
         Random random = new Random();
         int enumLength = enumClass.getEnumConstants().length;
@@ -248,6 +333,12 @@ public class CSUtils {
         return enumClass.getEnumConstants()[randomIndex];
     }
 
+    /**
+     * Generates a random string of the specified length.
+     *
+     * @param length the length of the random string
+     * @return the randomly generated string
+     */
     public static String generateRandomString(int length) {
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         Random random = new Random();
@@ -262,6 +353,13 @@ public class CSUtils {
         return sb.toString();
     }
 
+    /**
+     * Generates a random integer within the specified range.
+     *
+     * @param min the minimum value of the random number (inclusive)
+     * @param max the maximum value of the random number (inclusive)
+     * @return the randomly generated integer
+     */
     public static int generateRandomNumber(int min, int max) {
         Random random = new Random();
         return random.nextInt(max - min + 1) + min;

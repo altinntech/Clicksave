@@ -15,16 +15,42 @@ import java.util.Map;
 import static com.altinntech.clicksave.log.CSLogger.debug;
 import static com.altinntech.clicksave.log.CSLogger.info;
 
+/**
+ * The {@code BatchCollector} class is responsible for collecting batches of queries.
+ * It accumulates queries and sends them for processing when a threshold is reached.
+ *
+ * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 @Component
 public class BatchCollector {
 
+    /**
+     * The map to store batches of queries.
+     */
     private final Map<BatchedQueryData, List<List<Object>>> batches = new HashMap<>();
+
+    /**
+     * The bootstrap instance for database connectivity.
+     */
     private final CSBootstrap bootstrap;
 
+    /**
+     * Instantiates a new Batch collector.
+     *
+     * @param bootstrap the bootstrap
+     */
     public BatchCollector(CSBootstrap bootstrap) {
         this.bootstrap = bootstrap;
     }
 
+    /**
+     * Adds query data to the batch.
+     *
+     * @param batchQueryData the batch query data
+     * @param fieldsData     the fields data
+     */
     public void put(BatchedQueryData batchQueryData, List<Object> fieldsData) {
         if (!batches.containsKey(batchQueryData)) {
             batches.put(batchQueryData, new ArrayList<>());
@@ -38,6 +64,11 @@ public class BatchCollector {
         }
     }
 
+    /**
+     * Saves and flushes the batch for a specific class data cache.
+     *
+     * @param classDataCache the class data cache
+     */
     public void saveAndFlush(ClassDataCache classDataCache) {
         for (Map.Entry<BatchedQueryData, List<List<Object>>> entry : batches.entrySet()) {
             BatchedQueryData batchedQueryData = entry.getKey();
@@ -52,7 +83,12 @@ public class BatchCollector {
         }
     }
 
-    // todo: add log
+    /**
+     * Saves and flushes the batch.
+     *
+     * @param query the query
+     * @param batch the batch
+     */
     public void saveAndFlush(String query, List<List<Object>> batch) {
         try(Connection connection = bootstrap.getConnection()) {
             PreparedStatement statement = connection.prepareStatement(query);
@@ -80,6 +116,9 @@ public class BatchCollector {
         debug(query + " batch saved");
     }
 
+    /**
+     * Saves and flushes all batches.
+     */
     public void saveAndFlushAll() {
         for (Map.Entry<BatchedQueryData, List<List<Object>>> entry : batches.entrySet()) {
             BatchedQueryData batchedQueryData = entry.getKey();

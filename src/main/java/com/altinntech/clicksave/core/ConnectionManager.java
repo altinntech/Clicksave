@@ -17,6 +17,14 @@ import java.util.concurrent.Executors;
 import static com.altinntech.clicksave.log.CSLogger.error;
 import static com.altinntech.clicksave.log.CSLogger.info;
 
+/**
+ * The {@code ConnectionManager} class manages connections to the database and serves as a connection pool.
+ * It handles the creation, retrieval, and release of database connections.
+ *
+ * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 @Component
 public class ConnectionManager {
 
@@ -36,7 +44,11 @@ public class ConnectionManager {
 
     private int extendedPoolSize = 0;
 
-
+    /**
+     * Constructs a new ConnectionManager instance.
+     *
+     * @param env the environment settings
+     */
     private ConnectionManager(Environment env) {
         DefaultProperties defaultProperties = new DefaultProperties(env);
 
@@ -62,6 +74,12 @@ public class ConnectionManager {
         }
     }
 
+    /**
+     * Retrieves a database connection from the connection pool.
+     *
+     * @return the database connection
+     * @throws SQLException if a SQL exception occurs
+     */
     public synchronized Connection getConnection() throws SQLException {
         if (connectionPool.isEmpty()) {
             createConnection();
@@ -82,6 +100,12 @@ public class ConnectionManager {
         }
     }
 
+    /**
+     * Releases a database connection.
+     *
+     * @param connection the database connection to release
+     * @throws SQLException if a SQL exception occurs
+     */
     public synchronized void releaseConnection(Connection connection) throws SQLException {
         usedConnections.remove(connection);
         if (!connection.isClosed()) {
@@ -108,6 +132,9 @@ public class ConnectionManager {
         connectionPool.push(connection);
     }
 
+    /**
+     * Closes all database connections.
+     */
     public synchronized void closeAllConnections() {
         for (Connection connection : usedConnections) {
             try {

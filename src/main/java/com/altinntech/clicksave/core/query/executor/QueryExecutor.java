@@ -24,6 +24,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * The {@code QueryExecutor} class is responsible for executing assembled queries.
+ * It processes queries and returns objects or lists of objects from the database.
+ *
+ * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 @Component
 public class QueryExecutor {
 
@@ -32,12 +40,28 @@ public class QueryExecutor {
     private final QueryMetadataCache queryMetadataCache = QueryMetadataCache.getInstance();
     private final ProjectionClassDataCache projectionClassDataCache = ProjectionClassDataCache.getInstance();
 
+    /**
+     * Constructs a new QueryExecutor instance.
+     *
+     * @param bootstrap the bootstrap
+     */
     @Autowired
     public QueryExecutor(CSBootstrap bootstrap) {
         this.bootstrap = bootstrap;
         this.batchCollector = bootstrap.getBatchCollector();
     }
 
+    /**
+     * Processes the query and returns the result object.
+     *
+     * @param returnClass    the return class
+     * @param entityClass    the entity class
+     * @param arguments      the arguments
+     * @param methodMetadata the method metadata
+     * @return the result object
+     * @throws ClassCacheNotFoundException if class cache is not found
+     * @throws SQLException                if an SQL exception occurs
+     */
     public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException {
         String methodName = methodMetadata.getSourceMethod().getName();
         ClassDataCache classDataCache = bootstrap.getClassDataCache(entityClass);

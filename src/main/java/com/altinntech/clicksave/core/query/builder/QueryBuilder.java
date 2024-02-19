@@ -13,6 +13,14 @@ import java.util.List;
 
 import static com.altinntech.clicksave.core.query.builder.SqlPartDefinition.sqlPartsMap;
 
+/**
+ * The {@code QueryBuilder} class is responsible for building queries.
+ * It uses parts obtained from a query parser to construct the query body.
+ *
+ * <p>This class constructs queries based on provided parts, table name, field data, and fields to fetch.</p>
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 public class QueryBuilder {
 
     private final StringBuilder preparedQuery = new StringBuilder();
@@ -25,6 +33,14 @@ public class QueryBuilder {
     private CommonPart qualifierPart;
     private QueryPullType pullType = QueryPullType.NONE;
 
+    /**
+     * Constructs a new QueryBuilder instance.
+     *
+     * @param parts         the parts obtained from query parsing
+     * @param tableName     the name of the table
+     * @param fieldsData    the data related to fields
+     * @param fieldsToFetch the fields to fetch
+     */
     public QueryBuilder(List<Part> parts, String tableName, List<FieldDataCache> fieldsData, List<FieldData> fieldsToFetch) {
         this.parts = parts;
         this.tableName = tableName;
@@ -32,6 +48,11 @@ public class QueryBuilder {
         this.fieldsToFetch = fieldsToFetch;
     }
 
+    /**
+     * Creates a custom query metadata based on the constructed query.
+     *
+     * @return the custom query metadata
+     */
     public CustomQueryMetadata createQuery() {
         qualifierPart = (CommonPart) parts.getFirst();
         QueryType queryType = qualifierPart.getQualifier();

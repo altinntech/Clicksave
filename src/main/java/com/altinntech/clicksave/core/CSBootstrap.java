@@ -25,6 +25,14 @@ import java.util.*;
 import static com.altinntech.clicksave.core.CSUtils.*;
 import static com.altinntech.clicksave.log.CSLogger.*;
 
+/**
+ * The {@code CSBootstrap} class initializes the application and manages the configuration setup.
+ * It sets up connections, initializes entities, and handles shutdown procedures.
+ *
+ * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 @Component
 public class CSBootstrap {
 
@@ -35,6 +43,15 @@ public class CSBootstrap {
     private final Environment environment;
     private final BatchCollector batchCollector;
 
+    /**
+     * Constructs a new CSBootstrap instance.
+     *
+     * @param connectionManager the connection manager
+     * @param environment       the environment
+     * @param batchCollector    the batch collector
+     * @throws FieldInitializationException if field initialization fails
+     * @throws ClassCacheNotFoundException if class cache is not found
+     */
     @Autowired
     public CSBootstrap(ConnectionManager connectionManager, Environment environment, @Lazy BatchCollector batchCollector) throws FieldInitializationException, ClassCacheNotFoundException {
         this.connectionManager = connectionManager;
@@ -67,6 +84,9 @@ public class CSBootstrap {
         info("Initializing completed");
     }
 
+    /**
+     * The shutdown thread.
+     */
     Thread shutdownThread = new Thread(this::shutdownProcess);
 
 
@@ -77,6 +97,13 @@ public class CSBootstrap {
         info("Shutdown completed");
     }
 
+    /**
+     * Retrieves the class data cache for the specified class.
+     *
+     * @param clazz the class
+     * @return the class data cache
+     * @throws ClassCacheNotFoundException if class cache is not found
+     */
     public ClassDataCache getClassDataCache(Class<?> clazz) throws ClassCacheNotFoundException {
         Optional<ClassDataCache> classDataCacheOptional = Optional.ofNullable(classDataCacheMap.get(clazz));
         if (classDataCacheOptional.isPresent()) {
@@ -85,14 +112,31 @@ public class CSBootstrap {
         throw new ClassCacheNotFoundException();
     }
 
+    /**
+     * Retrieves the batch collector.
+     *
+     * @return the batch collector
+     */
     public BatchCollector getBatchCollector() {
         return batchCollector;
     }
 
+    /**
+     * Retrieves a database connection.
+     *
+     * @return the database connection
+     * @throws SQLException if a SQL exception occurs
+     */
     public Connection getConnection() throws SQLException {
         return connectionManager.getConnection();
     }
 
+    /**
+     * Releases a database connection.
+     *
+     * @param connection the database connection to release
+     * @throws SQLException if a SQL exception occurs
+     */
     public void releaseConnection(Connection connection) throws SQLException {
         connectionManager.releaseConnection(connection);
     }
@@ -129,6 +173,12 @@ public class CSBootstrap {
         return false;
     }
 
+    /**
+     * Fetches the list of columns for a table.
+     *
+     * @param tableName the table name
+     * @return the list of columns
+     */
     public List<String> fetchTableColumns(String tableName) {
         List<String> columns = new ArrayList<>();
 
@@ -200,7 +250,6 @@ public class CSBootstrap {
             queryBuilder.append(", ");
         }
 
-        // Удаляем последнюю запятую и добавляем закрывающую скобку
         queryBuilder.delete(queryBuilder.length() - 2, queryBuilder.length()).append(") ");
         queryBuilder.append("ENGINE = MergeTree ").append("PRIMARY KEY (").append(primaryKey).append(")");
         return queryBuilder.toString();

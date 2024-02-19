@@ -23,18 +23,49 @@ import java.util.UUID;
 import static com.altinntech.clicksave.core.CSUtils.*;
 import static com.altinntech.clicksave.log.CSLogger.error;
 
+/**
+ * The {@code CHRepository} class represents a service repository that facilitates communication between the ORM and the database.
+ * It handles basic CRUD operations.
+ *
+ * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 @Component
 public class CHRepository {
 
+    /**
+     * The CSBootstrap instance for database connectivity.
+     */
     private final CSBootstrap CSBootstrap;
+
+    /**
+     * The BatchCollector instance for managing batches of queries.
+     */
     private final BatchCollector batchCollector;
 
+    /**
+     * Instantiates a new ClickHouse repository.
+     *
+     * @param CSBootstrap the CSBootstrap
+     */
     @Autowired
     public CHRepository(CSBootstrap CSBootstrap) {
         this.CSBootstrap = CSBootstrap;
         this.batchCollector = CSBootstrap.getBatchCollector();
     }
 
+    /**
+     * Saves an entity to the database.
+     *
+     * @param <T>    the type parameter
+     * @param entity the entity to save
+     * @return the saved entity
+     * @throws FieldInitializationException if there is an error with field initialization
+     * @throws ClassCacheNotFoundException if the class cache is not found
+     * @throws IllegalAccessException      if illegal access occurs
+     * @throws SQLException                 if a SQL exception occurs
+     */
     public <T> T save(T entity) throws FieldInitializationException, ClassCacheNotFoundException, IllegalAccessException, SQLException {
         Class<?> entityClass = entity.getClass();
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
@@ -132,6 +163,18 @@ public class CHRepository {
         return entity;
     }
 
+    /**
+     * Saves an entity to the database.
+     *
+     * @param <T>    the type parameter
+     * @param entity the entity to update
+     * @param classDataCache the classData of the entity
+     * @param idFieldData the fieldData of the id filed
+     * @param id of the entity
+     * @return the updated entity
+     * @throws IllegalAccessException      if illegal access occurs
+     * @throws SQLException                 if a SQL exception occurs
+     */
     // todo: refactor
     private <T> T update(T entity, ClassDataCache classDataCache, FieldDataCache idFieldData, UUID id) throws IllegalAccessException, SQLException {
         String tableName = classDataCache.getTableName();
@@ -182,6 +225,15 @@ public class CHRepository {
         return entity;
     }
 
+    /**
+     * Finds an entity by its ID.
+     *
+     * @param <T>         the type parameter
+     * @param entityClass the entity class
+     * @param id          the ID of the entity
+     * @return the entity if found, otherwise null
+     * @throws ClassCacheNotFoundException if the class cache is not found
+     */
     public <T> T findById(Class<T> entityClass, UUID id) throws ClassCacheNotFoundException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
@@ -210,6 +262,15 @@ public class CHRepository {
         return null;
     }
 
+    /**
+     * Retrieves all entities from the database.
+     *
+     * @param <T>         the type parameter
+     * @param entityClass the entity class
+     * @return the list of all entities
+     * @throws ClassCacheNotFoundException if the class cache is not found
+     * @throws SQLException                if a SQL exception occurs
+     */
     public <T> List<T> findAll(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
@@ -229,6 +290,12 @@ public class CHRepository {
         }
     }
 
+    /**
+     * Deletes all records from the database table associated with the specified entity class.
+     *
+     * @param entityClass the entity class
+     * @throws ClassCacheNotFoundException if the class cache is not found
+     */
     public void deleteAll(Class<?> entityClass) throws ClassCacheNotFoundException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
@@ -244,6 +311,14 @@ public class CHRepository {
         }
     }
 
+    /**
+     * Deletes the specified entity from the database.
+     *
+     * @param <T>    the type parameter
+     * @param entity the entity to delete
+     * @throws ClassCacheNotFoundException if the class cache is not found
+     * @throws IllegalAccessException      if there is illegal access to the entity's fields
+     */
     public <T> void delete(T entity) throws ClassCacheNotFoundException, IllegalAccessException {
         Class<?> entityClass = entity.getClass();
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
@@ -267,6 +342,15 @@ public class CHRepository {
         }
     }
 
+    /**
+     * Checks if an entity with the specified ID exists in the database.
+     *
+     * @param <T>         the type parameter
+     * @param entityClass the entity class
+     * @param id          the ID of the entity
+     * @return true if the entity exists, false otherwise
+     * @throws ClassCacheNotFoundException if the class cache is not found
+     */
     public <T> boolean entityExists(Class<T> entityClass, UUID id) throws ClassCacheNotFoundException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         batchCollector.saveAndFlush(classDataCache);

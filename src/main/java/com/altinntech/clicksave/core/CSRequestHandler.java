@@ -18,12 +18,26 @@ import java.util.UUID;
 
 import static com.altinntech.clicksave.log.CSLogger.error;
 
+/**
+ * The {@code CSRequestHandler} class intercepts requests to methods in the repository.
+ * It handles various CRUD operations and query executions.
+ *
+ * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 @Component
 public class CSRequestHandler implements MethodHandler {
 
     private final CHRepository repository;
     private final QueryExecutor queryExecutor;
 
+    /**
+     * Constructs a new CSRequestHandler instance.
+     *
+     * @param repository    the repository
+     * @param queryExecutor the query executor
+     */
     @Autowired
     public CSRequestHandler(CHRepository repository, QueryExecutor queryExecutor) {
         this.repository = repository;

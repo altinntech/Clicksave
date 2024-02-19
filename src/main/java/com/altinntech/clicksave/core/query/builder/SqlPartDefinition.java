@@ -5,8 +5,17 @@ import com.altinntech.clicksave.core.query.parser.CommonPart;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The {@code SqlPartDefinition} class provides static definitions for SQL parts used in queries.
+ * It maps common parts of queries to their corresponding SQL representations.
+ *
+ * <p>Author: Fyodor Plotnikov</p>
+ */
 public abstract class SqlPartDefinition {
 
+    /**
+     * The map containing SQL parts and their representations.
+     */
     public static Map<CommonPart, String> sqlPartsMap = new HashMap<>();
 
     static {
