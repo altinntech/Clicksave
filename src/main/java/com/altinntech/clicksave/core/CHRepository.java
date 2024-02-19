@@ -2,23 +2,25 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.Batching;
 import com.altinntech.clicksave.annotations.Column;
+import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
-import com.altinntech.clicksave.enums.EnumType;
-import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.interfaces.EnumId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-import static com.altinntech.clicksave.core.CSUtils.createEntityFromResultSet;
-import static com.altinntech.clicksave.core.CSUtils.setFieldValue;
+import static com.altinntech.clicksave.core.CSUtils.*;
 import static com.altinntech.clicksave.log.CSLogger.error;
 
 @Component

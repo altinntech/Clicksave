@@ -10,6 +10,7 @@ public enum CommonPart implements Part {
     FIND_ALL_BY_PART("findAllBy", QueryType.SELECT),
     AND_PART("And", QueryType.ANY),
     OR_PART("Or", QueryType.ANY),
+    CUSTOM_PART("Custom", QueryType.ANY)
     ;
 
     CommonPart(String partName, QueryType qualifier) {

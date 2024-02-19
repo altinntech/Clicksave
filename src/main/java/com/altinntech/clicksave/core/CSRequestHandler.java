@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.altinntech.clicksave.log.CSLogger.error;
-import static com.altinntech.clicksave.log.CSLogger.info;
 
 @Component
 public class CSRequestHandler implements MethodHandler {
@@ -34,6 +33,7 @@ public class CSRequestHandler implements MethodHandler {
     @Override
     public Object handle(Object[] arguments, MethodMetadata methodMetadata) {
         Class<?> entityType = findEntityType(methodMetadata);
+        Class<?> methodReturnType = getParameterType(methodMetadata);
 
         switch (methodMetadata.getSourceMethod().getName()) {
             case "save" -> {
@@ -48,19 +48,10 @@ public class CSRequestHandler implements MethodHandler {
             case "delete" -> handleDelete(arguments[0]);
             case "deleteAll" -> handleDeleteAll(entityType);
             default -> {
-                return handleQuery(entityType, arguments, methodMetadata);
+                return handleQuery(methodReturnType, entityType, arguments, methodMetadata);
             }
         }
         return null;
-    }
-
-    private Object handleFindAll(Class<?> entityType) {
-        try {
-            return repository.findAll(entityType);
-        } catch (ClassCacheNotFoundException | SQLException e) {
-            error(e.getMessage());
-        }
-        return new ArrayList<>();
     }
 
     private Class<?> findEntityType(MethodMetadata methodMetadata) {
@@ -77,6 +68,26 @@ public class CSRequestHandler implements MethodHandler {
             }
         }
         return null;
+    }
+
+    private static Class<?> getParameterType(MethodMetadata methodMetadata) {
+        Type returnType = methodMetadata.getReturnTypeMetadata().getResolvedType();
+        if (returnType instanceof ParameterizedType parameterizedType) {
+            Type[] typeArguments = parameterizedType.getActualTypeArguments();
+            if (typeArguments.length > 0 && typeArguments[0] instanceof Class<?> parameterType) {
+                return parameterType;
+            }
+        }
+        return null;
+    }
+
+    private Object handleFindAll(Class<?> entityType) {
+        try {
+            return repository.findAll(entityType);
+        } catch (ClassCacheNotFoundException | SQLException e) {
+            error(e.getMessage());
+        }
+        return new ArrayList<>();
     }
 
     private Object handleSave(Object[] arguments) {
@@ -113,9 +124,9 @@ public class CSRequestHandler implements MethodHandler {
         }
     }
 
-    private Object handleQuery(Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) {
+    private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) {
         try {
-            return queryExecutor.processQuery(entityType, arguments, methodMetadata);
+            return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
         } catch (ClassCacheNotFoundException | SQLException e) {
             error(e.getMessage());
         }

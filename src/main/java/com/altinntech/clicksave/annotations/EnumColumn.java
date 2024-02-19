@@ -1,6 +1,5 @@
 package com.altinntech.clicksave.annotations;
 
-
 import com.altinntech.clicksave.enums.EnumType;
 
 import java.lang.annotation.ElementType;

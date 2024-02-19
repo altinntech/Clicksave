@@ -1,7 +1,8 @@
 package com.altinntech.clicksave.core.query.builder;
 
-import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.dto.CustomQueryMetadata;
+import com.altinntech.clicksave.core.dto.FieldData;
+import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.query.parser.CommonPart;
 import com.altinntech.clicksave.core.query.parser.FieldPart;
 import com.altinntech.clicksave.core.query.parser.Part;
@@ -19,14 +20,16 @@ public class QueryBuilder {
     private final String tableName;
     private final List<FieldDataCache> fieldsData;
     private final List<FieldDataCache> queriedFieldsData = new ArrayList<>();
+    private final List<FieldData> fieldsToFetch;
 
     private CommonPart qualifierPart;
     private QueryPullType pullType = QueryPullType.NONE;
 
-    public QueryBuilder(List<Part> parts, String tableName, List<FieldDataCache> fieldsData) {
+    public QueryBuilder(List<Part> parts, String tableName, List<FieldDataCache> fieldsData, List<FieldData> fieldsToFetch) {
         this.parts = parts;
         this.tableName = tableName;
         this.fieldsData = fieldsData;
+        this.fieldsToFetch = fieldsToFetch;
     }
 
     public CustomQueryMetadata createQuery() {
@@ -65,6 +68,15 @@ public class QueryBuilder {
                 queriedFieldsData.add(fieldData);
             }
         }
+
+        StringBuilder fetchingFields = new StringBuilder();
+        for (FieldData currentFieldData : fieldsToFetch) {
+            fetchingFields.append(currentFieldData.getFieldInTableName()).append(", ");
+        }
+        fetchingFields.delete(fetchingFields.length() - 2, fetchingFields.length());
         preparedQuery.deleteCharAt(preparedQuery.length() - 1);
+        int index = preparedQuery.indexOf("*");
+        preparedQuery.deleteCharAt(index);
+        preparedQuery.insert(index, fetchingFields);
     }
 }

@@ -1,15 +1,19 @@
 package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.Column;
+import com.altinntech.clicksave.annotations.EnumColumn;
+import com.altinntech.clicksave.annotations.Reference;
+import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
-import com.altinntech.clicksave.annotations.EnumColumn;
+import com.altinntech.clicksave.core.dto.ProjectionClassData;
+import com.altinntech.clicksave.core.dto.ProjectionFieldData;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
-import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -18,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import static com.altinntech.clicksave.log.CSLogger.error;
@@ -29,8 +34,8 @@ public class CSUtils {
         return toSnakeCase(className);
     }
 
-    @NonNull
-    static String toSnakeCase(String input) {
+    @NotNull
+    public static String toSnakeCase(String input) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < input.length(); i++) {
             char currentChar = input.charAt(i);
@@ -171,6 +176,51 @@ public class CSUtils {
             }
         }
         throw new IllegalArgumentException("No enum constant with id: " + id);
+    }
+
+    private static FieldDataCache findFieldDataCache(String fieldName, ClassDataCache classDataCache) {
+        List<FieldDataCache> fetchedEntityFieldsData = classDataCache.getFields();
+        return fetchedEntityFieldsData.stream()
+                .filter(fieldDataCache -> fieldDataCache.getFieldName().equals(fieldName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static <T> T createDtoEntityFromResultSet(Class<T> returnType, ResultSet resultSet, ClassDataCache classDataCache) throws SQLException {
+        T entity = null;
+        ProjectionClassDataCache projectionClassDataCache = ProjectionClassDataCache.getInstance();
+        ProjectionClassData projectionClassData = projectionClassDataCache.get(returnType, classDataCache.getFields());
+
+        try {
+            entity = returnType.getDeclaredConstructor().newInstance();
+            List<ProjectionFieldData> fieldDataList = projectionClassData.getFields();
+            for (ProjectionFieldData fieldData : fieldDataList) {
+                Field field = fieldData.getField();
+                field.setAccessible(true);
+                Optional<Reference> referenceAnnotationOptional = fieldData.getReferenceAnnotationOptional();
+
+                if (referenceAnnotationOptional.isPresent()) {
+                    String fieldNameInEntity = referenceAnnotationOptional.get().value();
+                    FieldDataCache fieldDataCache = findFieldDataCache(fieldNameInEntity, classDataCache);
+                    if (fieldDataCache != null) {
+                        Object value = resultSet.getObject(fieldDataCache.getFieldInTableName());
+                        setFieldValue(entity, field, value, fieldDataCache);
+                    }
+                } else {
+                    String fieldNameInEntity = fieldData.getFieldName();
+                    FieldDataCache fieldDataCache = findFieldDataCache(fieldNameInEntity, classDataCache);
+                    if (fieldDataCache != null) {
+                        Object value = resultSet.getObject(fieldDataCache.getFieldInTableName());
+                        setFieldValue(entity, field, value, fieldDataCache);
+                    }
+                }
+
+            }
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | IllegalArgumentException |
+                 InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return entity;
     }
 
     public static <T> T createEntityFromResultSet(Class<T> entityClass, ResultSet resultSet, ClassDataCache classDataCache) throws SQLException, IllegalArgumentException {

@@ -7,8 +7,8 @@ public class DefaultProperties {
     private final Environment environment;
 
     private final String url = "jdbc:clickhouse://localhost:8123/default";
-    private final String username = "username";
-    private final String password = "password";
+    private final String username = "";
+    private final String password = "";
     private final String initialConnectionsPoolSize = "20";
     private final String connectionsPoolSizeRefillThreshold = "5";
     private final String maxConnectionPoolSize = "50";

@@ -1,5 +1,6 @@
 package com.altinntech.clicksave;
 
+import com.altinntech.clicksave.examples.dto.PersonResponse;
 import com.altinntech.clicksave.examples.entity.Gender;
 import com.altinntech.clicksave.examples.entity.Job;
 import com.altinntech.clicksave.examples.entity.Person;
@@ -205,8 +206,21 @@ public class ClicksaveTests {
     }
 
     @Test
+    void projectionMapping() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        PersonResponse personResponseExpected = new PersonResponse();
+        personResponseExpected.setSome_name(TEST_PERSON_1.getName());
+        personResponseExpected.setLastName(TEST_PERSON_1.getLastName());
+        personResponseExpected.setJob(TEST_PERSON_1.getJob());
+
+        Optional<PersonResponse> personResponse = jpaPersonRepository.findByLastName(TEST_PERSON_1.getLastName());
+        assertTrue(personResponse.isPresent());
+        assertEquals(personResponseExpected, personResponse.get());
+    }
+
+    @Test
     void performanceTest() {
-        double maxTimeForSaveOperation = 2.0; // ms
+        double maxTimeForSaveOperation = 0.2; // ms
         double maxTimeForUpdateOperation = 8.0; // ms
         double maxTimeForDeleteOperation = 14.0; // ms
         double maxTimeForFindOperation = 2.7; // ms

@@ -1,10 +1,12 @@
 package com.altinntech.clicksave.core.query.parser;
 
+import com.altinntech.clicksave.core.query.builder.QueryType;
 import com.altinntech.clicksave.exceptions.WrongQueryMethodException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,9 +14,16 @@ public class PartParser {
 
     List<Part> parts = new ArrayList<>();
     List<CommonPart> serviceParts = new ArrayList<>();
-    String fieldPartSplitPattern = "(" + CommonPart.AND_PART.getPartName() + "|" + CommonPart.OR_PART.getPartName() + ")";
+    String fieldPartSplitPattern;
 
     public PartParser() {
+        StringJoiner joiner = new StringJoiner("|");
+        for (CommonPart part : CommonPart.values()) {
+            if (part.getQualifier() == QueryType.ANY) {
+                joiner.add(part.getPartName());
+            }
+        }
+        this.fieldPartSplitPattern = "(" + joiner.toString() + ")";
     }
 
     public void parse(String methodName) {
@@ -30,7 +39,7 @@ public class PartParser {
             }
         }
 
-        if (parts.getLast().isServicePart() || !parts.getFirst().isServicePart()) {
+        if (!parts.getFirst().isServicePart()) {
             throw new WrongQueryMethodException(methodName + " is not valid query method");
         }
     }

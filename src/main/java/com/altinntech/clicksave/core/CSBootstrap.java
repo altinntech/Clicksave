@@ -3,20 +3,23 @@ package com.altinntech.clicksave.core;
 import com.altinntech.clicksave.annotations.Batching;
 import com.altinntech.clicksave.annotations.ClickHouseEntity;
 import com.altinntech.clicksave.annotations.Column;
+import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
-import com.altinntech.clicksave.enums.EnumType;
-import com.altinntech.clicksave.annotations.EnumColumn;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 import static com.altinntech.clicksave.core.CSUtils.*;
@@ -58,12 +61,14 @@ public class CSBootstrap {
         }
 
         createTablesFromAnnotatedClasses();
+        shutdownThread.setName("CS_shutdownHook");
         Runtime.getRuntime().addShutdownHook(shutdownThread);
 
         info("Initializing completed");
     }
 
     Thread shutdownThread = new Thread(this::shutdownProcess);
+
 
     private void shutdownProcess() {
         info("Shutdown initiated! Saving batches...");

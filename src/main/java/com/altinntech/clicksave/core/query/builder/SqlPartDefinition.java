@@ -14,5 +14,6 @@ public abstract class SqlPartDefinition {
         sqlPartsMap.put(CommonPart.FIND_ALL_BY_PART, "SELECT *");
         sqlPartsMap.put(CommonPart.AND_PART, "AND");
         sqlPartsMap.put(CommonPart.OR_PART, "OR");
+        sqlPartsMap.put(CommonPart.CUSTOM_PART, "");
     }
 }
