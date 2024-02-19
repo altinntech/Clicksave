@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class PersonResponse {
+public class PersonResponse { // you can use dto projections
 
-    @Reference("name")
+    @Reference("name") // this annotation is used to determine the column in source entity
     String some_name;
     String lastName;
     Job job;

@@ -28,7 +28,7 @@ public class PersonService {
     }
 
     public Person getPersonById(UUID id) {
-        Optional<Person> person = jpaPersonRepository.findById(id); // built-in method faster than custom method
+        Optional<Person> person = jpaPersonRepository.findById(id);
         if (person.isPresent())
             return person.get();
         else throw new PersonNotFoundException();

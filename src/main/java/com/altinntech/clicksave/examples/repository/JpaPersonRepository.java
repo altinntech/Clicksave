@@ -20,6 +20,6 @@ public interface JpaPersonRepository extends ClickHouseJpa<Person> {
     Optional<Person> findByNameAndLastName(String name, String lastName); // supports "And" & "Or" operators
     Optional<Person> findByNameAndLastNameOrAddress(String name, String lastName, String address);
     Optional<Person> findByAgeAndName(int age, String name);
-    Optional<PersonResponse> findByLastName(String lastName);
-    Optional<PersonResponse> findByIdCustom(UUID id);
+    Optional<PersonResponse> findByLastName(String lastName); // supports data projections
+    Optional<PersonResponse> findByIdCustom(UUID id); // overrides default findById method
 }
