@@ -19,6 +19,11 @@ public enum QueryPullType {
     MULTIPLE,
 
     /**
+     * Indicates a auto entities retrieval mode.
+     */
+    AUTO,
+
+    /**
      * Indicates no entity retrieval mode.
      */
     NONE,

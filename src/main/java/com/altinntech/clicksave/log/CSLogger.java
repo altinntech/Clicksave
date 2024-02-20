@@ -25,6 +25,15 @@ public class CSLogger {
     }
 
     /**
+     * Logs a warning message.
+     *
+     * @param message the message to log
+     */
+    public static void warn(String message) {
+        logger.warn(message);
+    }
+
+    /**
      * Logs a debug message.
      *
      * @param message the message to log

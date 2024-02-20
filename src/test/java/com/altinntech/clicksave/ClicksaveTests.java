@@ -186,6 +186,81 @@ public class ClicksaveTests {
     }
 
     @Test
+    void annotationBasedQuery() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        Optional<Person> fetched = jpaPersonRepository.annotationBasedQuery(TEST_PERSON_3.getName(), TEST_PERSON_3.getAge());
+        assertTrue(fetched.isPresent());
+        assertEquals(TEST_PERSON_3, fetched.get());
+    }
+
+    @Test
+    void annotationBasedQuery_Projection() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        PersonResponse personResponse = PersonResponse.create(TEST_PERSON_3);
+        Optional<PersonResponse> fetched = jpaPersonRepository.annotationBasedQueryProjection(TEST_PERSON_3.getName(), TEST_PERSON_3.getAge());
+        assertTrue(fetched.isPresent());
+        assertEquals(personResponse, fetched.get());
+    }
+
+    @Test
+    void annotationBasedQuery_NotAllFields() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        Optional<Person> fetched = jpaPersonRepository.annotationBasedQueryNotAllFields(TEST_PERSON_3.getName(), TEST_PERSON_3.getAge());
+        assertTrue(fetched.isPresent());
+        assertEquals(TEST_PERSON_3.getName(), fetched.get().getName());
+    }
+
+    @Test
+    void annotationBasedQuery_Projection_NotAllFields() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        PersonResponse personResponse = new PersonResponse();
+        personResponse.setSome_name(TEST_PERSON_3.getName());
+        Optional<PersonResponse> fetched = jpaPersonRepository.annotationBasedQueryProjectionNotAllFields(TEST_PERSON_3.getName(), TEST_PERSON_3.getAge());
+        assertTrue(fetched.isPresent());
+        assertEquals(personResponse, fetched.get());
+    }
+
+    @Test
+    void annotationBasedQuery_Projection_FieldsOverloads() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        PersonResponse personResponse = PersonResponse.create(TEST_PERSON_3);
+        Optional<PersonResponse> fetched = jpaPersonRepository.annotationBasedQueryProjectionFieldsOverload(TEST_PERSON_3.getName(), TEST_PERSON_3.getAge());
+        assertTrue(fetched.isPresent());
+        assertEquals(personResponse, fetched.get());
+    }
+
+    @Test
+    void annotationBasedQueryFindAll_Projection_FieldsOverload() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        List<PersonResponse> fetched = jpaPersonRepository.annotationBasedQueryFindAll_Projection_FieldsOverload();
+        assertEquals(5, fetched.size());
+    }
+
+    @Test
     void multipleSaving() {
         int iterations = 20;
         List<Person> persons = new ArrayList<>();
@@ -226,7 +301,7 @@ public class ClicksaveTests {
         double maxTimeForFindOperation = 2.7; // ms
         double maxTimeForCustomFindOperation = 2.75; // ms
 
-        double epsilon = 5.0; // ms
+        double epsilon = 3.0; // ms
 
         double avgSaveTime = 0.0;
         double avgUpdateTime = 0.0;

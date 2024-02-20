@@ -13,19 +13,22 @@ import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
+import com.altinntech.clicksave.log.CSLogger;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.IntStream;
 
-import static com.altinntech.clicksave.log.CSLogger.error;
+import static com.altinntech.clicksave.log.CSLogger.*;
 
 /**
  * The {@code CSUtils} class provides various utility methods for common operations.
@@ -268,18 +271,10 @@ public class CSUtils {
 
                 if (referenceAnnotationOptional.isPresent()) {
                     String fieldNameInEntity = referenceAnnotationOptional.get().value();
-                    FieldDataCache fieldDataCache = findFieldDataCache(fieldNameInEntity, classDataCache);
-                    if (fieldDataCache != null) {
-                        Object value = resultSet.getObject(fieldDataCache.getFieldInTableName());
-                        setFieldValue(entity, field, value, fieldDataCache);
-                    }
+                    setValueFromResultSet(resultSet, classDataCache, entity, field, fieldNameInEntity);
                 } else {
                     String fieldNameInEntity = fieldData.getFieldName();
-                    FieldDataCache fieldDataCache = findFieldDataCache(fieldNameInEntity, classDataCache);
-                    if (fieldDataCache != null) {
-                        Object value = resultSet.getObject(fieldDataCache.getFieldInTableName());
-                        setFieldValue(entity, field, value, fieldDataCache);
-                    }
+                    setValueFromResultSet(resultSet, classDataCache, entity, field, fieldNameInEntity);
                 }
 
             }
@@ -288,6 +283,20 @@ public class CSUtils {
             e.printStackTrace();
         }
         return entity;
+    }
+
+    private static <T> void setValueFromResultSet(ResultSet resultSet, ClassDataCache classDataCache, T entity, Field field, String fieldNameInEntity) throws SQLException, IllegalAccessException {
+        FieldDataCache fieldDataCache = findFieldDataCache(fieldNameInEntity, classDataCache);
+        if (fieldDataCache != null) {
+            String columnName = fieldDataCache.getFieldInTableName();
+            boolean columnFound = isColumnFound(resultSet, columnName);
+            if(columnFound) {
+                Object value = resultSet.getObject(columnName);
+                setFieldValue(entity, field, value, fieldDataCache);
+            } else {
+                warn("Column '" + columnName + "' not found in resultSet");
+            }
+        }
     }
 
     /**
@@ -309,14 +318,36 @@ public class CSUtils {
             for (FieldDataCache fieldDataCache : fields) {
                 Field field = fieldDataCache.getField();
                 String columnName = fieldDataCache.getFieldInTableName();
-                Object value = resultSet.getObject(columnName);
-                setFieldValue(entity, field, value, fieldDataCache);
+                boolean columnFound = isColumnFound(resultSet, columnName);
+
+                if(columnFound) {
+                    Object value = resultSet.getObject(columnName);
+                    setFieldValue(entity, field, value, fieldDataCache);
+                } else {
+                    warn("Column '" + columnName + "' not found in resultSet");
+                }
             }
         } catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchMethodException |
                  InvocationTargetException e) {
             error(e.getMessage());
         }
         return entity;
+    }
+
+    private static boolean isColumnFound(ResultSet resultSet, String columnName) throws SQLException {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
+
+        boolean columnFound = IntStream.range(1, columnCount + 1)
+                .mapToObj(i -> {
+                    try {
+                        return metaData.getColumnName(i);
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Failed to get column name", e);
+                    }
+                })
+                .anyMatch(columnName::equals);
+        return columnFound;
     }
 
     /**

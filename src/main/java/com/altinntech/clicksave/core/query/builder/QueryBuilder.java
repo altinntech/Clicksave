@@ -6,6 +6,7 @@ import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.query.parser.CommonPart;
 import com.altinntech.clicksave.core.query.parser.FieldPart;
 import com.altinntech.clicksave.core.query.parser.Part;
+import com.altinntech.clicksave.exceptions.NotImplementationException;
 import com.altinntech.clicksave.exceptions.WrongQueryMethodException;
 
 import java.util.ArrayList;
@@ -56,10 +57,6 @@ public class QueryBuilder {
     public CustomQueryMetadata createQuery() {
         qualifierPart = (CommonPart) parts.getFirst();
         QueryType queryType = qualifierPart.getQualifier();
-        if (qualifierPart.equals(CommonPart.FIND_ALL_BY_PART))
-            pullType = QueryPullType.MULTIPLE;
-        else if (qualifierPart.equals(CommonPart.FIND_BY_PART))
-            pullType = QueryPullType.SINGLE;
         switch (queryType) {
             case SELECT -> buildSelectQuery();
             case DELETE -> {
@@ -68,9 +65,12 @@ public class QueryBuilder {
         }
         CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
         customQueryMetadata.setQueryBody(preparedQuery.toString());
-        customQueryMetadata.setPullType(pullType);
         customQueryMetadata.setFields(queriedFieldsData);
         return customQueryMetadata;
+    }
+
+    public CustomQueryMetadata createQueryFormBody(String query) throws NotImplementationException {
+        throw new NotImplementationException();
     }
 
     private void buildSelectQuery() {

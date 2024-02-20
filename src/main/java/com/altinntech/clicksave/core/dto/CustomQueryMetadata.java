@@ -36,5 +36,10 @@ public class CustomQueryMetadata implements QueryMetadata {
      * The list of fields.
      */
     List<FieldDataCache> fields;
+
+    /**
+     * Is by annotation.
+     */
+    Boolean isQueryFromAnnotation = false;
 }
 

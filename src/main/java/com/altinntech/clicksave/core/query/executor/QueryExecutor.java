@@ -1,6 +1,7 @@
 package com.altinntech.clicksave.core.query.executor;
 
 import com.altinntech.clicksave.annotations.EnumColumn;
+import com.altinntech.clicksave.annotations.Query;
 import com.altinntech.clicksave.core.BatchCollector;
 import com.altinntech.clicksave.core.CSBootstrap;
 import com.altinntech.clicksave.core.CSUtils;
@@ -8,6 +9,7 @@ import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.caches.QueryMetadataCache;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.core.query.builder.QueryBuilder;
+import com.altinntech.clicksave.core.query.builder.QueryPullType;
 import com.altinntech.clicksave.core.query.parser.Part;
 import com.altinntech.clicksave.core.query.parser.PartParser;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
@@ -16,6 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thepavel.icomponent.metadata.MethodMetadata;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -68,49 +73,36 @@ public class QueryExecutor {
         batchCollector.saveAndFlush(classDataCache);
 
         if (!queryMetadataCache.containsKey(methodName)) {
-            PartParser partParser = new PartParser();
-            partParser.parse(methodName);
-            List<Part> parts = partParser.getParts();
-
-            List<FieldDataCache> fieldDataCacheList = classDataCache.getFields();
-            List<FieldData> fieldsToFetch;
-
-            if (!returnClass.equals(entityClass)) {
-                ProjectionClassData projectionClassData = projectionClassDataCache.get(returnClass, fieldDataCacheList);
-                fieldsToFetch = new ArrayList<>(projectionClassData.getFields());
-            } else {
-                fieldsToFetch = new ArrayList<>(fieldDataCacheList);
+            Annotation[] annotations = methodMetadata.getSourceMethod().getAnnotations();
+            Query queryAnnotation = null;
+            for (Annotation annotation : annotations) {
+                if (annotation.annotationType() == Query.class) {
+                    queryAnnotation = (Query) annotation;
+                    break;
+                }
             }
 
-            QueryBuilder queryBuilder = new QueryBuilder(parts, classDataCache.getTableName(), fieldDataCacheList, fieldsToFetch);
-            CustomQueryMetadata query = queryBuilder.createQuery();
-            queryMetadataCache.addToCache(methodName, query);
+            if (queryAnnotation != null) {
+                CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
+                customQueryMetadata.setQueryBody(queryAnnotation.value());
+                customQueryMetadata.setPullType(getPullType(methodMetadata));
+                customQueryMetadata.setIsQueryFromAnnotation(true);
+                queryMetadataCache.addToCache(methodName, customQueryMetadata);
+            } else {
+                parseQueryMethod(returnClass, entityClass, methodName, classDataCache, methodMetadata);
+            }
         }
 
         CustomQueryMetadata query = (CustomQueryMetadata) queryMetadataCache.getFromCache(methodName);
         try(Connection connection = bootstrap.getConnection();
             PreparedStatement statement = connection.prepareStatement(query.getQueryBody())) {
-            for (int i = 1; i < arguments.length + 1; i++) {
-                FieldDataCache currentFieldData = query.getFields().get(i - 1);
-                Optional<EnumColumn> enumColumnOptional = currentFieldData.getEnumColumnAnnotation();
-                if (enumColumnOptional.isPresent()) {
-                    EnumColumn enumColumn = enumColumnOptional.get();
-                    switch (enumColumn.value()) {
-                        case STRING -> {
-                            Enum<?> enumValue = (Enum<?>) arguments[i - 1];
-                            statement.setObject(i, enumValue.toString());
-                        }
-                        case ORDINAL -> {
-                            Enum<?> enumValue = (Enum<?>) arguments[i - 1];
-                            statement.setObject(i, enumValue.ordinal());
-                        }
-                        case BY_ID -> {
-                            EnumId enumValue = (EnumId) arguments[i - 1];
-                            statement.setObject(i, enumValue.getId());
-                        }
-                    }
-                } else {
+            if (query.getIsQueryFromAnnotation()) {
+                for (int i = 1; i < arguments.length + 1; i++) {
                     statement.setObject(i, arguments[i - 1]);
+                }
+            } else {
+                for (int i = 1; i < arguments.length + 1; i++) {
+                    setStatementArgument(arguments, query, statement, i);
                 }
             }
 
@@ -150,6 +142,73 @@ public class QueryExecutor {
 
                 }
             }
+        }
+
+        return null;
+    }
+
+    private static void setStatementArgument(Object[] arguments, CustomQueryMetadata query, PreparedStatement statement, int i) throws SQLException {
+        FieldDataCache currentFieldData = query.getFields().get(i - 1);
+        Optional<EnumColumn> enumColumnOptional = currentFieldData.getEnumColumnAnnotation();
+        if (enumColumnOptional.isPresent()) {
+            EnumColumn enumColumn = enumColumnOptional.get();
+            switch (enumColumn.value()) {
+                case STRING -> {
+                    Enum<?> enumValue = (Enum<?>) arguments[i - 1];
+                    statement.setObject(i, enumValue.toString());
+                }
+                case ORDINAL -> {
+                    Enum<?> enumValue = (Enum<?>) arguments[i - 1];
+                    statement.setObject(i, enumValue.ordinal());
+                }
+                case BY_ID -> {
+                    EnumId enumValue = (EnumId) arguments[i - 1];
+                    statement.setObject(i, enumValue.getId());
+                }
+            }
+        } else {
+            statement.setObject(i, arguments[i - 1]);
+        }
+    }
+
+    private void parseQueryMethod(Class<?> returnClass, Class<?> entityClass, String methodName, ClassDataCache classDataCache, MethodMetadata methodMetadata) {
+        PartParser partParser = new PartParser();
+        partParser.parse(methodName);
+        List<Part> parts = partParser.getParts();
+
+        List<FieldDataCache> fieldDataCacheList = classDataCache.getFields();
+        List<FieldData> fieldsToFetch;
+
+        if (!returnClass.equals(entityClass)) {
+            ProjectionClassData projectionClassData = projectionClassDataCache.get(returnClass, fieldDataCacheList);
+            fieldsToFetch = new ArrayList<>(projectionClassData.getFields());
+        } else {
+            fieldsToFetch = new ArrayList<>(fieldDataCacheList);
+        }
+
+        QueryBuilder queryBuilder = new QueryBuilder(parts, classDataCache.getTableName(), fieldDataCacheList, fieldsToFetch);
+        CustomQueryMetadata query = queryBuilder.createQuery();
+        query.setPullType(getPullType(methodMetadata));
+        queryMetadataCache.addToCache(methodName, query);
+    }
+
+    private static QueryPullType getPullType(MethodMetadata methodMetadata) {
+        Type returnType = methodMetadata.getReturnTypeMetadata().getResolvedType();
+
+        if (returnType instanceof ParameterizedType parameterizedType) {
+            Type rawType = parameterizedType.getRawType();
+            if (rawType instanceof Class<?> rawClass) {
+                if (rawClass.equals(Optional.class)) {
+                    return QueryPullType.SINGLE;
+                } else if (rawClass.equals(List.class)) {
+                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                    if (actualTypeArguments.length > 0 && actualTypeArguments[0] instanceof Class<?>) {
+                        return QueryPullType.MULTIPLE;
+                    }
+                }
+            }
+        } else if (returnType instanceof Class<?>) {
+            return QueryPullType.NONE;
         }
 
         return null;
