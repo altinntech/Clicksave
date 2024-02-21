@@ -14,7 +14,6 @@ import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
 import com.altinntech.clicksave.log.CSLogger;
-import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -62,7 +61,7 @@ public class CSUtils {
      * @param input the input string
      * @return the string converted to snake case
      */
-    @NotNull
+
     public static String toSnakeCase(String input) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < input.length(); i++) {
