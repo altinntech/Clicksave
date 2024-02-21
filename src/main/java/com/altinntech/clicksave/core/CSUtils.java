@@ -61,6 +61,7 @@ public class CSUtils {
      * @param input the input string
      * @return the string converted to snake case
      */
+
     public static String toSnakeCase(String input) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < input.length(); i++) {
