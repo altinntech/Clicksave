@@ -209,6 +209,7 @@ public class CSBootstrap {
 
         String tableName = classDataCache.getTableName();
         List<FieldDataCache> fields = classDataCache.getFields();
+        info("Create table " + tableName);
 
         StringBuilder queryBuilder = new StringBuilder("CREATE TABLE ");
         queryBuilder.append(tableName).append(" (");
@@ -260,11 +261,13 @@ public class CSBootstrap {
 
         String tableName = classDataCache.getTableName();
         List<String> tableFieldsFromDB = fetchTableColumns(tableName);
+        info("Check for updates table " + tableName);
 
         List<FieldDataCache> fields = classDataCache.getFields();
         for (FieldDataCache fieldData : fields) {
             String fieldName = fieldData.getFieldInTableName();
             if (!tableFieldsFromDB.contains(fieldName)) {
+                info("Update field " + fieldName + " in table " + tableName);
                 Optional<Column> columnOptional = fieldData.getColumnAnnotation();
                 Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
 
