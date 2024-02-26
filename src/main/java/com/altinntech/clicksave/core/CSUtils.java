@@ -106,8 +106,6 @@ public class CSUtils {
                     isPersistent = true;
                     fieldData.setColumnAnnotation(column);
                     if (column.id()) {
-                        if (column.value() != FieldType.UUID)
-                            throw new FieldInitializationException("Id column must be a UUID column type");
                         idFieldsCount++;
                         isId = true;
                     }

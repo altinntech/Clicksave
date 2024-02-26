@@ -99,7 +99,7 @@ public class CHRepository {
                 try {
                     value = field.get(entity);
                     if (value == null && columnAnnotation.id()) {
-                        value = UUID.randomUUID();
+                        //value = UUID.randomUUID(); TODO: increase id
                         setFieldValue(entity, field, value, fieldData);
                     }
                 } catch (IllegalAccessException e) {

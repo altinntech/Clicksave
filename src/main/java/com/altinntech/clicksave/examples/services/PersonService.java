@@ -27,7 +27,7 @@ public class PersonService {
         jpaPersonRepository.delete(person);
     }
 
-    public Person getPersonById(UUID id) {
+    public Person getPersonById(Long id) {
         Optional<Person> person = jpaPersonRepository.findById(id);
         if (person.isPresent())
             return person.get();

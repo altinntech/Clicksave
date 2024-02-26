@@ -12,7 +12,7 @@ import java.util.UUID;
  *
  * @param <T> the type parameter representing the entity type
  */
-public interface ClickHouseJpa<T> {
+public interface ClickHouseJpa<T, ID> {
 
     /**
      * Saves the given entity.
@@ -20,7 +20,8 @@ public interface ClickHouseJpa<T> {
      * @param entity the entity to save
      * @return the saved entity
      */
-    T save(T entity);
+    <S extends T> S save(S entity);
+
 
     /**
      * Retrieves an entity by its ID.
@@ -28,14 +29,14 @@ public interface ClickHouseJpa<T> {
      * @param id the ID of the entity to retrieve
      * @return an {@code Optional} containing the entity, or empty if not found
      */
-    Optional<T> findById(UUID id);
+    Optional<T> findById(ID id);
 
     /**
      * Retrieves all entities of type T.
      *
      * @return a list containing all entities
      */
-    List<T> findAll();
+    <S extends T> List<S>  findAll();
 
     /**
      * Deletes the given entity.

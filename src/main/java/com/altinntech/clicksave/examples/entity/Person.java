@@ -22,8 +22,8 @@ public class Person {
     public Person() {
     }
 
-    @Column(value = FieldType.UUID, id = true)
-    UUID id; // the id field must be UUID type
+    @Column(value = FieldType.LONG, id = true)
+    Long id; // the id field must be UUID type
     @Column(FieldType.STRING)
     String name;
     @Column(FieldType.STRING)
