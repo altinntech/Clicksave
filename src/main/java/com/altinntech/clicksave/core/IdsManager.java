@@ -47,12 +47,14 @@ public class IdsManager {
     public Object getLastId(ClassDataCache classDataCache) {
         Object lastId = idCache.get(classDataCache);
         if (lastId == null) {
-            sync(classDataCache);
-            lastId = idCache.get(classDataCache);
-        }
-        Optional<Batching> batchSizeAnnotation = classDataCache.getBatchingAnnotationOptional();
-        if (!batchSizeAnnotation.isPresent()) {
             adaptiveSync(classDataCache);
+            lastId = idCache.get(classDataCache);
+        } else {
+            Optional<Batching> batchSizeAnnotation = classDataCache.getBatchingAnnotationOptional();
+            if (batchSizeAnnotation.isEmpty()) {
+                adaptiveSync(classDataCache);
+                lastId = idCache.get(classDataCache);
+            }
         }
         return lastId;
     }

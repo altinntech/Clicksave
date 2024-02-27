@@ -15,15 +15,15 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @ClickHouseEntity // you should use this annotation for persistence entity
-@Batching(batchSize = 10) // add batch for saving
+@Batching(batchSize = 3) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor
     public Person() {
     }
 
-    @Column(value = FieldType.UUID, id = true)
-    UUID id;
+    @Column(value = FieldType.LONG, id = true)
+    Long id;
     @Column(FieldType.STRING)
     String name;
     @Column(FieldType.STRING)
