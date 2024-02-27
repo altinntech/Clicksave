@@ -21,10 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import static com.altinntech.clicksave.log.CSLogger.*;
@@ -391,5 +388,21 @@ public class CSUtils {
     public static int generateRandomNumber(int min, int max) {
         Random random = new Random();
         return random.nextInt(max - min + 1) + min;
+    }
+
+    static Integer generateIntegerId(Integer currentId) {
+        if (currentId == null) {
+            return 0;
+        } else {
+            return currentId + 1;
+        }
+    }
+
+    static Long generateLongId(Long currentId) {
+        if (currentId == null) {
+            return 0L;
+        } else {
+            return currentId + 1L;
+        }
     }
 }

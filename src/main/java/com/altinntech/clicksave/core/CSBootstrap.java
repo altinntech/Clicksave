@@ -42,6 +42,7 @@ public class CSBootstrap {
     private final ConnectionManager connectionManager;
     private final Environment environment;
     private final BatchCollector batchCollector;
+    private static CSBootstrap instance;
 
     /**
      * Constructs a new CSBootstrap instance.
@@ -57,7 +58,12 @@ public class CSBootstrap {
         this.connectionManager = connectionManager;
         this.environment = environment;
         this.batchCollector = batchCollector;
+        instance = this;
         initialize();
+    }
+
+    public static CSBootstrap getInstance() {
+        return instance;
     }
 
     private void initialize() throws FieldInitializationException, ClassCacheNotFoundException {

@@ -31,6 +31,8 @@ public class BatchCollector {
      */
     private final Map<BatchedQueryData, List<List<Object>>> batches = new HashMap<>();
 
+    private final IdsManager idsManager = IdsManager.getInstance();
+
     /**
      * The bootstrap instance for database connectivity.
      */
@@ -49,7 +51,7 @@ public class BatchCollector {
      * Adds query data to the batch.
      *
      * @param batchQueryData the batch query data
-     * @param fieldsData     the fields data
+     * @param fieldsData     the field data
      */
     public void put(BatchedQueryData batchQueryData, List<Object> fieldsData) {
         if (!batches.containsKey(batchQueryData)) {
@@ -60,7 +62,7 @@ public class BatchCollector {
         batch.add(fieldsData);
 
         if (batch.size() >= batchQueryData.getClassDataCache().getBatchingAnnotation().batchSize()) {
-            saveAndFlush(batchQueryData.getQuery(), batch);
+            saveAndFlush(batchQueryData, batch);
         }
     }
 
@@ -77,7 +79,7 @@ public class BatchCollector {
                 List<List<Object>> batch = entry.getValue();
                 if (batch.isEmpty())
                     return;
-                saveAndFlush(batchedQueryData.getQuery(), batch);
+                saveAndFlush(batchedQueryData, batch);
                 return;
             }
         }
@@ -86,10 +88,11 @@ public class BatchCollector {
     /**
      * Saves and flushes the batch.
      *
-     * @param query the query
+     * @param queryMeta the query
      * @param batch the batch
      */
-    public void saveAndFlush(String query, List<List<Object>> batch) {
+    public void saveAndFlush(BatchedQueryData queryMeta, List<List<Object>> batch) {
+        String query = queryMeta.getQuery();
         try(Connection connection = bootstrap.getConnection()) {
             PreparedStatement statement = connection.prepareStatement(query);
 
@@ -113,6 +116,7 @@ public class BatchCollector {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        idsManager.sync(queryMeta.getClassDataCache());
         debug(query + " batch saved");
     }
 
@@ -125,7 +129,7 @@ public class BatchCollector {
             List<List<Object>> batch = entry.getValue();
             if (batch.isEmpty())
                 continue;
-            saveAndFlush(batchedQueryData.getQuery(), batch);
+            saveAndFlush(batchedQueryData, batch);
         }
         info("All batches saved");
     }

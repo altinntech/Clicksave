@@ -1,3 +1,4 @@
+/*
 package com.altinntech.clicksave.examples.services;
 
 import com.altinntech.clicksave.examples.entity.Person;
@@ -38,3 +39,4 @@ public class PersonService {
         return true;
     }
 }
+*/

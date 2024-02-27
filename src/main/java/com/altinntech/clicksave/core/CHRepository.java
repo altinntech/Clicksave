@@ -7,8 +7,10 @@ import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.enums.EnumType;
+import com.altinntech.clicksave.enums.IDTypes;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
+import com.altinntech.clicksave.exceptions.NotImplementationException;
 import com.altinntech.clicksave.interfaces.EnumId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.altinntech.clicksave.core.CSUtils.*;
+import static com.altinntech.clicksave.enums.IDTypes.allowedIdTypes;
 import static com.altinntech.clicksave.log.CSLogger.error;
 
 /**
@@ -44,6 +47,8 @@ public class CHRepository {
      */
     private final BatchCollector batchCollector;
 
+    private final IdsManager idsManager = IdsManager.getInstance();
+
     /**
      * Instantiates a new ClickHouse repository.
      *
@@ -66,7 +71,7 @@ public class CHRepository {
      * @throws IllegalAccessException      if illegal access occurs
      * @throws SQLException                 if a SQL exception occurs
      */
-    public <T> T save(T entity) throws FieldInitializationException, ClassCacheNotFoundException, IllegalAccessException, SQLException {
+    public <T, ID> T save(T entity, ID idType) throws FieldInitializationException, ClassCacheNotFoundException, IllegalAccessException, SQLException {
         Class<?> entityClass = entity.getClass();
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         FieldDataCache idFieldData = classDataCache.getIdField();
@@ -74,7 +79,7 @@ public class CHRepository {
 
         // check for update
         idField.setAccessible(true);
-        UUID id = (UUID) idFieldData.getField().get(entity);
+        ID id = (ID) idFieldData.getField().get(entity);
         if (id != null && entityExists(entityClass, id)) {
             return update(entity, classDataCache, idFieldData, id);
         }
@@ -99,7 +104,7 @@ public class CHRepository {
                 try {
                     value = field.get(entity);
                     if (value == null && columnAnnotation.id()) {
-                        //value = UUID.randomUUID(); TODO: increase id
+                        value = idsManager.getNextId(classDataCache, fieldData, idType);
                         setFieldValue(entity, field, value, fieldData);
                     }
                 } catch (IllegalAccessException e) {
@@ -176,7 +181,7 @@ public class CHRepository {
      * @throws SQLException                 if a SQL exception occurs
      */
     // todo: refactor
-    private <T> T update(T entity, ClassDataCache classDataCache, FieldDataCache idFieldData, UUID id) throws IllegalAccessException, SQLException {
+    private <T, ID> T update(T entity, ClassDataCache classDataCache, FieldDataCache idFieldData, ID id) throws IllegalAccessException, SQLException {
         String tableName = classDataCache.getTableName();
         StringBuilder updateQuery = new StringBuilder("ALTER TABLE ").append(tableName).append(" UPDATE ");
         batchCollector.saveAndFlush(classDataCache);
@@ -234,7 +239,7 @@ public class CHRepository {
      * @return the entity if found, otherwise null
      * @throws ClassCacheNotFoundException if the class cache is not found
      */
-    public <T> T findById(Class<T> entityClass, UUID id) throws ClassCacheNotFoundException {
+    public <T, ID> T findById(Class<T> entityClass, ID id) throws ClassCacheNotFoundException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         StringBuilder selectQuery = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE ");
@@ -329,7 +334,7 @@ public class CHRepository {
 
         StringBuilder deleteQuery = new StringBuilder("DELETE FROM ").append(classDataCache.getTableName()).append(" WHERE ");
         String columnName = idFieldData.getFieldInTableName();
-        UUID id = (UUID) idField.get(entity);
+        Object id = idField.get(entity);
         deleteQuery.append(columnName).append(" = ").append("'").append(id).append("'");
 
         try(Connection connection = CSBootstrap.getConnection();
@@ -351,7 +356,7 @@ public class CHRepository {
      * @return true if the entity exists, false otherwise
      * @throws ClassCacheNotFoundException if the class cache is not found
      */
-    public <T> boolean entityExists(Class<T> entityClass, UUID id) throws ClassCacheNotFoundException {
+    public <T, ID> boolean entityExists(Class<T> entityClass, ID id) throws ClassCacheNotFoundException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         batchCollector.saveAndFlush(classDataCache);
         String tableName = classDataCache.getTableName();

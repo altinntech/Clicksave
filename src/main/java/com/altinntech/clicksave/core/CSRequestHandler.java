@@ -47,11 +47,12 @@ public class CSRequestHandler implements MethodHandler {
     @Override
     public Object handle(Object[] arguments, MethodMetadata methodMetadata) {
         Class<?> entityType = findEntityType(methodMetadata);
+        Class<?> entityIdType = findEntityIdType(methodMetadata);
         Class<?> methodReturnType = getParameterType(methodMetadata);
 
         switch (methodMetadata.getSourceMethod().getName()) {
             case "save" -> {
-                return handleSave(arguments);
+                return handleSave(arguments, entityIdType);
             }
             case "findById" -> {
                 return handleFindById(entityType, arguments);
@@ -84,6 +85,22 @@ public class CSRequestHandler implements MethodHandler {
         return null;
     }
 
+    private Class<?> findEntityIdType(MethodMetadata methodMetadata) {
+        Class<?> sourceClass = methodMetadata.getSourceClassMetadata().getSourceClass();
+        Type[] interfaces = sourceClass.getGenericInterfaces();
+
+        for (Type type : interfaces) {
+            if (type instanceof ParameterizedType parameterizedType) {
+                Type rawType = parameterizedType.getRawType();
+                if (rawType.getTypeName().equals(ClickHouseJpa.class.getName())) {
+                    Type[] typeArguments = parameterizedType.getActualTypeArguments();
+                    return (Class<?>) typeArguments[1];
+                }
+            }
+        }
+        return null;
+    }
+
     private static Class<?> getParameterType(MethodMetadata methodMetadata) {
         Type returnType = methodMetadata.getReturnTypeMetadata().getResolvedType();
         if (returnType instanceof ParameterizedType parameterizedType) {
@@ -104,9 +121,9 @@ public class CSRequestHandler implements MethodHandler {
         return new ArrayList<>();
     }
 
-    private Object handleSave(Object[] arguments) {
+    private Object handleSave(Object[] arguments, Class<?> entityIdType) {
         try {
-            return repository.save(arguments[0]);
+            return repository.save(arguments[0], entityIdType);
         } catch (FieldInitializationException | ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
             error(e.getMessage());
         }
@@ -115,7 +132,7 @@ public class CSRequestHandler implements MethodHandler {
 
     private Object handleFindById(Class<?> entityType, Object[] arguments) {
         try {
-            return Optional.ofNullable(repository.findById(entityType, (UUID) arguments[0]));
+            return Optional.ofNullable(repository.findById(entityType, arguments[0]));
         } catch (ClassCacheNotFoundException e) {
             error(e.getMessage());
         }
