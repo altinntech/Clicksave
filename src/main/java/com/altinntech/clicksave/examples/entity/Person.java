@@ -22,7 +22,7 @@ public class Person {
     public Person() {
     }
 
-    @Column(value = FieldType.LONG, id = true)
+    @Column(value = FieldType.LONG, id = true) // it is recommended to make the id field a UUID type
     Long id;
     @Column(FieldType.STRING)
     String name;

@@ -26,11 +26,6 @@ public enum FieldType {
     LONG("Int64"),
 
     /**
-     * Represents an unsigned long field type.
-     */
-    U_LONG("UInt64"),
-
-    /**
      * Represents a float field type.
      */
     FLOAT("Float32"),
@@ -53,7 +48,7 @@ public enum FieldType {
     /**
      * Represents a big decimal field type.
      */
-    BIG_DECIMAL("Decimal"),
+    BIG_DECIMAL("Decimal(20, 9)"),
 
     /**
      * Represents a UUID field type.
