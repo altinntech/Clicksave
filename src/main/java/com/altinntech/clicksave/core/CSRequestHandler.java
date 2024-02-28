@@ -14,7 +14,6 @@ import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.UUID;
 
 import static com.altinntech.clicksave.log.CSLogger.error;
 
@@ -31,16 +30,18 @@ public class CSRequestHandler implements MethodHandler {
 
     private final CHRepository repository;
     private final QueryExecutor queryExecutor;
+    private final CSBootstrap bootstrap;
 
     /**
      * Constructs a new CSRequestHandler instance.
      *
-     * @param repository    the repository
      * @param queryExecutor the query executor
+     * @param bootstrap the bootstrap
      */
     @Autowired
-    public CSRequestHandler(CHRepository repository, QueryExecutor queryExecutor) {
-        this.repository = repository;
+    public CSRequestHandler(QueryExecutor queryExecutor, CSBootstrap bootstrap) {
+        this.bootstrap = bootstrap;
+        this.repository = CHRepository.getInstance();
         this.queryExecutor = queryExecutor;
     }
 
@@ -115,7 +116,7 @@ public class CSRequestHandler implements MethodHandler {
     private Object handleFindAll(Class<?> entityType) {
         try {
             return repository.findAll(entityType);
-        } catch (ClassCacheNotFoundException | SQLException e) {
+        } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
             error(e.getMessage());
         }
         return new ArrayList<>();
@@ -133,7 +134,7 @@ public class CSRequestHandler implements MethodHandler {
     private Object handleFindById(Class<?> entityType, Object[] arguments) {
         try {
             return Optional.ofNullable(repository.findById(entityType, arguments[0]));
-        } catch (ClassCacheNotFoundException e) {
+        } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
             error(e.getMessage());
         }
         return Optional.empty();
@@ -142,7 +143,7 @@ public class CSRequestHandler implements MethodHandler {
     private void handleDelete(Object argument) {
         try {
             repository.delete(argument);
-        } catch (ClassCacheNotFoundException | IllegalAccessException e) {
+        } catch (ClassCacheNotFoundException | IllegalAccessException | SQLException e) {
             error(e.getMessage());
         }
     }
@@ -150,7 +151,7 @@ public class CSRequestHandler implements MethodHandler {
     private void handleDeleteAll(Class<?> entityType) {
         try {
             repository.deleteAll(entityType);
-        } catch (ClassCacheNotFoundException e) {
+        } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
             error(e.getMessage());
         }
     }
@@ -158,7 +159,7 @@ public class CSRequestHandler implements MethodHandler {
     private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) {
         try {
             return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
-        } catch (ClassCacheNotFoundException | SQLException e) {
+        } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
             error(e.getMessage());
         }
         return null;

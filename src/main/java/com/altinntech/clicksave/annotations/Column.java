@@ -22,7 +22,7 @@ public @interface Column {
      *
      * @return the field type.
      */
-    FieldType value() default FieldType.NONE;
+    FieldType value();
 
     /**
      * Indicates if the field is an ID.

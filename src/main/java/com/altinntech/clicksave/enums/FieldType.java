@@ -26,6 +26,11 @@ public enum FieldType {
     LONG("Int64"),
 
     /**
+     * Represents an unsigned long field type.
+     */
+    U_LONG("UInt64"),
+
+    /**
      * Represents a float field type.
      */
     FLOAT("Float32"),

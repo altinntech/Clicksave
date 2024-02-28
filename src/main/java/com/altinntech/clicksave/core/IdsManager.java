@@ -3,7 +3,10 @@ package com.altinntech.clicksave.core;
 import com.altinntech.clicksave.annotations.Batching;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.enums.IDTypes;
+import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,8 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.altinntech.clicksave.core.CSUtils.generateIntegerId;
-import static com.altinntech.clicksave.core.CSUtils.generateLongId;
+import static com.altinntech.clicksave.core.CSUtils.*;
 import static com.altinntech.clicksave.enums.IDTypes.allowedIdTypes;
 
 public class IdsManager {
@@ -44,24 +46,32 @@ public class IdsManager {
         idCache.put(classDataCache, lastId);
     }
 
-    public Object getLastId(ClassDataCache classDataCache) {
+    public Object getLastId(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
         Object lastId = idCache.get(classDataCache);
         if (lastId == null) {
             adaptiveSync(classDataCache);
-            lastId = idCache.get(classDataCache);
         } else {
-            Optional<Batching> batchSizeAnnotation = classDataCache.getBatchingAnnotationOptional();
-            if (batchSizeAnnotation.isEmpty()) {
+            Optional<Batching> batchAnnotation = classDataCache.getBatchingAnnotationOptional();
+            if (batchAnnotation.isEmpty()) {
                 adaptiveSync(classDataCache);
-                lastId = idCache.get(classDataCache);
             }
         }
+        lastId = idCache.get(classDataCache);
         return lastId;
     }
 
-    void sync(ClassDataCache classDataCache) {
-        FieldDataCache idFieldData = classDataCache.getIdField();
+    void sync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
         Object refreshedId = null;
+        CHRepository repository = CHRepository.getInstance();
+        Optional<ClicksaveSequence> lastLockRecord = repository.findLast(ClicksaveSequence.class);
+        if (lastLockRecord.isPresent() && lastLockRecord.get().getIsLocked() == 1) {
+            refreshedId = lastLockRecord.get().getEndLockId();
+            idCache.put(classDataCache, refreshedId);
+            ClicksaveSequence unlockMarker =  createLockRecord(classDataCache, -1L, -1L, false);
+            repository.save(unlockMarker, unlockMarker.getTimestamp().getClass());
+            return;
+        }
+        FieldDataCache idFieldData = classDataCache.getIdField();
         StringBuilder selectIdQuery = new StringBuilder("SELECT ").append(idFieldData.getFieldInTableName()).append(" FROM ").append(classDataCache.getTableName()).append(" ORDER BY ").append(idFieldData.getFieldInTableName()).append(" DESC LIMIT 1");
         try(Connection connection = bootstrap.getConnection();
             PreparedStatement statement = connection.prepareStatement(selectIdQuery.toString())) {
@@ -72,8 +82,6 @@ public class IdsManager {
                     bootstrap.releaseConnection(connection);
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
 
         if (refreshedId != null) {
@@ -81,13 +89,13 @@ public class IdsManager {
         }
     }
 
-    public void adaptiveSync(ClassDataCache classDataCache) {
+    public void adaptiveSync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
         if (classDataCache.getIdField().getType() != IDTypes.UUID.getType()) {
             sync(classDataCache);
         }
     }
 
-    public <ID> ID getNextId(ClassDataCache classDataCache, FieldDataCache idFieldData, ID idType) {
+    public <ID> ID getNextId(ClassDataCache classDataCache, FieldDataCache idFieldData, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
         ID currentId = (ID) getLastId(classDataCache);
         ID nextId = null;
 
@@ -105,9 +113,47 @@ public class IdsManager {
             nextId = (ID) generateIntegerId((Integer) currentId);
         } else if (idType.equals(IDTypes.LONG.getType())) {
             nextId = (ID) generateLongId((Long) currentId);
+        } else {
+            throw new IllegalArgumentException("Invalid id type: " + idType);
         }
 
         idCache.put(classDataCache, nextId);
         return nextId;
+    }
+
+    public <ID> void lockIds(ClassDataCache classDataCache, int range, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        ID startId = (ID) getLastId(classDataCache);
+        ID endId = null;
+
+        if (idType.equals(IDTypes.UUID.getType())) {
+            return;
+        }
+        if (!allowedIdTypes.contains(idType)) {
+            throw new IllegalArgumentException("Invalid id type: " + idType);
+        }
+
+        if (idType.equals(IDTypes.INTEGER.getType())) {
+            endId = (ID) getRangedIntegerId((Integer) startId, range);
+        } else if (idType.equals(IDTypes.LONG.getType())) {
+            endId = (ID) getRangedLongId((Long) startId, range);
+        }
+
+        CHRepository repository = CHRepository.getInstance();
+        ClicksaveSequence lockRecord = createLockRecord(classDataCache, (Long) startId, (Long) endId, true);
+        repository.save(lockRecord, lockRecord.getTimestamp().getClass());
+    }
+
+    @NotNull
+    private static <ID> ClicksaveSequence createLockRecord(ClassDataCache classDataCache, Long startId, Long endId, boolean isLocked) {
+        ClicksaveSequence lockRecord = new ClicksaveSequence();
+        lockRecord.setTimestamp(System.nanoTime());
+        lockRecord.setStartLockId(startId);
+        lockRecord.setEndLockId(endId);
+        lockRecord.setTableName(classDataCache.getTableName());
+        if (isLocked)
+            lockRecord.setIsLocked(1);
+        else
+            lockRecord.setIsLocked(0);
+        return lockRecord;
     }
 }

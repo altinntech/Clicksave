@@ -67,7 +67,7 @@ public class QueryExecutor {
      * @throws ClassCacheNotFoundException if class cache is not found
      * @throws SQLException                if an SQL exception occurs
      */
-    public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException {
+    public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
         String methodName = methodMetadata.getSourceMethod().getName();
         ClassDataCache classDataCache = bootstrap.getClassDataCache(entityClass);
         batchCollector.saveAndFlush(classDataCache);

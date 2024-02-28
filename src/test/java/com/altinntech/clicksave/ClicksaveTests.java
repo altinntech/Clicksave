@@ -46,7 +46,7 @@ public class ClicksaveTests {
 
     @AfterEach
     void after() {
-        jpaPersonRepository.deleteAll();
+        //jpaPersonRepository.deleteAll();
     }
 
     @Test
@@ -262,7 +262,7 @@ public class ClicksaveTests {
 
     @Test
     void multipleSaving() {
-        int iterations = 20;
+        int iterations = 30;
         List<Person> persons = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
             Person person = Person.buildMockPerson();

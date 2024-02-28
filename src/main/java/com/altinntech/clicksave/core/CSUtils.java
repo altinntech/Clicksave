@@ -310,16 +310,7 @@ public class CSUtils {
             entity = entityClass.getDeclaredConstructor().newInstance();
             List<FieldDataCache> fields = classDataCache.getFields();
             for (FieldDataCache fieldDataCache : fields) {
-                Field field = fieldDataCache.getField();
-                String columnName = fieldDataCache.getFieldInTableName();
-                boolean columnFound = isColumnFound(resultSet, columnName);
-
-                if(columnFound) {
-                    Object value = resultSet.getObject(columnName);
-                    setFieldValue(entity, field, value, fieldDataCache);
-                } else {
-                    warn("Column '" + columnName + "' not found in resultSet");
-                }
+                setValueFromResultSet(resultSet, classDataCache, entity, fieldDataCache.getField(), fieldDataCache.getFieldName());
             }
         } catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchMethodException |
                  InvocationTargetException e) {
@@ -404,5 +395,13 @@ public class CSUtils {
         } else {
             return currentId + 1L;
         }
+    }
+
+    static Integer getRangedIntegerId(Integer startId, int range) {
+        return startId + range;
+    }
+
+    static Long getRangedLongId(Long startId, int range) {
+        return startId + range;
     }
 }

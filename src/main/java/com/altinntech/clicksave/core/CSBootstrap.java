@@ -98,7 +98,11 @@ public class CSBootstrap {
 
     private void shutdownProcess() {
         info("Shutdown initiated! Saving batches...");
-        batchCollector.saveAndFlushAll();
+        try {
+            batchCollector.saveAndFlushAll();
+        } catch (SQLException | ClassCacheNotFoundException | IllegalAccessException e) {
+            error(e.getMessage());
+        }
         connectionManager.closeAllConnections();
         info("Shutdown completed");
     }
