@@ -6,7 +6,6 @@ import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.enums.IDTypes;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -143,7 +142,6 @@ public class IdsManager {
         repository.save(lockRecord, lockRecord.getTimestamp().getClass());
     }
 
-    @NotNull
     private static <ID> ClicksaveSequence createLockRecord(ClassDataCache classDataCache, Long startId, Long endId, boolean isLocked) {
         ClicksaveSequence lockRecord = new ClicksaveSequence();
         lockRecord.setTimestamp(System.nanoTime());
