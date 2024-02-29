@@ -15,9 +15,7 @@ import com.altinntech.clicksave.interfaces.EnumId;
 
 import java.lang.reflect.Field;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static com.altinntech.clicksave.core.CSUtils.*;
 import static com.altinntech.clicksave.log.CSLogger.error;
@@ -321,12 +319,13 @@ public class CHRepository {
         }
     }
 
-    <T> Optional<T> findLast(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
+    <T> Optional<T> findLast(Class<T> entityClass, Properties properties) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         FieldDataCache idFieldData = classDataCache.getIdField();
+        String condition = convertPropertiesToQuery(properties);
         StringBuilder selectIdQuery = new StringBuilder("SELECT *")
-                .append(" FROM ").append(tableName).append(" ORDER BY ")
+                .append(" FROM ").append(tableName).append(" WHERE ").append(condition).append(" ORDER BY ")
                 .append(idFieldData.getFieldInTableName()).append(" DESC LIMIT 1");
         batchCollector.saveAndFlush(classDataCache);
 

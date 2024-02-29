@@ -428,4 +428,24 @@ public class CSUtils {
     static Long getRangedLongId(Long startId, int range) {
         return startId + range;
     }
+
+    static String convertPropertiesToQuery(Properties properties) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        Set<String> propertyNames = properties.stringPropertyNames();
+        for (String propertyName : propertyNames) {
+            String propertyValue = properties.getProperty(propertyName);
+            stringBuilder.append(propertyName)
+                    .append(" = '")
+                    .append(propertyValue)
+                    .append("' AND ");
+        }
+
+        // Удаление " AND " с конца строки
+        if (stringBuilder.length() >= 5) {
+            stringBuilder.setLength(stringBuilder.length() - 5);
+        }
+
+        return stringBuilder.toString();
+    }
 }

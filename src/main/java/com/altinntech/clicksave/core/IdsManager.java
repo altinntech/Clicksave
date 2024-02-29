@@ -11,10 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static com.altinntech.clicksave.core.CSUtils.*;
 import static com.altinntech.clicksave.enums.IDTypes.allowedIdTypes;
@@ -62,7 +59,9 @@ public class IdsManager {
     void sync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
         Object refreshedId = null;
         CHRepository repository = CHRepository.getInstance();
-        Optional<ClicksaveSequence> lastLockRecord = repository.findLast(ClicksaveSequence.class);
+        Properties properties = new Properties();
+        properties.setProperty("table_name", classDataCache.getTableName());
+        Optional<ClicksaveSequence> lastLockRecord = repository.findLast(ClicksaveSequence.class, properties);
         if (lastLockRecord.isPresent() && lastLockRecord.get().getIsLocked() == 1) {
             refreshedId = lastLockRecord.get().getEndLockId();
             idCache.put(classDataCache, refreshedId);
