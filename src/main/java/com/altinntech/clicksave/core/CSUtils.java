@@ -7,12 +7,10 @@ import com.altinntech.clicksave.annotations.Reference;
 import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EnumType;
-import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
-import com.altinntech.clicksave.log.CSLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -234,12 +232,28 @@ public class CSUtils {
      * @param classDataCache the ClassData containing field data
      * @return the FieldDataCache object corresponding to the field name, or null if not found
      */
-    private static FieldDataCache findFieldDataCache(String fieldName, ClassData classDataCache) {
-        List<FieldDataCache> fetchedEntityFieldsData = classDataCache.getFields();
+    private static FieldDataCache findFieldDataCache(String fieldName, ClassData classDataCache) throws ClassCacheNotFoundException {
+        List<FieldDataCache> fetchedEntityFieldsData = new ArrayList<>();
+        for (FieldDataCache fieldDataCache : classDataCache.getFields()) {
+            findEmbeddedFieldDataCache(fetchedEntityFieldsData, fieldDataCache);
+        }
         return fetchedEntityFieldsData.stream()
                 .filter(fieldDataCache -> fieldDataCache.getFieldName().equals(fieldName))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private static void findEmbeddedFieldDataCache(List<FieldDataCache> fetchedEntityFieldsData, FieldDataCache fieldDataCache) throws ClassCacheNotFoundException {
+        Optional<Embedded> embeddedOptional = fieldDataCache.getEmbeddedAnnotation();
+        if (embeddedOptional.isPresent()) {
+            CSBootstrap bootstrap = CSBootstrap.getInstance();
+            EmbeddableClassData embeddableClassData = bootstrap.getEmbeddableClassDataCache(fieldDataCache.getType());
+            for (FieldDataCache fieldDataEmb : embeddableClassData.getFields()) {
+                findEmbeddedFieldDataCache(fetchedEntityFieldsData, fieldDataEmb);
+            }
+        } else {
+            fetchedEntityFieldsData.add(fieldDataCache);
+        }
     }
 
     /**
@@ -275,13 +289,13 @@ public class CSUtils {
 
             }
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | IllegalArgumentException |
-                 InvocationTargetException e) {
+                 InvocationTargetException | ClassCacheNotFoundException e) {
             e.printStackTrace();
         }
         return entity;
     }
 
-    private static <T> void setValueFromResultSet(ResultSet resultSet, ClassData classDataCache, T entity, Field field, String fieldNameInEntity) throws SQLException, IllegalAccessException {
+    private static <T> void setValueFromResultSet(ResultSet resultSet, ClassData classDataCache, T entity, Field field, String fieldNameInEntity) throws SQLException, IllegalAccessException, ClassCacheNotFoundException {
         FieldDataCache fieldDataCache = findFieldDataCache(fieldNameInEntity, classDataCache);
         if (fieldDataCache != null) {
             String columnName = fieldDataCache.getFieldInTableName();

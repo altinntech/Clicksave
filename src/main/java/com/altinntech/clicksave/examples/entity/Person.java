@@ -10,7 +10,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 @ClickHouseEntity // you should use this annotation for persistence entity
-//@Batching(batchSize = 10) // add batch for saving
+@Batching(batchSize = 10) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor
@@ -55,6 +55,7 @@ public class Person {
         person.address = CSUtils.generateRandomString(15);
         person.gender = CSUtils.getRandomEnum(Gender.class);
         person.job = CSUtils.getRandomEnum(Job.class);
+        person.employeeInfo = buildMockEmployeeInfo();
         return person;
     }
 
@@ -62,6 +63,14 @@ public class Person {
         EmployeeInfo employeeInfo = new EmployeeInfo();
         employeeInfo.description = CSUtils.generateRandomString(15);
         employeeInfo.experience = (float) CSUtils.generateRandomNumber(1, 99);
+        employeeInfo.setWorkInfo(buildMockWorkInfo());
         return employeeInfo;
+    }
+
+    public static WorkInfo buildMockWorkInfo() {
+        WorkInfo workInfo = new WorkInfo();
+        workInfo.setWorkName(CSUtils.generateRandomString(5));
+        workInfo.setGrade(CSUtils.generateRandomNumber(1, 99));
+        return workInfo;
     }
 }

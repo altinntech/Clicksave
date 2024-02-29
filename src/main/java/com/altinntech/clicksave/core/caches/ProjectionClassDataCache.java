@@ -80,7 +80,7 @@ public class ProjectionClassDataCache {
                 projectionFieldData.setFieldInTableName(CSUtils.toSnakeCase(projectionFieldData.getFieldName()));
             }
 
-            if (originalFieldNames.contains(projectionFieldData.getFieldInTableName()))
+            if (originalFieldNames.contains(projectionFieldData.getFieldInTableName()) || projectionFieldData.getReferenceAnnotationOptional().isPresent())
                 projectionFieldDataList.add(projectionFieldData);
         }
 

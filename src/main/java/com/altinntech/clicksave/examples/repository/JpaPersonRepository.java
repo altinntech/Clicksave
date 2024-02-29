@@ -45,7 +45,7 @@ public interface JpaPersonRepository extends ClickHouseJpa<Person, Long> {
     @Query("SELECT name FROM person WHERE name = ? AND age = ?")
     Optional<PersonResponse> annotationBasedQueryProjectionNotAllFields(String name, int age);
 
-    @Query("SELECT name, last_name, job, age, gender FROM person WHERE name = ? AND age = ?")
+    @Query("SELECT name, last_name, job, age, gender, description FROM person WHERE name = ? AND age = ?")
     Optional<PersonResponse> annotationBasedQueryProjectionFieldsOverload(String name, int age);
 
     @Query("SELECT name, last_name, job, age, gender FROM person")

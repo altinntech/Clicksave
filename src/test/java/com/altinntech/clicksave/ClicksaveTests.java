@@ -297,10 +297,7 @@ public class ClicksaveTests {
     @Test
     void projectionMapping() {
         jpaPersonRepository.save(TEST_PERSON_1);
-        PersonResponse personResponseExpected = new PersonResponse();
-        personResponseExpected.setSome_name(TEST_PERSON_1.getName());
-        personResponseExpected.setLastName(TEST_PERSON_1.getLastName());
-        personResponseExpected.setJob(TEST_PERSON_1.getJob());
+        PersonResponse personResponseExpected = PersonResponse.create(TEST_PERSON_1);
 
         Optional<PersonResponse> personResponse = jpaPersonRepository.findByLastName(TEST_PERSON_1.getLastName());
         assertTrue(personResponse.isPresent());

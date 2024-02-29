@@ -14,6 +14,8 @@ public class PersonResponse { // you can use dto projections
     String some_name;
     String lastName;
     Job job;
+    @Reference("description")
+    String description;
     String this_field_doesnt_exist;
 
     public static PersonResponse create(Person person) {
@@ -21,6 +23,7 @@ public class PersonResponse { // you can use dto projections
         response.setSome_name(person.getName());
         response.setLastName(person.getLastName());
         response.setJob(person.getJob());
+        response.setDescription(person.getEmployeeInfo().getDescription());
         return response;
     }
 }

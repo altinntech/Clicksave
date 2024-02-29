@@ -122,6 +122,9 @@ public class CHRepository {
     }
 
     private <T, ID> void extractFieldValuesForCreate(T entity, ID idType, ClassDataCache classDataCache, StringBuilder insertQuery, StringBuilder valuesPlaceholder, List<FieldDataCache> fields, List<Object> fieldValues) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        if (entity == null) {
+            return;
+        }
         for (FieldDataCache fieldData : fields) {
             String columnName = fieldData.getFieldInTableName();
             Field field = fieldData.getField();
@@ -214,6 +217,9 @@ public class CHRepository {
     }
 
     private <T> void extractFieldValuesForUpdate(T entity, StringBuilder updateQuery, List<FieldDataCache> fields) throws IllegalAccessException, ClassCacheNotFoundException {
+        if (entity == null) {
+            return;
+        }
         for (FieldDataCache fieldData : fields) {
             String columnName = fieldData.getFieldInTableName();
             Field field = fieldData.getField();

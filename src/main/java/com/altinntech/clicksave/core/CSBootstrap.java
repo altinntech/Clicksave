@@ -289,6 +289,7 @@ public class CSBootstrap {
                 EmbeddableClassData embeddableClassData = embeddableClassDataCacheMap.get(fieldData.getType());
                 if (embeddableClassData != null) {
                     parseQueryForCreate(primaryKey, embeddableClassData.getFields(), query);
+                    continue;
                 } else {
                     throw new FieldInitializationException("Embeddable class of field '" + fieldData.getFieldName() + "' not found");
                 }

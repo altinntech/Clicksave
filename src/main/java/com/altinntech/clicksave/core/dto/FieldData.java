@@ -1,6 +1,7 @@
 package com.altinntech.clicksave.core.dto;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * The {@code FieldData} interface defines methods to access field data.

@@ -171,7 +171,7 @@ public class QueryExecutor {
         }
     }
 
-    private void parseQueryMethod(Class<?> returnClass, Class<?> entityClass, String methodName, ClassDataCache classDataCache, MethodMetadata methodMetadata) {
+    private void parseQueryMethod(Class<?> returnClass, Class<?> entityClass, String methodName, ClassDataCache classDataCache, MethodMetadata methodMetadata) throws ClassCacheNotFoundException {
         PartParser partParser = new PartParser();
         partParser.parse(methodName);
         List<Part> parts = partParser.getParts();
@@ -183,13 +183,26 @@ public class QueryExecutor {
             ProjectionClassData projectionClassData = projectionClassDataCache.get(returnClass, fieldDataCacheList);
             fieldsToFetch = new ArrayList<>(projectionClassData.getFields());
         } else {
-            fieldsToFetch = new ArrayList<>(fieldDataCacheList);
+            fieldsToFetch = getFieldsToFetch(fieldDataCacheList);
         }
 
         QueryBuilder queryBuilder = new QueryBuilder(parts, classDataCache.getTableName(), fieldDataCacheList, fieldsToFetch);
         CustomQueryMetadata query = queryBuilder.createQuery();
         query.setPullType(getPullType(methodMetadata));
         queryMetadataCache.addToCache(methodName, query);
+    }
+
+    private List<FieldData> getFieldsToFetch(List<FieldDataCache> fieldDataCacheList) throws ClassCacheNotFoundException {
+        List<FieldData> result = new ArrayList<>();
+        for (FieldDataCache fieldData : fieldDataCacheList) {
+            if (fieldData.getEmbeddedAnnotation().isPresent()) {
+                EmbeddableClassData embeddableClassData = bootstrap.getEmbeddableClassDataCache(fieldData.getType());
+                result.addAll(getFieldsToFetch(embeddableClassData.getFields()));
+            } else {
+                result.add(fieldData);
+            }
+        }
+        return result;
     }
 
     private static QueryPullType getPullType(MethodMetadata methodMetadata) {
