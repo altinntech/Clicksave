@@ -62,6 +62,20 @@ public class ClicksaveTests {
     }
 
     @Test
+    void update() throws InterruptedException {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        Optional<Person> fetched = jpaPersonRepository.findById(TEST_PERSON_1.getId());
+        assertTrue(fetched.isPresent());
+        Person person = fetched.get();
+        person.setAge(40);
+        jpaPersonRepository.save(person);
+        Thread.sleep(500);
+        Optional<Person> fetched2 = jpaPersonRepository.findById(person.getId());
+        assertTrue(fetched2.isPresent());
+        assertEquals(person, fetched2.get());
+    }
+
+    @Test
     void find() {
         jpaPersonRepository.save(TEST_PERSON_1);
         Optional<Person> fetched = jpaPersonRepository.findById(TEST_PERSON_1.getId());

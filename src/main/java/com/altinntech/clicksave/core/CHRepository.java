@@ -2,28 +2,24 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.Batching;
 import com.altinntech.clicksave.annotations.Column;
+import com.altinntech.clicksave.annotations.Embedded;
 import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
+import com.altinntech.clicksave.core.dto.EmbeddableClassData;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.enums.EnumType;
-import com.altinntech.clicksave.enums.IDTypes;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
-import com.altinntech.clicksave.exceptions.NotImplementationException;
 import com.altinntech.clicksave.interfaces.EnumId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static com.altinntech.clicksave.core.CSUtils.*;
-import static com.altinntech.clicksave.enums.IDTypes.allowedIdTypes;
 import static com.altinntech.clicksave.log.CSLogger.error;
 
 /**
@@ -94,11 +90,44 @@ public class CHRepository {
         List<FieldDataCache> fields = classDataCache.getFields();
         List<Object> fieldValues = new ArrayList<>();
 
+        extractFieldValuesForCreate(entity, idType, classDataCache, insertQuery, valuesPlaceholder, fields, fieldValues);
+
+        insertQuery.delete(insertQuery.length() - 2, insertQuery.length()).append(")");
+        valuesPlaceholder.delete(valuesPlaceholder.length() - 2, valuesPlaceholder.length()).append(")");
+
+        String query = insertQuery + valuesPlaceholder.toString();
+
+        Optional<Batching> batchSizeAnnotation = classDataCache.getBatchingAnnotationOptional();
+        if (batchSizeAnnotation.isPresent()) {
+            BatchedQueryData batchedQuery = new BatchedQueryData(query, classDataCache);
+            batchCollector.put(batchedQuery, fieldValues);
+            return entity;
+        }
+
+        try(Connection connection = CSBootstrap.getConnection();
+            PreparedStatement statement = connection.prepareStatement(query)) {
+
+            for (int i = 0; i < fieldValues.size(); i++) {
+                statement.setObject(i + 1, fieldValues.get(i));
+            }
+            statement.addBatch();
+            statement.executeBatch();
+            CSBootstrap.releaseConnection(connection);
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return entity;
+    }
+
+    private <T, ID> void extractFieldValuesForCreate(T entity, ID idType, ClassDataCache classDataCache, StringBuilder insertQuery, StringBuilder valuesPlaceholder, List<FieldDataCache> fields, List<Object> fieldValues) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
         for (FieldDataCache fieldData : fields) {
             String columnName = fieldData.getFieldInTableName();
             Field field = fieldData.getField();
             Optional<Column> columnOptional = fieldData.getColumnAnnotation();
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
+            Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
 
             if (columnOptional.isPresent()) {
                 Column columnAnnotation = columnOptional.get();
@@ -137,38 +166,16 @@ public class CHRepository {
                 insertQuery.append(columnName).append(", ");
                 valuesPlaceholder.append("?, ");
                 fieldValues.add(value);
-            } else {
-                throw new FieldInitializationException();
+            } else if (embeddedOptional.isPresent()) {
+                EmbeddableClassData embeddableClassData = CSBootstrap.getEmbeddableClassDataCache(fieldData.getType());
+                field.setAccessible(true);
+                Object value = field.get(entity);
+                extractFieldValuesForCreate(value, null, classDataCache, insertQuery, valuesPlaceholder, embeddableClassData.getFields(), fieldValues);
+            }
+            else {
+                throw new FieldInitializationException("Exception while saving: Not valid field - " + fieldData);
             }
         }
-
-        insertQuery.delete(insertQuery.length() - 2, insertQuery.length()).append(")");
-        valuesPlaceholder.delete(valuesPlaceholder.length() - 2, valuesPlaceholder.length()).append(")");
-
-        String query = insertQuery + valuesPlaceholder.toString();
-
-        Optional<Batching> batchSizeAnnotation = classDataCache.getBatchingAnnotationOptional();
-        if (batchSizeAnnotation.isPresent()) {
-            BatchedQueryData batchedQuery = new BatchedQueryData(query, classDataCache);
-            batchCollector.put(batchedQuery, fieldValues);
-            return entity;
-        }
-
-        try(Connection connection = CSBootstrap.getConnection();
-            PreparedStatement statement = connection.prepareStatement(query)) {
-
-            for (int i = 0; i < fieldValues.size(); i++) {
-                statement.setObject(i + 1, fieldValues.get(i));
-            }
-            statement.addBatch();
-            statement.executeBatch();
-            CSBootstrap.releaseConnection(connection);
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        return entity;
     }
 
     /**
@@ -190,11 +197,29 @@ public class CHRepository {
         batchCollector.saveAndFlush(classDataCache);
 
         List<FieldDataCache> fields = classDataCache.getFields();
+        extractFieldValuesForUpdate(entity, updateQuery, fields);
+
+        updateQuery.delete(updateQuery.length() - 2, updateQuery.length()).append(" WHERE ")
+                .append(idFieldData.getFieldInTableName()).append(" = ").append("'" + id + "'");
+
+        try(Connection connection = CSBootstrap.getConnection();
+            Statement statement = connection.createStatement()) {
+            int rowAffected = statement.executeUpdate(updateQuery.toString());
+            CSBootstrap.releaseConnection(connection);
+        } catch (SQLException e) {
+            error(e.getMessage());
+        }
+
+        return entity;
+    }
+
+    private <T> void extractFieldValuesForUpdate(T entity, StringBuilder updateQuery, List<FieldDataCache> fields) throws IllegalAccessException, ClassCacheNotFoundException {
         for (FieldDataCache fieldData : fields) {
             String columnName = fieldData.getFieldInTableName();
             Field field = fieldData.getField();
             Optional<Column> columnOptional = fieldData.getColumnAnnotation();
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
+            Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
 
             if (columnOptional.isPresent()) {
                 Column columnAnnotation = columnOptional.get();
@@ -216,21 +241,13 @@ public class CHRepository {
                     value = enumValue.getId();
                 }
                 updateQuery.append(columnName).append(" = ").append("'" + value + "'").append(", ");
+            } else if (embeddedOptional.isPresent()) {
+                EmbeddableClassData embeddableClassData = CSBootstrap.getEmbeddableClassDataCache(fieldData.getType());
+                field.setAccessible(true);
+                Object value = field.get(entity);
+                extractFieldValuesForUpdate(value, updateQuery, embeddableClassData.getFields());
             }
         }
-
-        updateQuery.delete(updateQuery.length() - 2, updateQuery.length()).append(" WHERE ")
-                .append(idFieldData.getFieldInTableName()).append(" = ").append("'" + id + "'");
-
-        try(Connection connection = CSBootstrap.getConnection();
-            Statement statement = connection.createStatement()) {
-            int rowAffected = statement.executeUpdate(updateQuery.toString());
-            CSBootstrap.releaseConnection(connection);
-        } catch (SQLException e) {
-            error(e.getMessage());
-        }
-
-        return entity;
     }
 
     /**

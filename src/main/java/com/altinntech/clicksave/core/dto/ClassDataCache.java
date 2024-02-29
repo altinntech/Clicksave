@@ -17,7 +17,7 @@ import java.util.Optional;
  */
 @Data
 @NoArgsConstructor
-public class ClassDataCache {
+public class ClassDataCache implements ClassData {
 
     private String tableName;
     private List<FieldDataCache> fields;

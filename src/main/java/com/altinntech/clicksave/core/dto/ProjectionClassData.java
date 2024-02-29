@@ -11,7 +11,9 @@ import java.util.List;
  *
  * <p>This class is used to cache information about projection classes.</p>
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @see EmbeddableClassData
+ *
+ * @author Fyodor Plotnikov
  */
 @Data
 @NoArgsConstructor

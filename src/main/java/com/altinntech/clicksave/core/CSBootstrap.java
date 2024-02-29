@@ -1,10 +1,8 @@
 package com.altinntech.clicksave.core;
 
-import com.altinntech.clicksave.annotations.Batching;
-import com.altinntech.clicksave.annotations.ClickHouseEntity;
-import com.altinntech.clicksave.annotations.Column;
-import com.altinntech.clicksave.annotations.EnumColumn;
+import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
+import com.altinntech.clicksave.core.dto.EmbeddableClassData;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
@@ -36,8 +34,9 @@ import static com.altinntech.clicksave.log.CSLogger.*;
 @Component
 public class CSBootstrap {
 
-    private Set<Class<?>> annotatedClasses;
+    private Set<Class<?>> entityClasses;
     private final Map<Class<?>, ClassDataCache> classDataCacheMap = new HashMap<>();
+    private final Map<Class<?>, EmbeddableClassData> embeddableClassDataCacheMap = new HashMap<>();
 
     private final ConnectionManager connectionManager;
     private final Environment environment;
@@ -70,9 +69,10 @@ public class CSBootstrap {
         info("Start initialization...");
         DefaultProperties defaultProperties = new DefaultProperties(environment);
         Reflections reflections = new Reflections(defaultProperties.getRootPackageToScan());
-        annotatedClasses = reflections.getTypesAnnotatedWith(ClickHouseEntity.class);
+        entityClasses = reflections.getTypesAnnotatedWith(ClickHouseEntity.class);
+        Set<Class<?>> embeddableClasses = reflections.getTypesAnnotatedWith(Embeddable.class);
 
-        for (Class<?> clazz : annotatedClasses) {
+        for (Class<?> clazz : entityClasses) {
             ClassDataCache classDataCache = new ClassDataCache();
 
             classDataCache.setTableName(buildTableName(clazz));
@@ -81,6 +81,14 @@ public class CSBootstrap {
 
             classDataCacheMap.put(clazz, classDataCache);
             debug("Find class: " + clazz);
+        }
+
+        for (Class<?> clazz : embeddableClasses) {
+            EmbeddableClassData embeddableClassData = new EmbeddableClassData();
+            getFieldsData(clazz, embeddableClassData);
+
+            embeddableClassDataCacheMap.put(clazz, embeddableClassData);
+            debug("Find embeddable class: " + clazz);
         }
 
         createTablesFromAnnotatedClasses();
@@ -123,6 +131,21 @@ public class CSBootstrap {
     }
 
     /**
+     * Retrieves the embeddable class data cache for the specified class.
+     *
+     * @param clazz the class
+     * @return the embeddable class data cache
+     * @throws ClassCacheNotFoundException if class cache is not found
+     */
+    public EmbeddableClassData getEmbeddableClassDataCache(Class<?> clazz) throws ClassCacheNotFoundException {
+        Optional<EmbeddableClassData> classDataCacheOptional = Optional.ofNullable(embeddableClassDataCacheMap.get(clazz));
+        if (classDataCacheOptional.isPresent()) {
+            return classDataCacheOptional.get();
+        }
+        throw new ClassCacheNotFoundException();
+    }
+
+    /**
      * Retrieves the batch collector.
      *
      * @return the batch collector
@@ -152,7 +175,7 @@ public class CSBootstrap {
     }
 
     private void createTablesFromAnnotatedClasses() throws FieldInitializationException, ClassCacheNotFoundException {
-        for (Class<?> clazz : annotatedClasses) {
+        for (Class<?> clazz : entityClasses) {
             ClassDataCache classDataCache = getClassDataCache(clazz);
             String tableName = classDataCache.getTableName();
             if (!isTableExists(tableName)) {
@@ -206,7 +229,6 @@ public class CSBootstrap {
 
         } catch (SQLException e) {
             error(e.getMessage());
-            //todo: обработать исключение
         }
 
         return columns;
@@ -221,49 +243,61 @@ public class CSBootstrap {
         List<FieldDataCache> fields = classDataCache.getFields();
         info("Create table " + tableName);
 
-        StringBuilder queryBuilder = new StringBuilder("CREATE TABLE ");
-        queryBuilder.append(tableName).append(" (");
+        StringBuilder query = new StringBuilder("CREATE TABLE ");
+        query.append(tableName).append(" (");
 
+        parseQueryForCreate(primaryKey, fields, query);
+
+        query.delete(query.length() - 2, query.length()).append(") ");
+        query.append("ENGINE = MergeTree ").append("PRIMARY KEY (").append(primaryKey).append(")");
+        return query.toString();
+    }
+
+    private void parseQueryForCreate(StringBuilder primaryKey, List<FieldDataCache> fields, StringBuilder query) {
         for (FieldDataCache fieldData : fields) {
             String fieldName = fieldData.getFieldInTableName();
             Optional<Column> columnOptional = fieldData.getColumnAnnotation();
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
+            Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
 
             if (enumeratedOptional.isPresent()) {
                 EnumColumn enumeratedAnnotation = enumeratedOptional.get();
                 if (enumeratedAnnotation.value() == EnumType.ORDINAL) {
-                    queryBuilder.append(fieldName).append(" ");
-                    queryBuilder.append(FieldType.UINT16.getType());
+                    query.append(fieldName).append(" ");
+                    query.append(FieldType.UINT16.getType());
                 } else if (enumeratedAnnotation.value() == EnumType.STRING) {
-                    queryBuilder.append(fieldName).append(" ");
-                    queryBuilder.append(FieldType.STRING.getType());
+                    query.append(fieldName).append(" ");
+                    query.append(FieldType.STRING.getType());
                 } else {
-                    queryBuilder.append(fieldName).append(" ");
-                    queryBuilder.append(FieldType.LONG.getType());
+                    query.append(fieldName).append(" ");
+                    query.append(FieldType.LONG.getType());
                 }
             } else if (columnOptional.isPresent()) {
                 Column columnAnnotation = columnOptional.get();
                 String dataType = columnAnnotation.value().getType();
-                queryBuilder.append(fieldName).append(" ");
-                queryBuilder.append(dataType);
+                query.append(fieldName).append(" ");
+                query.append(dataType);
 
                 if (columnAnnotation.primaryKey() || columnAnnotation.id()) {
                     if (primaryKey.length() == 0) {
-                        primaryKey = new StringBuilder(fieldName);
+                        primaryKey.append(fieldName);
                     } else {
                         primaryKey.append(", ").append(fieldName);
                     }
                 }
+            } else if (embeddedOptional.isPresent()) {
+                EmbeddableClassData embeddableClassData = embeddableClassDataCacheMap.get(fieldData.getType());
+                if (embeddableClassData != null) {
+                    parseQueryForCreate(primaryKey, embeddableClassData.getFields(), query);
+                } else {
+                    throw new FieldInitializationException("Embeddable class of field '" + fieldData.getFieldName() + "' not found");
+                }
             } else {
-                throw new FieldInitializationException();
+                throw new FieldInitializationException("Not valid field: " + fieldData);
             }
 
-            queryBuilder.append(", ");
+            query.append(", ");
         }
-
-        queryBuilder.delete(queryBuilder.length() - 2, queryBuilder.length()).append(") ");
-        queryBuilder.append("ENGINE = MergeTree ").append("PRIMARY KEY (").append(primaryKey).append(")");
-        return queryBuilder.toString();
     }
 
     private void updateTable(Class<?> clazz) throws FieldInitializationException, ClassCacheNotFoundException {
@@ -276,7 +310,7 @@ public class CSBootstrap {
         List<FieldDataCache> fields = classDataCache.getFields();
         for (FieldDataCache fieldData : fields) {
             String fieldName = fieldData.getFieldInTableName();
-            if (!tableFieldsFromDB.contains(fieldName)) {
+            if (!tableFieldsFromDB.contains(fieldName) && fieldData.getEmbeddedAnnotation().isEmpty()) {
                 info("Update field " + fieldName + " in table " + tableName);
                 Optional<Column> columnOptional = fieldData.getColumnAnnotation();
                 Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
@@ -306,7 +340,7 @@ public class CSBootstrap {
                         queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.LONG.getType());
                     }
                 } else {
-                    throw new FieldInitializationException();
+                    throw new FieldInitializationException("Not valid field: " + fieldData);
                 }
 
             }

@@ -1,15 +1,14 @@
 package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.Column;
+import com.altinntech.clicksave.annotations.Embedded;
 import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.annotations.Reference;
 import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
-import com.altinntech.clicksave.core.dto.ClassDataCache;
-import com.altinntech.clicksave.core.dto.FieldDataCache;
-import com.altinntech.clicksave.core.dto.ProjectionClassData;
-import com.altinntech.clicksave.core.dto.ProjectionFieldData;
+import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
+import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
@@ -83,7 +82,7 @@ public class CSUtils {
      * @return the list of field data caches
      * @throws FieldInitializationException if there is an issue initializing the fields
      */
-    static List<FieldDataCache> getFieldsData(Class<?> clazz, ClassDataCache classDataCache) throws FieldInitializationException {
+    static List<FieldDataCache> getFieldsData(Class<?> clazz, ClassData classDataCache) throws FieldInitializationException {
         Field[] fields = clazz.getDeclaredFields();
         List<FieldDataCache> result = new ArrayList<>();
         // always must be one
@@ -112,6 +111,9 @@ public class CSUtils {
                     }
                     isPersistent = true;
                     fieldData.setEnumColumnAnnotation(enumerated);
+                } else if (annotation instanceof Embedded embedded) {
+                    isPersistent = true;
+                    fieldData.setEmbeddedAnnotation(embedded);
                 }
             }
 
@@ -126,7 +128,7 @@ public class CSUtils {
                 }
             }
         }
-        if (idFieldsCount != 1)
+        if (idFieldsCount != 1 && classDataCache instanceof ClassDataCache)
             throw new EntityInitializationException("Entity must have one id field");
         classDataCache.setFields(result);
         classDataCache.setIdField(idField);
@@ -144,7 +146,6 @@ public class CSUtils {
      */
     static void setFieldValue(Object entity, Field field, Object value, FieldDataCache fieldData) throws IllegalAccessException {
         Class<?> fieldType = fieldData.getType();
-        field.setAccessible(true);
 
         if (isEnumAndString(fieldType, value)) {
             setEnumFieldValue(entity, field, (String) value, fieldData);
@@ -153,7 +154,7 @@ public class CSUtils {
         } else if (isEnumAndInteger(fieldType, value)) {
             setEnumOrdinalFieldValue(entity, field, (Integer) value, fieldData);
         } else if (isValidFieldValue(fieldType, value)) {
-            field.set(entity, value);
+            setField(entity, field, value);
         }
     }
 
@@ -200,6 +201,7 @@ public class CSUtils {
 
     private static void setField(Object entity, Field field, Object value) {
         try {
+            field.setAccessible(true);
             field.set(entity, value);
         } catch (IllegalAccessException e) {
             error(e.getMessage());
@@ -229,10 +231,10 @@ public class CSUtils {
      * Finds the FieldDataCache object by field name in the ClassDataCache.
      *
      * @param fieldName      the name of the field to find
-     * @param classDataCache the ClassDataCache containing field data
+     * @param classDataCache the ClassData containing field data
      * @return the FieldDataCache object corresponding to the field name, or null if not found
      */
-    private static FieldDataCache findFieldDataCache(String fieldName, ClassDataCache classDataCache) {
+    private static FieldDataCache findFieldDataCache(String fieldName, ClassData classDataCache) {
         List<FieldDataCache> fetchedEntityFieldsData = classDataCache.getFields();
         return fetchedEntityFieldsData.stream()
                 .filter(fieldDataCache -> fieldDataCache.getFieldName().equals(fieldName))
@@ -279,7 +281,7 @@ public class CSUtils {
         return entity;
     }
 
-    private static <T> void setValueFromResultSet(ResultSet resultSet, ClassDataCache classDataCache, T entity, Field field, String fieldNameInEntity) throws SQLException, IllegalAccessException {
+    private static <T> void setValueFromResultSet(ResultSet resultSet, ClassData classDataCache, T entity, Field field, String fieldNameInEntity) throws SQLException, IllegalAccessException {
         FieldDataCache fieldDataCache = findFieldDataCache(fieldNameInEntity, classDataCache);
         if (fieldDataCache != null) {
             String columnName = fieldDataCache.getFieldInTableName();
@@ -304,17 +306,26 @@ public class CSUtils {
      * @throws SQLException             the SQL exception
      * @throws IllegalArgumentException the illegal argument exception
      */
-    public static <T> T createEntityFromResultSet(Class<T> entityClass, ResultSet resultSet, ClassDataCache classDataCache) throws SQLException, IllegalArgumentException {
+    public static <T> T createEntityFromResultSet(Class<T> entityClass, ResultSet resultSet, ClassData classDataCache) throws ClassCacheNotFoundException, SQLException, IllegalArgumentException {
         T entity = null;
         try {
             entity = entityClass.getDeclaredConstructor().newInstance();
             List<FieldDataCache> fields = classDataCache.getFields();
             for (FieldDataCache fieldDataCache : fields) {
-                setValueFromResultSet(resultSet, classDataCache, entity, fieldDataCache.getField(), fieldDataCache.getFieldName());
+                Optional<Embedded> embeddedOptional = fieldDataCache.getEmbeddedAnnotation();
+                if (embeddedOptional.isPresent()) {
+                    CSBootstrap bootstrap = CSBootstrap.getInstance();
+                    EmbeddableClassData embeddableClassData = bootstrap.getEmbeddableClassDataCache(fieldDataCache.getType());
+                    Object value = createEntityFromResultSet(fieldDataCache.getType(), resultSet, embeddableClassData);
+                    Field field = fieldDataCache.getField();
+                    setField(entity, field, value);
+                } else {
+                    setValueFromResultSet(resultSet, classDataCache, entity, fieldDataCache.getField(), fieldDataCache.getFieldName());
+                }
             }
         } catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchMethodException |
                  InvocationTargetException e) {
-            error(e.getMessage());
+            error("Error while create instance of entity: " + e.getMessage());
         }
         return entity;
     }
@@ -323,7 +334,7 @@ public class CSUtils {
         ResultSetMetaData metaData = resultSet.getMetaData();
         int columnCount = metaData.getColumnCount();
 
-        boolean columnFound = IntStream.range(1, columnCount + 1)
+        return IntStream.range(1, columnCount + 1)
                 .mapToObj(i -> {
                     try {
                         return metaData.getColumnName(i);
@@ -332,7 +343,6 @@ public class CSUtils {
                     }
                 })
                 .anyMatch(columnName::equals);
-        return columnFound;
     }
 
     /**
