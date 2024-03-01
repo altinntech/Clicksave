@@ -16,3 +16,6 @@
 
 ## [1.1.2] - 2024-03-01
 - Added support for Lob
+
+## [1.1.3] - 2024-03-01
+- Fix creation of a clicksave_sequence table
