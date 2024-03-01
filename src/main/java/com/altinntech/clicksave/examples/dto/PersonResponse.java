@@ -1,6 +1,7 @@
 package com.altinntech.clicksave.examples.dto;
 
 import com.altinntech.clicksave.annotations.Reference;
+import com.altinntech.clicksave.examples.entity.CompanyMetadata;
 import com.altinntech.clicksave.examples.entity.Job;
 import com.altinntech.clicksave.examples.entity.Person;
 import lombok.Data;
@@ -16,6 +17,7 @@ public class PersonResponse { // you can use dto projections
     Job job;
     @Reference("description")
     String description;
+    CompanyMetadata companyMetadata;
     String this_field_doesnt_exist;
 
     public static PersonResponse create(Person person) {
@@ -24,6 +26,7 @@ public class PersonResponse { // you can use dto projections
         response.setLastName(person.getLastName());
         response.setJob(person.getJob());
         response.setDescription(person.getEmployeeInfo().getDescription());
+        response.setCompanyMetadata(person.getCompanyMetadata());
         return response;
     }
 }
