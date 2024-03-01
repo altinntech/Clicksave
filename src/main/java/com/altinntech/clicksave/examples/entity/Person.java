@@ -9,11 +9,12 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Data
 @AllArgsConstructor
 @ClickHouseEntity // you should use this annotation for persistence entity
-@Batching(batchSize = 10) // add batch for saving
+//@Batching(batchSize = 10) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor
@@ -40,6 +41,8 @@ public class Person {
     List<CompanyMetadata> companyMetadata;
     @Lob
     CompanyMetadata companyMetadataSingle;
+    @Lob
+    int[][][] matrix;
     String noSaveField; // this field will not be saved
 
     public Person(Long id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) {
@@ -58,6 +61,7 @@ public class Person {
             this.companyMetadata.add(metadata);
         }
         this.companyMetadataSingle = buildMockCompanyMetadata();
+        this.matrix = buildMockMatrix();
     }
 
     public static Person buildMockPerson() {
@@ -75,6 +79,7 @@ public class Person {
             person.companyMetadata.add(metadata);
         }
         person.companyMetadataSingle = buildMockCompanyMetadata();
+        person.matrix = buildMockMatrix();
         return person;
     }
 
@@ -98,5 +103,17 @@ public class Person {
         companyMetadata.setCompanyName(CSUtils.generateRandomString(7));
         companyMetadata.setCompanyIndex((long) CSUtils.generateRandomNumber(10000, 99999));
         return companyMetadata;
+    }
+
+    public static int[][][] buildMockMatrix() {
+        int[][][] matrix = new int[10][10][10];
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                for (int k = 0; k < 10; k++) {
+                    matrix[i][j][k] = CSUtils.generateRandomNumber(10, 99);
+                }
+            }
+        }
+        return matrix;
     }
 }
