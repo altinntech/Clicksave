@@ -7,6 +7,9 @@ import com.altinntech.clicksave.enums.FieldType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @ClickHouseEntity // you should use this annotation for persistence entity
@@ -34,7 +37,9 @@ public class Person {
     @Embedded
     EmployeeInfo employeeInfo;
     @Lob
-    CompanyMetadata companyMetadata;
+    List<CompanyMetadata> companyMetadata;
+    @Lob
+    CompanyMetadata companyMetadataSingle;
     String noSaveField; // this field will not be saved
 
     public Person(Long id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) {
@@ -47,7 +52,12 @@ public class Person {
         this.job = job;
         this.noSaveField = noSaveField;
         this.employeeInfo = buildMockEmployeeInfo();
-        this.companyMetadata = buildMockCompanyMetadata();
+        this.companyMetadata = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            CompanyMetadata metadata = buildMockCompanyMetadata();
+            this.companyMetadata.add(metadata);
+        }
+        this.companyMetadataSingle = buildMockCompanyMetadata();
     }
 
     public static Person buildMockPerson() {
@@ -59,7 +69,12 @@ public class Person {
         person.gender = CSUtils.getRandomEnum(Gender.class);
         person.job = CSUtils.getRandomEnum(Job.class);
         person.employeeInfo = buildMockEmployeeInfo();
-        person.companyMetadata = buildMockCompanyMetadata();
+        person.companyMetadata = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            CompanyMetadata metadata = buildMockCompanyMetadata();
+            person.companyMetadata.add(metadata);
+        }
+        person.companyMetadataSingle = buildMockCompanyMetadata();
         return person;
     }
 
@@ -75,7 +90,6 @@ public class Person {
         WorkInfo workInfo = new WorkInfo();
         workInfo.setWorkName(CSUtils.generateRandomString(5));
         workInfo.setGrade(CSUtils.generateRandomNumber(1, 99));
-        workInfo.setCompanyMetadataWorkInfo(buildMockCompanyMetadata());
         return workInfo;
     }
 

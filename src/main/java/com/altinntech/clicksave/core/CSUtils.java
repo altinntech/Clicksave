@@ -4,15 +4,19 @@ import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EnumType;
+import com.altinntech.clicksave.examples.entity.CompanyMetadata;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -161,8 +165,23 @@ public class CSUtils {
 
     private static void setLobValue(Object entity, Field field, String value, FieldDataCache fieldData) {
         Gson gson = new Gson();
-        Object deserializedValue = gson.fromJson(value, fieldData.getType());
-        setField(entity, field, deserializedValue);
+
+        Type genericType = field.getGenericType();
+
+        if (genericType instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) genericType;
+            Type[] typeArguments = parameterizedType.getActualTypeArguments();
+
+            if (typeArguments.length > 0) {
+                Type listType = typeArguments[0];
+                Type entityType = TypeToken.getParameterized((Class<?>) parameterizedType.getRawType(), listType).getType();
+                Object deserializedValue = gson.fromJson(value, entityType);
+                setField(entity, field, deserializedValue);
+            }
+        } else {
+            Object deserializedValue = gson.fromJson(value, fieldData.getType());
+            setField(entity, field, deserializedValue);
+        }
     }
 
     private static boolean isLob(FieldDataCache fieldData, Object value) {
@@ -455,7 +474,6 @@ public class CSUtils {
                     .append("' AND ");
         }
 
-        // Удаление " AND " с конца строки
         if (stringBuilder.length() >= 5) {
             stringBuilder.setLength(stringBuilder.length() - 5);
         }

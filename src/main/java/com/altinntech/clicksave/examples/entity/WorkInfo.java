@@ -19,6 +19,4 @@ public class WorkInfo {
     String workName;
     @Column(FieldType.INT)
     Integer grade;
-    @Lob
-    CompanyMetadata companyMetadataWorkInfo;
 }
