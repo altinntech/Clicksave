@@ -4,6 +4,7 @@ import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.EmbeddableClassData;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
@@ -70,6 +71,7 @@ public class CSBootstrap {
         DefaultProperties defaultProperties = new DefaultProperties(environment);
         Reflections reflections = new Reflections(defaultProperties.getRootPackageToScan());
         entityClasses = reflections.getTypesAnnotatedWith(ClickHouseEntity.class);
+        entityClasses.add(ClicksaveSequence.class);
         Set<Class<?>> embeddableClasses = reflections.getTypesAnnotatedWith(Embeddable.class);
 
         for (Class<?> clazz : entityClasses) {

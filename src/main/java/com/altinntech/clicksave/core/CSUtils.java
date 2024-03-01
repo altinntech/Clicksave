@@ -312,13 +312,13 @@ public class CSUtils {
                 field.setAccessible(true);
                 Optional<Reference> referenceAnnotationOptional = fieldData.getReferenceAnnotationOptional();
 
+                String fieldNameInEntity;
                 if (referenceAnnotationOptional.isPresent()) {
-                    String fieldNameInEntity = referenceAnnotationOptional.get().value();
-                    setValueFromResultSet(resultSet, classDataCache, entity, field, fieldNameInEntity);
+                    fieldNameInEntity = referenceAnnotationOptional.get().value();
                 } else {
-                    String fieldNameInEntity = fieldData.getFieldName();
-                    setValueFromResultSet(resultSet, classDataCache, entity, field, fieldNameInEntity);
+                    fieldNameInEntity = fieldData.getFieldName();
                 }
+                setValueFromResultSet(resultSet, classDataCache, entity, field, fieldNameInEntity);
 
             }
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | IllegalArgumentException |

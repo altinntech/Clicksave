@@ -6,7 +6,6 @@ import com.altinntech.clicksave.enums.FieldType;
 import lombok.Data;
 
 @Data
-@ClickHouseEntity
 public class ClicksaveSequence {
 
     public ClicksaveSequence() {
