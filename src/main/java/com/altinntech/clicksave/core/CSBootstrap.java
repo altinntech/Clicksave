@@ -259,6 +259,7 @@ public class CSBootstrap {
             Optional<Column> columnOptional = fieldData.getColumnAnnotation();
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
             Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
+            Optional<Lob> lobOptional = fieldData.getLobAnnotation();
 
             if (enumeratedOptional.isPresent()) {
                 EnumColumn enumeratedAnnotation = enumeratedOptional.get();
@@ -293,7 +294,11 @@ public class CSBootstrap {
                 } else {
                     throw new FieldInitializationException("Embeddable class of field '" + fieldData.getFieldName() + "' not found");
                 }
-            } else {
+            } else if (lobOptional.isPresent()) {
+                query.append(fieldName).append(" ");
+                query.append(FieldType.STRING.getType());
+            }
+            else {
                 throw new FieldInitializationException("Not valid field: " + fieldData);
             }
 
@@ -315,6 +320,7 @@ public class CSBootstrap {
                 info("Update field " + fieldName + " in table " + tableName);
                 Optional<Column> columnOptional = fieldData.getColumnAnnotation();
                 Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
+                Optional<Lob> lobOptional = fieldData.getLobAnnotation();
 
                 if (columnOptional.isPresent()) {
                     Column columnAnnotation = columnOptional.get();
@@ -340,6 +346,12 @@ public class CSBootstrap {
                         queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
                         queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.LONG.getType());
                     }
+                } else if (lobOptional.isPresent()) {
+                    StringBuilder queryBuilder = new StringBuilder();
+                    queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
+                    queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.STRING.getType());
+
+                    executeQuery(queryBuilder.toString());
                 } else {
                     throw new FieldInitializationException("Not valid field: " + fieldData);
                 }

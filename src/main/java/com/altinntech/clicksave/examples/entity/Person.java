@@ -33,6 +33,8 @@ public class Person {
     Job job;
     @Embedded
     EmployeeInfo employeeInfo;
+    @Lob
+    CompanyMetadata companyMetadata;
     String noSaveField; // this field will not be saved
 
     public Person(Long id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) {
@@ -45,6 +47,7 @@ public class Person {
         this.job = job;
         this.noSaveField = noSaveField;
         this.employeeInfo = buildMockEmployeeInfo();
+        this.companyMetadata = buildMockCompanyMetadata();
     }
 
     public static Person buildMockPerson() {
@@ -56,6 +59,7 @@ public class Person {
         person.gender = CSUtils.getRandomEnum(Gender.class);
         person.job = CSUtils.getRandomEnum(Job.class);
         person.employeeInfo = buildMockEmployeeInfo();
+        person.companyMetadata = buildMockCompanyMetadata();
         return person;
     }
 
@@ -71,6 +75,14 @@ public class Person {
         WorkInfo workInfo = new WorkInfo();
         workInfo.setWorkName(CSUtils.generateRandomString(5));
         workInfo.setGrade(CSUtils.generateRandomNumber(1, 99));
+        workInfo.setCompanyMetadataWorkInfo(buildMockCompanyMetadata());
         return workInfo;
+    }
+
+    public static CompanyMetadata buildMockCompanyMetadata() {
+        CompanyMetadata companyMetadata = new CompanyMetadata();
+        companyMetadata.setCompanyName(CSUtils.generateRandomString(7));
+        companyMetadata.setCompanyIndex((long) CSUtils.generateRandomNumber(10000, 99999));
+        return companyMetadata;
     }
 }

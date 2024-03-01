@@ -3,6 +3,7 @@ package com.altinntech.clicksave.core.dto;
 import com.altinntech.clicksave.annotations.Column;
 import com.altinntech.clicksave.annotations.Embedded;
 import com.altinntech.clicksave.annotations.EnumColumn;
+import com.altinntech.clicksave.annotations.Lob;
 import com.altinntech.clicksave.core.CSUtils;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,6 +41,7 @@ public class FieldDataCache implements FieldData {
     private Column columnAnnotation;
     private EnumColumn enumColumnAnnotation;
     private Embedded embeddedAnnotation;
+    private Lob lobAnnotation;
 
     /**
      * Retrieves the optional Column annotation associated with the field.
@@ -69,6 +71,15 @@ public class FieldDataCache implements FieldData {
     }
 
     /**
+     * Retrieves the optional Lob annotation associated with the field.
+     *
+     * @return the optional Lob annotation
+     */
+    public Optional<Lob> getLobAnnotation() {
+        return Optional.ofNullable(lobAnnotation);
+    }
+
+    /**
      * Constructs a new FieldDataCache instance with the provided field.
      *
      * @param field the field
@@ -80,6 +91,7 @@ public class FieldDataCache implements FieldData {
         this.columnAnnotation = field.getAnnotation(Column.class);
         this.enumColumnAnnotation = field.getAnnotation(EnumColumn.class);
         this.embeddedAnnotation = field.getAnnotation(Embedded.class);
+        this.lobAnnotation = field.getAnnotation(Lob.class);
         this.fieldInTableName = CSUtils.toSnakeCase(fieldName);
     }
 }

@@ -1,9 +1,6 @@
 package com.altinntech.clicksave.core;
 
-import com.altinntech.clicksave.annotations.Column;
-import com.altinntech.clicksave.annotations.Embedded;
-import com.altinntech.clicksave.annotations.EnumColumn;
-import com.altinntech.clicksave.annotations.Reference;
+import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EnumType;
@@ -11,6 +8,7 @@ import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
+import com.google.gson.Gson;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -112,6 +110,9 @@ public class CSUtils {
                 } else if (annotation instanceof Embedded embedded) {
                     isPersistent = true;
                     fieldData.setEmbeddedAnnotation(embedded);
+                } else if (annotation instanceof Lob lob) {
+                    isPersistent = true;
+                    fieldData.setLobAnnotation(lob);
                 }
             }
 
@@ -145,7 +146,9 @@ public class CSUtils {
     static void setFieldValue(Object entity, Field field, Object value, FieldDataCache fieldData) throws IllegalAccessException {
         Class<?> fieldType = fieldData.getType();
 
-        if (isEnumAndString(fieldType, value)) {
+        if (isLob(fieldData, value)) {
+            setLobValue(entity, field, (String) value, fieldData);
+        } else if (isEnumAndString(fieldType, value)) {
             setEnumFieldValue(entity, field, (String) value, fieldData);
         } else if (isEnumIdAndLong(fieldType, value, fieldData)) {
             setEnumIdFieldValue(entity, field, (Long) value, fieldData);
@@ -154,6 +157,17 @@ public class CSUtils {
         } else if (isValidFieldValue(fieldType, value)) {
             setField(entity, field, value);
         }
+    }
+
+    private static void setLobValue(Object entity, Field field, String value, FieldDataCache fieldData) {
+        Gson gson = new Gson();
+        Object deserializedValue = gson.fromJson(value, fieldData.getType());
+        setField(entity, field, deserializedValue);
+    }
+
+    private static boolean isLob(FieldDataCache fieldData, Object value) {
+        Optional<Lob> lobOptional = fieldData.getLobAnnotation();
+        return lobOptional.isPresent();
     }
 
     private static boolean isEnumAndString(Class<?> fieldType, Object value) {

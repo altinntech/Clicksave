@@ -1,9 +1,6 @@
 package com.altinntech.clicksave.core;
 
-import com.altinntech.clicksave.annotations.Batching;
-import com.altinntech.clicksave.annotations.Column;
-import com.altinntech.clicksave.annotations.Embedded;
-import com.altinntech.clicksave.annotations.EnumColumn;
+import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.EmbeddableClassData;
@@ -12,6 +9,7 @@ import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
+import com.google.gson.Gson;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -129,6 +127,7 @@ public class CHRepository {
             Optional<Column> columnOptional = fieldData.getColumnAnnotation();
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
             Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
+            Optional<Lob> lobOptional = fieldData.getLobAnnotation();
 
             if (columnOptional.isPresent()) {
                 Column columnAnnotation = columnOptional.get();
@@ -172,6 +171,19 @@ public class CHRepository {
                 field.setAccessible(true);
                 Object value = field.get(entity);
                 extractFieldValuesForCreate(value, null, classDataCache, insertQuery, valuesPlaceholder, embeddableClassData.getFields(), fieldValues);
+            } else if (lobOptional.isPresent()) {
+                field.setAccessible(true);
+                Object value;
+                try {
+                    value = field.get(entity);
+                    Gson gson = new Gson();
+                    String json = gson.toJson(value);
+                    fieldValues.add(json);
+                    insertQuery.append(columnName).append(", ");
+                    valuesPlaceholder.append("?, ");
+                } catch (IllegalAccessException e) {
+                    error(e.getMessage());
+                }
             }
             else {
                 throw new FieldInitializationException("Exception while saving: Not valid field - " + fieldData);
@@ -224,6 +236,7 @@ public class CHRepository {
             Optional<Column> columnOptional = fieldData.getColumnAnnotation();
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
             Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
+            Optional<Lob> lobOptional = fieldData.getLobAnnotation();
 
             if (columnOptional.isPresent()) {
                 Column columnAnnotation = columnOptional.get();
@@ -250,6 +263,17 @@ public class CHRepository {
                 field.setAccessible(true);
                 Object value = field.get(entity);
                 extractFieldValuesForUpdate(value, updateQuery, embeddableClassData.getFields());
+            } else if (lobOptional.isPresent()) {
+                field.setAccessible(true);
+                Object value;
+                try {
+                    value = field.get(entity);
+                    Gson gson = new Gson();
+                    String json = gson.toJson(value);
+                    updateQuery.append(columnName).append(" = ").append("'" + json + "'").append(", ");
+                } catch (IllegalAccessException e) {
+                    error(e.getMessage());
+                }
             }
         }
     }
