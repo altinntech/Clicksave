@@ -6,6 +6,7 @@ import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.EmbeddableClassData;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.enums.EnumType;
+import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
@@ -13,6 +14,7 @@ import com.google.gson.Gson;
 
 import java.lang.reflect.Field;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.altinntech.clicksave.core.CSUtils.*;
@@ -138,6 +140,10 @@ public class CHRepository {
                     if (value == null && columnAnnotation.id()) {
                         value = idsManager.getNextId(classDataCache, fieldData, idType);
                         setFieldValue(entity, field, value, fieldData);
+                    } else if (columnAnnotation.value().equals(FieldType.DATE_TIME)) {
+                        LocalDateTime timeField = (LocalDateTime) value;
+                        String formattedTimeValue = timeField != null ? timeField.format(formatter) : "";
+                        value = formattedTimeValue;
                     }
                 } catch (IllegalAccessException e) {
                     error(e.getMessage());

@@ -4,6 +4,7 @@ import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EnumType;
+import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.examples.entity.CompanyMetadata;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
@@ -20,6 +21,9 @@ import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -39,6 +43,8 @@ public class CSUtils {
     private CSUtils() {
         // Private constructor to prevent instantiation
     }
+
+    static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSSSSS");
 
     /**
      * Builds a snake-case table name from the given class name.
@@ -152,6 +158,10 @@ public class CSUtils {
 
         if (isLob(fieldData, value)) {
             setLobValue(entity, field, (String) value, fieldData);
+        } else if (isBoolean(fieldData, value)) {
+            setBoolean(entity, field, value, fieldData);
+        } else if (isDateTime(fieldData, value)) {
+            setDateTimeValue(entity, field, value, fieldData);
         } else if (isEnumAndString(fieldType, value)) {
             setEnumFieldValue(entity, field, (String) value, fieldData);
         } else if (isEnumIdAndLong(fieldType, value, fieldData)) {
@@ -184,9 +194,29 @@ public class CSUtils {
         }
     }
 
+    private static void setDateTimeValue(Object entity, Field field, Object value, FieldDataCache fieldData) {
+        LocalDateTime localDateTime = LocalDateTime.parse((String) value, formatter);
+        setField(entity, field, localDateTime);
+    }
+
+    private static void setBoolean(Object entity, Field field, Object value, FieldDataCache fieldData) {
+        Boolean booleanValue = Boolean.parseBoolean((String) value);
+        setField(entity, field, booleanValue);
+    }
+
     private static boolean isLob(FieldDataCache fieldData, Object value) {
         Optional<Lob> lobOptional = fieldData.getLobAnnotation();
         return lobOptional.isPresent();
+    }
+
+    private static boolean isBoolean(FieldDataCache fieldData, Object value) {
+        Optional<Column> columnOptional = fieldData.getColumnAnnotation();
+        return columnOptional.isPresent() && columnOptional.get().value() == FieldType.BOOL;
+    }
+
+    private static boolean isDateTime(FieldDataCache fieldData, Object value) {
+        Optional<Column> columnOptional = fieldData.getColumnAnnotation();
+        return columnOptional.isPresent() && columnOptional.get().value() == FieldType.DATE_TIME;
     }
 
     private static boolean isEnumAndString(Class<?> fieldType, Object value) {

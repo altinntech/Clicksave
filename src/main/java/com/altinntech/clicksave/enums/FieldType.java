@@ -53,7 +53,17 @@ public enum FieldType {
     /**
      * Represents a UUID field type.
      */
-    UUID("UUID");
+    UUID("UUID"),
+
+    /**
+     * Represents a Date time field type.
+     */
+    DATE_TIME("DateTime64(9)"),
+
+    /**
+     * Represents a Bool field type.
+     */
+    BOOL("Bool");
 
     private final String type;
 

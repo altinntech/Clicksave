@@ -7,13 +7,14 @@ import com.altinntech.clicksave.enums.FieldType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @ClickHouseEntity // you should use this annotation for persistence entity
-@Batching(batchSize = 10) // add batch for saving
+@Batching(batchSize = 10000) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor
@@ -42,6 +43,10 @@ public class Person {
     CompanyMetadata companyMetadataSingle;
     @Lob
     int[][][] matrix;
+    @Column(FieldType.DATE_TIME)
+    LocalDateTime timestamp;
+    @Column(FieldType.BOOL)
+    Boolean enabled;
     String noSaveField; // this field will not be saved
 
     public Person(Long id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) {
@@ -61,6 +66,8 @@ public class Person {
         }
         this.companyMetadataSingle = buildMockCompanyMetadata();
         this.matrix = buildMockMatrix();
+        this.timestamp = LocalDateTime.now();
+        this.enabled = true;
     }
 
     public static Person buildMockPerson() {
@@ -79,6 +86,8 @@ public class Person {
         }
         person.companyMetadataSingle = buildMockCompanyMetadata();
         person.matrix = buildMockMatrix();
+        person.timestamp = LocalDateTime.now();
+        person.enabled = true;
         return person;
     }
 
