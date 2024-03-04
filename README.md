@@ -210,6 +210,8 @@ In general, optimal values for these parameters depend on the application worklo
    - Annotate your entity class with @ClickHouseEntity to mark it as a persistence entity.
    - Use @Batching annotation to specify a batch size for saving multiple entities at once.
    - Annotate the fields of your entity class with @Column to specify their types.
+   - Supported id field types: UUID, Long, Integer
+   - Not supported primitive types
 
 3. Make JPA repository for entity
 
