@@ -1,5 +1,9 @@
 # Changelog
 
+### [1.1.4] - 2024-03-04
+- Added support for LocalDateTime
+- Added support for Boolean
+
 ### [1.1.3] - 2024-03-01
 - Fix creation of a clicksave_sequence table
 
