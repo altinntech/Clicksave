@@ -9,12 +9,11 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 @Data
 @AllArgsConstructor
 @ClickHouseEntity // you should use this annotation for persistence entity
-//@Batching(batchSize = 10) // add batch for saving
+@Batching(batchSize = 10) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor

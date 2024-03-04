@@ -7,6 +7,7 @@ import com.altinntech.clicksave.examples.entity.Person;
 import com.altinntech.clicksave.examples.repository.JpaPersonRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -277,6 +278,27 @@ public class ClicksaveTests {
     @Test
     void multipleSaving() {
         int iterations = 30;
+        List<Person> persons = new ArrayList<>();
+        for (int i = 0; i < iterations; i++) {
+            Person person = Person.buildMockPerson();
+            persons.add(person);
+        }
+        long startTime = System.nanoTime();
+        for (Person person : persons) {
+            jpaPersonRepository.save(person);
+        }
+        long endTime = System.nanoTime();
+        double executionTime =  (endTime - startTime) / 1_000_000.0;
+
+        List<Person> fetched = jpaPersonRepository.findAll();
+        assertEquals(iterations, fetched.size());
+        System.out.println("Time to saving: " + executionTime);
+    }
+
+    @Disabled
+    @Test
+    void saveStressTest() {
+        int iterations = 100_000;
         List<Person> persons = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
             Person person = Person.buildMockPerson();
