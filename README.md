@@ -2,6 +2,12 @@
 
 Versions history: [Changelog](CHANGELOG.md)
 
+## Authors
+
+- Fyodor Plotnikov // Author, Main Developer | [Diveloment](https://github.com/Diveloment)
+- Sergey Tsarev // Acting, Team Leader | [Slipcod](https://github.com/Slipcod)
+- Anton Volkov // Technical Consultant | [wolches](https://github.com/wolches)
+
 ## Description:
 
 Clicksave is a powerful Java library

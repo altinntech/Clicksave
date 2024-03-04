@@ -10,14 +10,20 @@
 	</parent>
 	<groupId>com.altinntech</groupId>
 	<artifactId>clicksave</artifactId>
-	<version>1.1.3</version>
+	<version>1.1.4</version>
 	<name>clicksave</name>
 	<description>ClickSave is an Object-Relational Mapping (ORM) system written in Java specifically designed for interacting with ClickHouse databases. It provides a seamless interface for Java applications to interact with ClickHouse databases, allowing for efficient data manipulation, retrieval, and management. ClickSave simplifies the integration of ClickHouse databases into Java-based projects, offering developers a powerful toolset to work with ClickHouse databases within their applications.</description>
 	<developers>
 		<developer>
 			<name>Fyodor Plotnikov</name>
 			<email>plotnikov.feodor@yandex.ru</email>
-			<organization>AltinnTech</organization>
+			<organization>AltInnTech</organization>
+			<organizationUrl>https://altinntech.com/en/</organizationUrl>
+		</developer>
+		<developer>
+			<name>Sergey Tsarev</name>
+			<email>b1rk1f23@gmail.com</email>
+			<organization>AltInnTech</organization>
 			<organizationUrl>https://altinntech.com/en/</organizationUrl>
 		</developer>
 	</developers>
