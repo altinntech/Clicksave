@@ -1,5 +1,8 @@
 # Changelog
 
+### [1.1.5] - 2024-03-05
+- Add database source replacement in runtime (for test containers)
+
 ### [1.1.4] - 2024-03-04
 - Added support for LocalDateTime
 - Added support for Boolean

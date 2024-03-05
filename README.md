@@ -75,7 +75,7 @@ developers can significantly reduce the time spent interacting with the database
           <server>
             <id>github</id>
             <username>Diveloment</username>
-            <password>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</password>
+            <password>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</password>
           </server>
         </servers>
       </settings>
@@ -87,6 +87,14 @@ developers can significantly reduce the time spent interacting with the database
    
    Example:
    ```xml
+   <repositories>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/altinntech/Clicksave</url>
+        </repository>
+   </repositories>
+   
    <dependency>
     <groupId>com.altinntech</groupId>
     <artifactId>clicksave</artifactId>
