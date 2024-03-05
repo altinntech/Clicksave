@@ -1,6 +1,9 @@
 package com.altinntech.clicksave.core;
 
-import org.springframework.core.env.Environment;
+import com.altinntech.clicksave.interfaces.Observer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The {@code DefaultProperties} class provides default properties for configuring the application.
@@ -8,97 +11,124 @@ import org.springframework.core.env.Environment;
  *
  * <p>Author: Fyodor Plotnikov</p>
  */
+
 public class DefaultProperties {
 
-    private final Environment environment;
+    private List<Observer> observers = new ArrayList<>();
 
-    private final String url = "jdbc:clickhouse://localhost:8123/default";
-    private final String username = "";
-    private final String password = "";
-    private final String initialConnectionsPoolSize = "20";
-    private final String connectionsPoolSizeRefillThreshold = "5";
-    private final String maxConnectionPoolSize = "50";
-    private final String allowConnectionsPoolExpansion = "true";
-    private final String rootPackageToScan = "";
+    private String url = "jdbc:clickhouse://localhost:8123/default";
+    private String username = "";
+    private String password = "";
+    private String initialConnectionsPoolSize = "20";
+    private String connectionsPoolSizeRefillThreshold = "5";
+    private String maxConnectionPoolSize = "50";
+    private String allowConnectionsPoolExpansion = "true";
+    private String rootPackageToScan = "";
 
-    /**
-     * Constructs a new DefaultProperties instance.
-     *
-     * @param environment the environment
-     */
-    public DefaultProperties(Environment environment) {
-        this.environment = environment;
+    public static DefaultProperties fromEnvironment() {
+        DefaultProperties defaultProperties = new DefaultProperties();
+        PropertyReader propertyReader = PropertyReader.getInstance();
+        defaultProperties.url = propertyReader.getProperty("clicksave.connection.datasource.url");
+        defaultProperties.username = propertyReader.getProperty("clicksave.connection.datasource.username");
+        defaultProperties.password = propertyReader.getProperty("clicksave.connection.datasource.password");
+        defaultProperties.initialConnectionsPoolSize = propertyReader.getProperty("clicksave.connection.pool.initial-size");
+        defaultProperties.connectionsPoolSizeRefillThreshold = propertyReader.getProperty("clicksave.connection.pool.refill-threshold");
+        defaultProperties.maxConnectionPoolSize = propertyReader.getProperty("clicksave.connection.pool.max-size");
+        defaultProperties.allowConnectionsPoolExpansion = propertyReader.getProperty("clicksave.connection.pool.allow-expansion");
+        defaultProperties.rootPackageToScan = propertyReader.getProperty("clicksave.core.root-package");
+        return defaultProperties;
     }
 
-    /**
-     * Gets the URL for the data source.
-     *
-     * @return the URL
-     */
+    public void reloadProperties() {
+        PropertyReader propertyReader = PropertyReader.getInstance();
+        url = propertyReader.getProperty("clicksave.connection.datasource.url", url);
+        username = propertyReader.getProperty("clicksave.connection.datasource.username", username);
+        password = propertyReader.getProperty("clicksave.connection.datasource.password", password);
+        initialConnectionsPoolSize = propertyReader.getProperty("clicksave.connection.pool.initial-size", initialConnectionsPoolSize);
+        connectionsPoolSizeRefillThreshold = propertyReader.getProperty("clicksave.connection.pool.refill-threshold", connectionsPoolSizeRefillThreshold);
+        maxConnectionPoolSize = propertyReader.getProperty("clicksave.connection.pool.max-size", maxConnectionPoolSize);
+        allowConnectionsPoolExpansion = propertyReader.getProperty("clicksave.connection.pool.allow-expansion", allowConnectionsPoolExpansion);
+        rootPackageToScan = propertyReader.getProperty("clicksave.core.root-package", rootPackageToScan);
+    }
+
     public String getUrl() {
-        return environment.getProperty("clicksave.connection.datasource.url", url);
+        return url;
     }
 
-    /**
-     * Gets the username for the data source.
-     *
-     * @return the username
-     */
+    public void setUrl(String url) {
+        this.url = url;
+        notifyObservers();
+    }
+
     public String getUsername() {
-        return environment.getProperty("clicksave.connection.datasource.username", username);
+        return username;
     }
 
-    /**
-     * Gets the password for the data source.
-     *
-     * @return the password
-     */
+    public void setUsername(String username) {
+        this.username = username;
+        notifyObservers();
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+        notifyObservers();
+    }
+
     public String getPassword() {
-        return environment.getProperty("clicksave.connection.datasource.password", password);
+        return this.password;
     }
 
-    /**
-     * Gets the initial size of the connections pool.
-     *
-     * @return the initial size
-     */
-    public Integer getInitialConnectionsPoolSize() {
-        return Integer.parseInt(environment.getProperty("clicksave.connection.pool.initial-size", initialConnectionsPoolSize));
+    public void setInitialConnectionsPoolSize(String initialConnectionsPoolSize) {
+        this.initialConnectionsPoolSize = initialConnectionsPoolSize;
     }
 
-    /**
-     * Gets the refill threshold for the connections pool size.
-     *
-     * @return the refill threshold
-     */
-    public Integer getConnectionsPoolSizeRefillThreshold() {
-        return Integer.parseInt(environment.getProperty("clicksave.connection.pool.refill-threshold", connectionsPoolSizeRefillThreshold));
+    public String getInitialConnectionsPoolSize() {
+        return initialConnectionsPoolSize;
     }
 
-    /**
-     * Gets the maximum size of the connections pool.
-     *
-     * @return the maximum size
-     */
-    public Integer getMaxConnectionPoolSize() {
-        return Integer.parseInt(environment.getProperty("clicksave.connection.pool.max-size", maxConnectionPoolSize));
+    public String getConnectionsPoolSizeRefillThreshold() {
+        return connectionsPoolSizeRefillThreshold;
     }
 
-    /**
-     * Determines whether connections pool expansion is allowed.
-     *
-     * @return true if expansion is allowed, false otherwise
-     */
-    public Boolean getAllowConnectionsPoolExpansion() {
-        return Boolean.parseBoolean(environment.getProperty("clicksave.connection.pool.allow-expansion", allowConnectionsPoolExpansion));
+    public void setConnectionsPoolSizeRefillThreshold(String connectionsPoolSizeRefillThreshold) {
+        this.connectionsPoolSizeRefillThreshold = connectionsPoolSizeRefillThreshold;
     }
 
-    /**
-     * Gets the root package to scan.
-     *
-     * @return the root package
-     */
+    public String getMaxConnectionPoolSize() {
+        return maxConnectionPoolSize;
+    }
+
+    public void setMaxConnectionPoolSize(String maxConnectionPoolSize) {
+        this.maxConnectionPoolSize = maxConnectionPoolSize;
+    }
+
+    public String getAllowConnectionsPoolExpansion() {
+        return allowConnectionsPoolExpansion;
+    }
+
+    public void setAllowConnectionsPoolExpansion(String allowConnectionsPoolExpansion) {
+        this.allowConnectionsPoolExpansion = allowConnectionsPoolExpansion;
+    }
+
     public String getRootPackageToScan() {
-        return environment.getProperty("clicksave.core.root-package", rootPackageToScan);
+        return rootPackageToScan;
+    }
+
+    public void setRootPackageToScan(String rootPackageToScan) {
+        this.rootPackageToScan = rootPackageToScan;
+    }
+
+    public void registerObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    public void notifyObservers() {
+        for (Observer observer : observers) {
+            observer.update();
+        }
     }
 }

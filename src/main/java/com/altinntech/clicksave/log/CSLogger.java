@@ -54,6 +54,16 @@ public class CSLogger {
     }
 
     /**
+     * Logs an error message.
+     *
+     * @param message the message to log
+     * @param source the source of log message
+     */
+    public static void error(String message, Class<?> source) {
+        logger.error("[" + source.getSimpleName() + "] " + message);
+    }
+
+    /**
      * Logs an important message.
      *
      * @param message the message to log

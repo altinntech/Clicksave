@@ -146,7 +146,7 @@ public class CHRepository {
                         value = formattedTimeValue;
                     }
                 } catch (IllegalAccessException e) {
-                    error(e.getMessage());
+                    error(e.getMessage(), this.getClass());
                 }
                 insertQuery.append(columnName).append(", ");
                 valuesPlaceholder.append("?, ");
@@ -167,7 +167,7 @@ public class CHRepository {
                         value = enumValue.getId();
                     }
                 } catch (IllegalAccessException e) {
-                    error(e.getMessage());
+                    error(e.getMessage(), this.getClass());
                 }
                 insertQuery.append(columnName).append(", ");
                 valuesPlaceholder.append("?, ");
@@ -188,7 +188,7 @@ public class CHRepository {
                     insertQuery.append(columnName).append(", ");
                     valuesPlaceholder.append("?, ");
                 } catch (IllegalAccessException e) {
-                    error(e.getMessage());
+                    error(e.getMessage(), this.getClass());
                 }
             }
             else {
@@ -226,7 +226,7 @@ public class CHRepository {
             int rowAffected = statement.executeUpdate(updateQuery.toString());
             CSBootstrap.releaseConnection(connection);
         } catch (SQLException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
 
         return entity;
@@ -278,7 +278,7 @@ public class CHRepository {
                     String json = gson.toJson(value);
                     updateQuery.append(columnName).append(" = ").append("'" + json + "'").append(", ");
                 } catch (IllegalAccessException e) {
-                    error(e.getMessage());
+                    error(e.getMessage(), this.getClass());
                 }
             }
         }
@@ -391,7 +391,7 @@ public class CHRepository {
             int rowAffected = statement.executeUpdate(deleteQuery.toString());
             CSBootstrap.releaseConnection(connection);
         } catch (SQLException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
     }
 
@@ -422,7 +422,7 @@ public class CHRepository {
             idField.set(entity, null);
             CSBootstrap.releaseConnection(connection);
         } catch (SQLException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
     }
 

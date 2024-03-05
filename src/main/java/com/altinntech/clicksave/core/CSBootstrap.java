@@ -11,8 +11,7 @@ import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
@@ -32,7 +31,7 @@ import static com.altinntech.clicksave.log.CSLogger.*;
  *
  * <p>Author: Fyodor Plotnikov</p>
  */
-@Component
+//@Component
 public class CSBootstrap {
 
     private Set<Class<?>> entityClasses;
@@ -40,26 +39,29 @@ public class CSBootstrap {
     private final Map<Class<?>, EmbeddableClassData> embeddableClassDataCacheMap = new HashMap<>();
 
     private final ConnectionManager connectionManager;
-    private final Environment environment;
     private final BatchCollector batchCollector;
     private static CSBootstrap instance;
+
+    private DefaultProperties defaultProperties;
 
     /**
      * Constructs a new CSBootstrap instance.
      *
-     * @param connectionManager the connection manager
-     * @param environment       the environment
-     * @param batchCollector    the batch collector
      * @throws FieldInitializationException if field initialization fails
      * @throws ClassCacheNotFoundException if class cache is not found
      */
-    @Autowired
-    public CSBootstrap(ConnectionManager connectionManager, Environment environment, @Lazy BatchCollector batchCollector) throws FieldInitializationException, ClassCacheNotFoundException {
-        this.connectionManager = connectionManager;
-        this.environment = environment;
-        this.batchCollector = batchCollector;
+    public CSBootstrap() throws FieldInitializationException, ClassCacheNotFoundException {
+        this(DefaultProperties.fromEnvironment());
+    }
+
+    public CSBootstrap(DefaultProperties defaultProperties) throws FieldInitializationException, ClassCacheNotFoundException {
+        info("Start initialization...");
+        this.defaultProperties = defaultProperties;
+        this.connectionManager = new ConnectionManager(defaultProperties);
         instance = this;
+        this.batchCollector = BatchCollector.getInstance();
         initialize();
+        info("Initializing completed");
     }
 
     public static CSBootstrap getInstance() {
@@ -67,8 +69,6 @@ public class CSBootstrap {
     }
 
     private void initialize() throws FieldInitializationException, ClassCacheNotFoundException {
-        info("Start initialization...");
-        DefaultProperties defaultProperties = new DefaultProperties(environment);
         Reflections reflections = new Reflections(defaultProperties.getRootPackageToScan());
         entityClasses = reflections.getTypesAnnotatedWith(ClickHouseEntity.class);
         entityClasses.add(ClicksaveSequence.class);
@@ -96,8 +96,6 @@ public class CSBootstrap {
         createTablesFromAnnotatedClasses();
         shutdownThread.setName("CS_shutdownHook");
         Runtime.getRuntime().addShutdownHook(shutdownThread);
-
-        info("Initializing completed");
     }
 
     /**
@@ -110,11 +108,11 @@ public class CSBootstrap {
         info("Shutdown initiated! Saving batches...");
         try {
             batchCollector.saveAndFlushAll();
+            connectionManager.closeAllConnections();
+            info("Shutdown completed");
         } catch (SQLException | ClassCacheNotFoundException | IllegalAccessException e) {
-            error(e.getMessage());
+            error("Error while saving batches: " + e.getMessage());
         }
-        connectionManager.closeAllConnections();
-        info("Shutdown completed");
     }
 
     /**
@@ -203,7 +201,7 @@ public class CSBootstrap {
                 return isTableExists;
             }
         } catch (SQLException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
         return false;
     }
@@ -230,7 +228,7 @@ public class CSBootstrap {
             }
 
         } catch (SQLException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
 
         return columns;
@@ -362,12 +360,16 @@ public class CSBootstrap {
         }
     }
 
+    public DefaultProperties getDefaultProperties() {
+        return defaultProperties;
+    }
+
     private void executeQuery(String query) {
         try (Connection connection = connectionManager.getConnection()) {
             connection.createStatement().execute(query);
             connectionManager.releaseConnection(connection);
         } catch (SQLException e) {
-            error(e.getMessage());
+            error("Query execution error: " + e.getMessage());
         }
     }
 }

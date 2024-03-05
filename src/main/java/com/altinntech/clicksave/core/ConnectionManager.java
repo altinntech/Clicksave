@@ -1,15 +1,11 @@
 package com.altinntech.clicksave.core;
 
 import cc.blynk.clickhouse.ClickHouseDataSource;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
+import com.altinntech.clicksave.interfaces.Observer;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,16 +17,17 @@ import static com.altinntech.clicksave.log.CSLogger.info;
  * The {@code ConnectionManager} class manages connections to the database and serves as a connection pool.
  * It handles the creation, retrieval, and release of database connections.
  *
- * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
- *
  * <p>Author: Fyodor Plotnikov</p>
  */
-@Component
-public class ConnectionManager {
+public class ConnectionManager implements Observer {
 
-    private final String URL;
-    private final String USER;
-    private final String PASSWORD;
+    private static ConnectionManager instance;
+
+    private final DefaultProperties defaultProperties;
+
+    private String URL;
+    private String USER;
+    private String PASSWORD;
     private final int INITIAL_POOL_SIZE;
     private final int REFILL_POOL_SIZE_THRESHOLD;
     private final int MAX_POOL_SIZE;
@@ -38,40 +35,33 @@ public class ConnectionManager {
 
     private final Stack<Connection> connectionPool = new Stack<>();
     private final List<Connection> usedConnections = new ArrayList<>();
-    private final ClickHouseDataSource dataSource;
+    private ClickHouseDataSource dataSource;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private int extendedPoolSize = 0;
 
-    /**
-     * Constructs a new ConnectionManager instance.
-     *
-     * @param env the environment settings
-     */
-    private ConnectionManager(Environment env) {
-        DefaultProperties defaultProperties = new DefaultProperties(env);
+    public ConnectionManager(DefaultProperties defaultProperties) {
+        this.defaultProperties = defaultProperties;
+        defaultProperties.registerObserver(this);
 
         //--Initialize Variables --//
         this.URL = defaultProperties.getUrl();
         this.USER = defaultProperties.getUsername();
         this.PASSWORD = defaultProperties.getPassword();
-        this.INITIAL_POOL_SIZE = defaultProperties.getInitialConnectionsPoolSize();
-        this.REFILL_POOL_SIZE_THRESHOLD = defaultProperties.getConnectionsPoolSizeRefillThreshold();
-        this.MAX_POOL_SIZE = defaultProperties.getMaxConnectionPoolSize();
-        this.ALLOW_EXPANSION = defaultProperties.getAllowConnectionsPoolExpansion();
+        this.INITIAL_POOL_SIZE = Integer.parseInt(defaultProperties.getInitialConnectionsPoolSize());
+        this.REFILL_POOL_SIZE_THRESHOLD = Integer.parseInt(defaultProperties.getConnectionsPoolSizeRefillThreshold());
+        this.MAX_POOL_SIZE = Integer.parseInt(defaultProperties.getMaxConnectionPoolSize());
+        this.ALLOW_EXPANSION = Boolean.parseBoolean(defaultProperties.getAllowConnectionsPoolExpansion());
 
-        Properties properties = new Properties();
-        properties.setProperty("user", USER);
-        properties.setProperty("password", PASSWORD);
-        this.dataSource = new ClickHouseDataSource(URL, properties);
-        try {
-            for (int i = 0; i < INITIAL_POOL_SIZE; i++) {
-                createConnection();
-            }
-        } catch (SQLException e) {
-            error(e.getMessage());
-        }
+        createDataSource(true);
+    }
+
+    /**
+     * Constructs a new ConnectionManager instance.
+     */
+    public ConnectionManager() {
+        this(DefaultProperties.fromEnvironment());
     }
 
     /**
@@ -120,7 +110,7 @@ public class ConnectionManager {
                     Connection connection = dataSource.getConnection();
                     connectionPool.push(connection);
                 } catch (SQLException e) {
-                    error(e.getMessage());
+                    error(e.getMessage(), this.getClass());
                 }
             }
         }, executorService);
@@ -152,5 +142,32 @@ public class ConnectionManager {
         }
         connectionPool.clear();
         info("All connections to the database are closed");
+    }
+
+    @Override
+    public void update() {
+        this.URL = defaultProperties.getUrl();
+        this.USER = defaultProperties.getUsername();
+        this.PASSWORD = defaultProperties.getPassword();
+
+        createDataSource(false);
+    }
+
+    private void createDataSource(boolean isFirstInit) {
+        if (!isFirstInit)
+            closeAllConnections();
+        info("Set up data source...");
+        Properties properties = new Properties();
+        properties.setProperty("user", USER);
+        properties.setProperty("password", PASSWORD);
+        this.dataSource = new ClickHouseDataSource(URL, properties);
+        try {
+            for (int i = 0; i < INITIAL_POOL_SIZE; i++) {
+                createConnection();
+            }
+            info("Connection to " + URL + " established");
+        } catch (SQLException e) {
+            error("Error while create connection: " + e.getMessage());
+        }
     }
 }

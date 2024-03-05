@@ -265,7 +265,7 @@ public class CSUtils {
             field.setAccessible(true);
             field.set(entity, value);
         } catch (IllegalAccessException e) {
-            error(e.getMessage());
+            error(e.getMessage(), CSUtils.class);
         }
     }
 

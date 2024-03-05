@@ -117,7 +117,7 @@ public class CSRequestHandler implements MethodHandler {
         try {
             return repository.findAll(entityType);
         } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
         return new ArrayList<>();
     }
@@ -126,7 +126,7 @@ public class CSRequestHandler implements MethodHandler {
         try {
             return repository.save(arguments[0], entityIdType);
         } catch (FieldInitializationException | ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
         return null;
     }
@@ -135,7 +135,7 @@ public class CSRequestHandler implements MethodHandler {
         try {
             return Optional.ofNullable(repository.findById(entityType, arguments[0]));
         } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
         return Optional.empty();
     }
@@ -144,7 +144,7 @@ public class CSRequestHandler implements MethodHandler {
         try {
             repository.delete(argument);
         } catch (ClassCacheNotFoundException | IllegalAccessException | SQLException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
     }
 
@@ -152,7 +152,7 @@ public class CSRequestHandler implements MethodHandler {
         try {
             repository.deleteAll(entityType);
         } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
     }
 
@@ -160,7 +160,7 @@ public class CSRequestHandler implements MethodHandler {
         try {
             return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
         } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage());
+            error(e.getMessage(), this.getClass());
         }
         return null;
     }

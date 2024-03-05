@@ -20,11 +20,8 @@ import static com.altinntech.clicksave.log.CSLogger.info;
  * The {@code BatchCollector} class is responsible for collecting batches of queries.
  * It accumulates queries and sends them for processing when a threshold is reached.
  *
- * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
- *
  * <p>Author: Fyodor Plotnikov</p>
  */
-@Component
 public class BatchCollector {
 
     /**
@@ -39,13 +36,20 @@ public class BatchCollector {
      */
     private final CSBootstrap bootstrap;
 
+    private static BatchCollector instance;
+
+    public static BatchCollector getInstance() {
+        if (instance == null) {
+            instance = new BatchCollector();
+        }
+        return instance;
+    }
+
     /**
      * Instantiates a new Batch collector.
-     *
-     * @param bootstrap the bootstrap
      */
-    public BatchCollector(CSBootstrap bootstrap) {
-        this.bootstrap = bootstrap;
+    private BatchCollector() {
+        this.bootstrap = CSBootstrap.getInstance();
     }
 
     /**
