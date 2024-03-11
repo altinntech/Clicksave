@@ -116,6 +116,12 @@ public class CSUtils {
                     if (enumerated.value() == EnumType.BY_ID && !EnumId.class.isAssignableFrom(fieldType)) {
                         throw new FieldInitializationException("Enum " + fieldType.getSimpleName() + " must implements " + EnumId.class.getSimpleName() + " interface");
                     }
+                    if (enumerated.value() == EnumType.STRING)
+                        fieldData.setFieldType(FieldType.STRING);
+                    else if (enumerated.value() == EnumType.ORDINAL)
+                        fieldData.setFieldType(FieldType.UINT16);
+                    else if (enumerated.value() == EnumType.BY_ID)
+                        fieldData.setFieldType(FieldType.LONG);
                     isPersistent = true;
                     fieldData.setEnumColumnAnnotation(enumerated);
                 } else if (annotation instanceof Embedded embedded) {
@@ -123,6 +129,7 @@ public class CSUtils {
                     fieldData.setEmbeddedAnnotation(embedded);
                 } else if (annotation instanceof Lob lob) {
                     isPersistent = true;
+                    fieldData.setFieldType(FieldType.STRING);
                     fieldData.setLobAnnotation(lob);
                 }
             }

@@ -379,40 +379,34 @@ public class CSBootstrap {
                     checkFields(tableName, embeddableClassData.getFields(), fieldsFromDB);
                 }
             }
+
+            //check for types
+            if (fieldData.getEmbeddedAnnotation().isEmpty()) {
+                String fieldType = fieldData.getFieldType().getType();
+                boolean concurrence = fieldsFromDB.stream()
+                        .anyMatch(columnData -> columnData.getColumnName().equals(fieldName) &&
+                                columnData.getColumnType().equals(fieldType));
+                if (exists && !concurrence) {
+                    modifyColumn(tableName, fieldData);
+                }
+            }
         }
     }
 
     private void addColumn(String tableName, FieldDataCache fieldData) {
         String fieldName = fieldData.getFieldInTableName();
-        Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
-        Optional<Lob> lobOptional = fieldData.getLobAnnotation();
+        String dataType = fieldData.getFieldType().getType();
+        String queryBuilder = "ALTER TABLE " + tableName + " ADD COLUMN" +
+                " " + fieldName + " " + dataType;
+        executeQuery(queryBuilder);
+    }
 
-        if (enumeratedOptional.isPresent()) {
-            EnumColumn enumeratedAnnotation = enumeratedOptional.get();
-            StringBuilder queryBuilder = new StringBuilder();
-            if (enumeratedAnnotation.value() == EnumType.ORDINAL) {
-                queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
-                queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.UINT16.getType());
-                executeQuery(queryBuilder.toString());
-            } else if (enumeratedAnnotation.value() == EnumType.STRING) {
-                queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
-                queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.STRING.getType());
-                executeQuery(queryBuilder.toString());
-            } else {
-                queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
-                queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.LONG.getType());
-                executeQuery(queryBuilder.toString());
-            }
-        } else if (lobOptional.isPresent()) {
-            String queryBuilder = "ALTER TABLE " + tableName + " ADD COLUMN" +
-                    " " + fieldName + " " + FieldType.STRING.getType();
-            executeQuery(queryBuilder);
-        } else {
-            String dataType = fieldData.getFieldType().getType();
-            String queryBuilder = "ALTER TABLE " + tableName + " ADD COLUMN" +
-                    " " + fieldName + " " + dataType;
-            executeQuery(queryBuilder);
-        }
+    private void modifyColumn(String tableName, FieldDataCache fieldData) {
+        String fieldName = fieldData.getFieldInTableName();
+        String dataType = fieldData.getFieldType().getType();
+        String queryBuilder = "ALTER TABLE " + tableName + " MODIFY COLUMN" +
+                " " + fieldName + " " + dataType;
+        executeQuery(queryBuilder);
     }
 
     public DefaultProperties getDefaultProperties() {
