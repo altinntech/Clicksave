@@ -17,11 +17,9 @@ import static com.altinntech.clicksave.log.CSLogger.info;
  * The {@code ConnectionManager} class manages connections to the database and serves as a connection pool.
  * It handles the creation, retrieval, and release of database connections.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class ConnectionManager implements Observer {
-
-    private static ConnectionManager instance;
 
     private final DefaultProperties defaultProperties;
 
@@ -46,15 +44,18 @@ public class ConnectionManager implements Observer {
         defaultProperties.registerObserver(this);
 
         //--Initialize Variables --//
-        this.URL = defaultProperties.getUrl();
-        this.USER = defaultProperties.getUsername();
-        this.PASSWORD = defaultProperties.getPassword();
         this.INITIAL_POOL_SIZE = Integer.parseInt(defaultProperties.getInitialConnectionsPoolSize());
         this.REFILL_POOL_SIZE_THRESHOLD = Integer.parseInt(defaultProperties.getConnectionsPoolSizeRefillThreshold());
         this.MAX_POOL_SIZE = Integer.parseInt(defaultProperties.getMaxConnectionPoolSize());
         this.ALLOW_EXPANSION = Boolean.parseBoolean(defaultProperties.getAllowConnectionsPoolExpansion());
 
-        createDataSource(true);
+        if (defaultProperties.validate()) {
+            this.URL = defaultProperties.getUrl();
+            this.USER = defaultProperties.getUsername();
+            this.PASSWORD = defaultProperties.getPassword();
+
+            createDataSource(true);
+        }
     }
 
     /**

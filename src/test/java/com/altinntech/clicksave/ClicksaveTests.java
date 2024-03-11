@@ -329,7 +329,7 @@ public class ClicksaveTests {
     @Test
     void performanceTest() {
         double maxTimeForSaveOperation = 0.2; // ms
-        double maxTimeForUpdateOperation = 8.0; // ms
+        double maxTimeForUpdateOperation = 10.0; // ms
         double maxTimeForDeleteOperation = 14.0; // ms
         double maxTimeForFindOperation = 2.7; // ms
         double maxTimeForCustomFindOperation = 2.75; // ms

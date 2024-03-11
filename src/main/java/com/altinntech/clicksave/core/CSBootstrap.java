@@ -57,11 +57,15 @@ public class CSBootstrap {
     public CSBootstrap(DefaultProperties defaultProperties) throws FieldInitializationException, ClassCacheNotFoundException {
         info("Start initialization...");
         this.defaultProperties = defaultProperties;
-        this.connectionManager = new ConnectionManager(defaultProperties);
         instance = this;
+        this.connectionManager = new ConnectionManager(defaultProperties);
         this.batchCollector = BatchCollector.getInstance();
-        initialize();
-        info("Initializing completed");
+        if (defaultProperties.validate()) {
+            initialize();
+            info("Initializing completed");
+        } else {
+            warn("Initialization skipped due to unrecognized properties. Check the configuration to ensure that all properties are correctly spelled and recognized");
+        }
     }
 
     public static CSBootstrap getInstance() {

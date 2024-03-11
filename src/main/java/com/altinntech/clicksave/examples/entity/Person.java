@@ -10,6 +10,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -21,8 +22,8 @@ public class Person {
     public Person() {
     }
 
-    @Column(value = FieldType.LONG, id = true) // it is recommended to make the id field a UUID type
-    Long id;
+    @Column(value = FieldType.UUID, id = true) // it is recommended to make the id field a UUID type
+    UUID id;
     @Column(FieldType.STRING)
     String name;
     @Column(FieldType.STRING)
@@ -49,7 +50,7 @@ public class Person {
     Boolean enabled;
     String noSaveField; // this field will not be saved
 
-    public Person(Long id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) {
+    public Person(UUID id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) {
         this.id = id;
         this.name = name;
         this.lastName = lastName;
