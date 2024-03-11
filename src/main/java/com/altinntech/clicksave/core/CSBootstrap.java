@@ -260,37 +260,13 @@ public class CSBootstrap {
     private void parseQueryForCreate(StringBuilder primaryKey, List<FieldDataCache> fields, StringBuilder query) {
         for (FieldDataCache fieldData : fields) {
             String fieldName = fieldData.getFieldInTableName();
-            Optional<Column> columnOptional = fieldData.getColumnAnnotation();
-            Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
             Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
-            Optional<Lob> lobOptional = fieldData.getLobAnnotation();
 
-            if (enumeratedOptional.isPresent()) {
-                EnumColumn enumeratedAnnotation = enumeratedOptional.get();
-                if (enumeratedAnnotation.value() == EnumType.ORDINAL) {
-                    query.append(fieldName).append(" ");
-                    query.append(FieldType.UINT16.getType());
-                } else if (enumeratedAnnotation.value() == EnumType.STRING) {
-                    query.append(fieldName).append(" ");
-                    query.append(FieldType.STRING.getType());
-                } else {
-                    query.append(fieldName).append(" ");
-                    query.append(FieldType.LONG.getType());
-                }
-            } else if (columnOptional.isPresent()) {
-                Column columnAnnotation = columnOptional.get();
-                String dataType = columnAnnotation.value().getType();
-                query.append(fieldName).append(" ");
-                query.append(dataType);
+            if (fieldData.getFieldType() == null && embeddedOptional.isEmpty()) {
+                throw new FieldInitializationException("Not valid field: " + fieldData);
+            }
 
-                if (columnAnnotation.primaryKey() || columnAnnotation.id()) {
-                    if (primaryKey.length() == 0) {
-                        primaryKey.append(fieldName);
-                    } else {
-                        primaryKey.append(", ").append(fieldName);
-                    }
-                }
-            } else if (embeddedOptional.isPresent()) {
+            if (embeddedOptional.isPresent()) {
                 EmbeddableClassData embeddableClassData = embeddableClassDataCacheMap.get(fieldData.getType());
                 if (embeddableClassData != null) {
                     parseQueryForCreate(primaryKey, embeddableClassData.getFields(), query);
@@ -298,12 +274,17 @@ public class CSBootstrap {
                 } else {
                     throw new FieldInitializationException("Embeddable class of field '" + fieldData.getFieldName() + "' not found");
                 }
-            } else if (lobOptional.isPresent()) {
+            } else {
                 query.append(fieldName).append(" ");
-                query.append(FieldType.STRING.getType());
-            }
-            else {
-                throw new FieldInitializationException("Not valid field: " + fieldData);
+                query.append(fieldData.getFieldType().getType());
+
+                if (fieldData.isPk() || fieldData.isId()) {
+                    if (primaryKey.length() == 0) {
+                        primaryKey.append(fieldName);
+                    } else {
+                        primaryKey.append(", ").append(fieldName);
+                    }
+                }
             }
 
             query.append(", ");
@@ -318,50 +299,6 @@ public class CSBootstrap {
         List<ColumnData> tableFieldsFromDB = fetchTableColumns(tableName);
         List<FieldDataCache> fields = classDataCache.getFields();
         checkFields(tableName, fields, tableFieldsFromDB);
-        /*for (FieldDataCache fieldData : fields) {
-            String fieldName = fieldData.getFieldInTableName();
-            if (!tableFieldsFromDB.contains(fieldName) && fieldData.getEmbeddedAnnotation().isEmpty()) {
-                info("Update field " + fieldName + " in table " + tableName);
-                Optional<Column> columnOptional = fieldData.getColumnAnnotation();
-                Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
-                Optional<Lob> lobOptional = fieldData.getLobAnnotation();
-
-                if (columnOptional.isPresent()) {
-                    Column columnAnnotation = columnOptional.get();
-                    String dataType = columnAnnotation.value().getType();
-                    String queryBuilder = "ALTER TABLE " + tableName + " ADD COLUMN" +
-                            " " + fieldName + " " + dataType;
-
-                    executeQuery(queryBuilder);
-                } else if (enumeratedOptional.isPresent()) {
-                    EnumColumn enumeratedAnnotation = enumeratedOptional.get();
-                    StringBuilder queryBuilder = new StringBuilder();
-                    if (enumeratedAnnotation.value() == EnumType.ORDINAL) {
-                        queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
-                        queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.UINT16.getType());
-
-                        executeQuery(queryBuilder.toString());
-                    } else if (enumeratedAnnotation.value() == EnumType.STRING) {
-                        queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
-                        queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.STRING.getType());
-
-                        executeQuery(queryBuilder.toString());
-                    } else {
-                        queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
-                        queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.LONG.getType());
-                    }
-                } else if (lobOptional.isPresent()) {
-                    StringBuilder queryBuilder = new StringBuilder();
-                    queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
-                    queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.STRING.getType());
-
-                    executeQuery(queryBuilder.toString());
-                } else {
-                    throw new FieldInitializationException("Not valid field: " + fieldData);
-                }
-
-            }
-        }*/
     }
 
     private void checkFields(String tableName, List<FieldDataCache> fieldDataCaches, List<ColumnData> fieldsFromDB) {
@@ -399,6 +336,7 @@ public class CSBootstrap {
         String queryBuilder = "ALTER TABLE " + tableName + " ADD COLUMN" +
                 " " + fieldName + " " + dataType;
         executeQuery(queryBuilder);
+        info("Add column '" + fieldName + "' into table '" + tableName + "'");
     }
 
     private void modifyColumn(String tableName, FieldDataCache fieldData) {
@@ -407,6 +345,7 @@ public class CSBootstrap {
         String queryBuilder = "ALTER TABLE " + tableName + " MODIFY COLUMN" +
                 " " + fieldName + " " + dataType;
         executeQuery(queryBuilder);
+        info("Modify column '" + fieldName + "' into table '" + tableName + "'");
     }
 
     public DefaultProperties getDefaultProperties() {

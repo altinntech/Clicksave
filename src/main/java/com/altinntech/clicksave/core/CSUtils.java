@@ -109,9 +109,13 @@ public class CSUtils {
                     if (column.id()) {
                         idFieldsCount++;
                         isId = true;
+                        fieldData.setId(true);
+                        fieldData.setPk(true);
+                    }
+                    if (column.primaryKey()) {
+                        fieldData.setPk(true);
                     }
                     fieldData.setFieldType(column.value());
-                    fieldData.setId(isId);
                 } else if (annotation instanceof EnumColumn enumerated) {
                     if (enumerated.value() == EnumType.BY_ID && !EnumId.class.isAssignableFrom(fieldType)) {
                         throw new FieldInitializationException("Enum " + fieldType.getSimpleName() + " must implements " + EnumId.class.getSimpleName() + " interface");
@@ -123,12 +127,15 @@ public class CSUtils {
                     else if (enumerated.value() == EnumType.BY_ID)
                         fieldData.setFieldType(FieldType.LONG);
                     isPersistent = true;
+                    fieldData.setEnum(true);
                     fieldData.setEnumColumnAnnotation(enumerated);
                 } else if (annotation instanceof Embedded embedded) {
                     isPersistent = true;
+                    fieldData.setEmbedded(true);
                     fieldData.setEmbeddedAnnotation(embedded);
                 } else if (annotation instanceof Lob lob) {
                     isPersistent = true;
+                    fieldData.setLob(true);
                     fieldData.setFieldType(FieldType.STRING);
                     fieldData.setLobAnnotation(lob);
                 }

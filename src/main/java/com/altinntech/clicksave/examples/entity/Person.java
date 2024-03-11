@@ -49,8 +49,6 @@ public class Person {
     @Column(FieldType.BOOL)
     Boolean enabled;
     String noSaveField; // this field will not be saved
-    @Column(FieldType.UUID)
-    UUID someField;
 
     public Person(UUID id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) {
         this.id = id;

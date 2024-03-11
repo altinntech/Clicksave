@@ -41,6 +41,10 @@ public class FieldDataCache implements FieldData {
     private Class<?> type;
     private FieldType fieldType;
     private boolean isId;
+    private boolean isPk;
+    private boolean isEnum;
+    private boolean isLob;
+    private boolean isEmbedded;
     private Column columnAnnotation;
     private EnumColumn enumColumnAnnotation;
     private Embedded embeddedAnnotation;

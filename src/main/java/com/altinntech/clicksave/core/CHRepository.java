@@ -126,58 +126,18 @@ public class CHRepository {
         for (FieldDataCache fieldData : fields) {
             String columnName = fieldData.getFieldInTableName();
             Field field = fieldData.getField();
-            Optional<Column> columnOptional = fieldData.getColumnAnnotation();
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
-            Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
-            Optional<Lob> lobOptional = fieldData.getLobAnnotation();
 
-            if (columnOptional.isPresent()) {
-                Column columnAnnotation = columnOptional.get();
-                field.setAccessible(true);
-                Object value = null;
-                try {
-                    value = field.get(entity);
-                    if (value == null && columnAnnotation.id()) {
-                        value = idsManager.getNextId(classDataCache, fieldData, idType);
-                        setFieldValue(entity, field, value, fieldData);
-                    } else if (columnAnnotation.value().equals(FieldType.DATE_TIME)) {
-                        LocalDateTime timeField = (LocalDateTime) value;
-                        String formattedTimeValue = timeField != null ? timeField.format(formatter) : "";
-                        value = formattedTimeValue;
-                    }
-                } catch (IllegalAccessException e) {
-                    error(e.getMessage(), this.getClass());
-                }
-                insertQuery.append(columnName).append(", ");
-                valuesPlaceholder.append("?, ");
-                fieldValues.add(value);
-            } else if (enumeratedOptional.isPresent()) {
-                EnumColumn enumeratedAnnotation = enumeratedOptional.get();
-                field.setAccessible(true);
-                Object value = null;
-                try {
-                    value = field.get(entity);
-                    if (enumeratedAnnotation.value() == EnumType.STRING) {
-                        value = value.toString();
-                    } else if (enumeratedAnnotation.value() == EnumType.ORDINAL) {
-                        Enum<?> enumValue = (Enum<?>) value;
-                        value = enumValue.ordinal();
-                    } else {
-                        EnumId enumValue = (EnumId) value;
-                        value = enumValue.getId();
-                    }
-                } catch (IllegalAccessException e) {
-                    error(e.getMessage(), this.getClass());
-                }
-                insertQuery.append(columnName).append(", ");
-                valuesPlaceholder.append("?, ");
-                fieldValues.add(value);
-            } else if (embeddedOptional.isPresent()) {
+            if (fieldData.getFieldType() == null && !fieldData.isEmbedded()) {
+                throw new FieldInitializationException("Exception while saving: Not valid field - " + fieldData);
+            }
+
+            if (fieldData.isEmbedded()) {
                 EmbeddableClassData embeddableClassData = CSBootstrap.getEmbeddableClassDataCache(fieldData.getType());
                 field.setAccessible(true);
                 Object value = field.get(entity);
                 extractFieldValuesForCreate(value, null, classDataCache, insertQuery, valuesPlaceholder, embeddableClassData.getFields(), fieldValues);
-            } else if (lobOptional.isPresent()) {
+            } else if (fieldData.isLob()) {
                 field.setAccessible(true);
                 Object value;
                 try {
@@ -190,11 +150,46 @@ public class CHRepository {
                 } catch (IllegalAccessException e) {
                     error(e.getMessage(), this.getClass());
                 }
-            }
-            else {
-                throw new FieldInitializationException("Exception while saving: Not valid field - " + fieldData);
+            } else {
+                field.setAccessible(true);
+                Object value = null;
+                try {
+                    value = field.get(entity);
+                    if (value == null && fieldData.isId()) {
+                        value = idsManager.getNextId(classDataCache, fieldData, idType);
+                        setFieldValue(entity, field, value, fieldData);
+                    } else if (fieldData.getFieldType().equals(FieldType.DATE_TIME)) {
+                        LocalDateTime timeField = (LocalDateTime) value;
+                        value = timeField != null ? timeField.format(formatter) : "";
+                    } else if (fieldData.isEnum()) {
+                        if (enumeratedOptional.isPresent()) {
+                            EnumColumn enumeratedAnnotation = enumeratedOptional.get();
+                            value = getValueFromEnum(enumeratedAnnotation, value);
+                        } else {
+                            value = value.toString();
+                        }
+                    }
+                } catch (IllegalAccessException e) {
+                    error(e.getMessage(), this.getClass());
+                }
+                insertQuery.append(columnName).append(", ");
+                valuesPlaceholder.append("?, ");
+                fieldValues.add(value);
             }
         }
+    }
+
+    private Object getValueFromEnum(EnumColumn enumeratedAnnotation, Object value) {
+        if (enumeratedAnnotation.value() == EnumType.STRING) {
+            value = value.toString();
+        } else if (enumeratedAnnotation.value() == EnumType.ORDINAL) {
+            Enum<?> enumValue = (Enum<?>) value;
+            value = enumValue.ordinal();
+        } else {
+            EnumId enumValue = (EnumId) value;
+            value = enumValue.getId();
+        }
+        return value;
     }
 
     /**
@@ -239,37 +234,14 @@ public class CHRepository {
         for (FieldDataCache fieldData : fields) {
             String columnName = fieldData.getFieldInTableName();
             Field field = fieldData.getField();
-            Optional<Column> columnOptional = fieldData.getColumnAnnotation();
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
-            Optional<Embedded> embeddedOptional = fieldData.getEmbeddedAnnotation();
-            Optional<Lob> lobOptional = fieldData.getLobAnnotation();
 
-            if (columnOptional.isPresent()) {
-                Column columnAnnotation = columnOptional.get();
-                if (!columnAnnotation.id() && !columnAnnotation.primaryKey()) {
-                    field.setAccessible(true);
-                    updateQuery.append(columnName).append(" = ").append("'" + field.get(entity) + "'").append(", ");
-                }
-            } else if (enumeratedOptional.isPresent()) {
-                EnumColumn enumColumnAnnotation = enumeratedOptional.get();
-                field.setAccessible(true);
-                Object value = field.get(entity);
-                if (enumColumnAnnotation.value() == EnumType.STRING) {
-                    value = value.toString();
-                } else if (enumColumnAnnotation.value() == EnumType.ORDINAL) {
-                    Enum<?> enumValue = (Enum<?>) value;
-                    value = enumValue.ordinal();
-                } else {
-                    EnumId enumValue = (EnumId) value;
-                    value = enumValue.getId();
-                }
-                updateQuery.append(columnName).append(" = ").append("'" + value + "'").append(", ");
-            } else if (embeddedOptional.isPresent()) {
+            if (fieldData.isEmbedded()) {
                 EmbeddableClassData embeddableClassData = CSBootstrap.getEmbeddableClassDataCache(fieldData.getType());
                 field.setAccessible(true);
                 Object value = field.get(entity);
                 extractFieldValuesForUpdate(value, updateQuery, embeddableClassData.getFields());
-            } else if (lobOptional.isPresent()) {
+            } else if (fieldData.isLob()) {
                 field.setAccessible(true);
                 Object value;
                 try {
@@ -280,6 +252,23 @@ public class CHRepository {
                 } catch (IllegalAccessException e) {
                     error(e.getMessage(), this.getClass());
                 }
+            } else if (!fieldData.isId() && !fieldData.isPk()) {
+                field.setAccessible(true);
+                Object value = field.get(entity);
+
+                if (fieldData.getFieldType().equals(FieldType.DATE_TIME)) {
+                    LocalDateTime timeField = (LocalDateTime) value;
+                    value = timeField != null ? timeField.format(formatter) : "";
+                } else if (fieldData.isEnum()) {
+                    if (enumeratedOptional.isPresent()) {
+                        EnumColumn enumeratedAnnotation = enumeratedOptional.get();
+                        value = getValueFromEnum(enumeratedAnnotation, value);
+                    } else {
+                        value = value.toString();
+                    }
+                }
+
+                updateQuery.append(columnName).append(" = ").append("'" + value + "'").append(", ");
             }
         }
     }
