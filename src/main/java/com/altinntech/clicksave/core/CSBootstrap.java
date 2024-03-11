@@ -2,6 +2,7 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
+import com.altinntech.clicksave.core.dto.ColumnData;
 import com.altinntech.clicksave.core.dto.EmbeddableClassData;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
@@ -10,9 +11,6 @@ import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import org.reflections.Reflections;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -216,17 +214,19 @@ public class CSBootstrap {
      * @param tableName the table name
      * @return the list of columns
      */
-    public List<String> fetchTableColumns(String tableName) {
-        List<String> columns = new ArrayList<>();
+    public List<ColumnData> fetchTableColumns(String tableName) {
+        List<ColumnData> columns = new ArrayList<>();
 
         try (Connection connection = connectionManager.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT name FROM system.columns WHERE table = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement("SELECT name, type FROM system.columns WHERE table = ?")) {
 
             preparedStatement.setString(1, tableName);
             try (ResultSet resultSet = preparedStatement.executeQuery())
             {
                 while (resultSet.next()) {
-                    columns.add(resultSet.getString("name"));
+                    String name = resultSet.getString("name");
+                    String type = resultSet.getString("type");
+                    columns.add(new ColumnData(name, type));
                 }
                 connectionManager.releaseConnection(connection);
             }
@@ -314,11 +314,11 @@ public class CSBootstrap {
         ClassDataCache classDataCache = getClassDataCache(clazz);
 
         String tableName = classDataCache.getTableName();
-        List<String> tableFieldsFromDB = fetchTableColumns(tableName);
         info("Check for updates table " + tableName);
-
+        List<ColumnData> tableFieldsFromDB = fetchTableColumns(tableName);
         List<FieldDataCache> fields = classDataCache.getFields();
-        for (FieldDataCache fieldData : fields) {
+        checkFields(tableName, fields, tableFieldsFromDB);
+        /*for (FieldDataCache fieldData : fields) {
             String fieldName = fieldData.getFieldInTableName();
             if (!tableFieldsFromDB.contains(fieldName) && fieldData.getEmbeddedAnnotation().isEmpty()) {
                 info("Update field " + fieldName + " in table " + tableName);
@@ -361,6 +361,57 @@ public class CSBootstrap {
                 }
 
             }
+        }*/
+    }
+
+    private void checkFields(String tableName, List<FieldDataCache> fieldDataCaches, List<ColumnData> fieldsFromDB) {
+        for (FieldDataCache fieldData : fieldDataCaches) {
+            String fieldName = fieldData.getFieldInTableName();
+
+            // check for existing
+            boolean exists = fieldsFromDB.stream()
+                    .anyMatch(columnData -> columnData.getColumnName().equals(fieldName));
+            if (!exists && fieldData.getEmbeddedAnnotation().isEmpty()) {
+                addColumn(tableName, fieldData);
+            } else if (fieldData.getEmbeddedAnnotation().isPresent()) {
+                EmbeddableClassData embeddableClassData = embeddableClassDataCacheMap.get(fieldData.getType());
+                if (embeddableClassData != null) {
+                    checkFields(tableName, embeddableClassData.getFields(), fieldsFromDB);
+                }
+            }
+        }
+    }
+
+    private void addColumn(String tableName, FieldDataCache fieldData) {
+        String fieldName = fieldData.getFieldInTableName();
+        Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
+        Optional<Lob> lobOptional = fieldData.getLobAnnotation();
+
+        if (enumeratedOptional.isPresent()) {
+            EnumColumn enumeratedAnnotation = enumeratedOptional.get();
+            StringBuilder queryBuilder = new StringBuilder();
+            if (enumeratedAnnotation.value() == EnumType.ORDINAL) {
+                queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
+                queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.UINT16.getType());
+                executeQuery(queryBuilder.toString());
+            } else if (enumeratedAnnotation.value() == EnumType.STRING) {
+                queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
+                queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.STRING.getType());
+                executeQuery(queryBuilder.toString());
+            } else {
+                queryBuilder.append("ALTER TABLE ").append(tableName).append(" ADD COLUMN");
+                queryBuilder.append(" ").append(fieldName).append(" ").append(FieldType.LONG.getType());
+                executeQuery(queryBuilder.toString());
+            }
+        } else if (lobOptional.isPresent()) {
+            String queryBuilder = "ALTER TABLE " + tableName + " ADD COLUMN" +
+                    " " + fieldName + " " + FieldType.STRING.getType();
+            executeQuery(queryBuilder);
+        } else {
+            String dataType = fieldData.getFieldType().getType();
+            String queryBuilder = "ALTER TABLE " + tableName + " ADD COLUMN" +
+                    " " + fieldName + " " + dataType;
+            executeQuery(queryBuilder);
         }
     }
 

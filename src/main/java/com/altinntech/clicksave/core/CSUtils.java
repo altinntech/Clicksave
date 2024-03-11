@@ -21,7 +21,6 @@ import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -111,6 +110,8 @@ public class CSUtils {
                         idFieldsCount++;
                         isId = true;
                     }
+                    fieldData.setFieldType(column.value());
+                    fieldData.setId(isId);
                 } else if (annotation instanceof EnumColumn enumerated) {
                     if (enumerated.value() == EnumType.BY_ID && !EnumId.class.isAssignableFrom(fieldType)) {
                         throw new FieldInitializationException("Enum " + fieldType.getSimpleName() + " must implements " + EnumId.class.getSimpleName() + " interface");

@@ -5,6 +5,7 @@ import com.altinntech.clicksave.annotations.Embedded;
 import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.annotations.Lob;
 import com.altinntech.clicksave.core.CSUtils;
+import com.altinntech.clicksave.enums.FieldType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -38,6 +39,8 @@ public class FieldDataCache implements FieldData {
     private String fieldName;
     private String fieldInTableName;
     private Class<?> type;
+    private FieldType fieldType;
+    private boolean isId;
     private Column columnAnnotation;
     private EnumColumn enumColumnAnnotation;
     private Embedded embeddedAnnotation;
