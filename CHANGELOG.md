@@ -1,5 +1,11 @@
 # Changelog
 
+### [1.1.6] - 2024-03-12
+- Disable Clicksave if not resolve properties
+- Improved table updater
+- Reduce dependencies
+- Fixed bug: that caused the application to terminate incorrectly
+
 ### [1.1.5] - 2024-03-05
 - Add database source replacement in runtime (for test containers)
 
