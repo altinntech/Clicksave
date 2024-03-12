@@ -15,7 +15,7 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @ClickHouseEntity // you should use this annotation for persistence entity
-@Batching(batchSize = 10000) // add batch for saving
+@Batching(batchSize = 10) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor

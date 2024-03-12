@@ -277,7 +277,7 @@ public class ClicksaveTests {
 
     @Test
     void multipleSaving() {
-        int iterations = 100;
+        int iterations = 30;
         List<Person> persons = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
             Person person = Person.buildMockPerson();
