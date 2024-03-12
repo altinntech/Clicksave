@@ -39,7 +39,9 @@ public class ConnectionManager implements Observer {
 
     private int extendedPoolSize = 0;
 
-    public ConnectionManager(DefaultProperties defaultProperties) {
+    private boolean debounce = false;
+
+    public ConnectionManager(DefaultProperties defaultProperties) throws SQLException {
         this.defaultProperties = defaultProperties;
         defaultProperties.registerObserver(this);
 
@@ -61,7 +63,7 @@ public class ConnectionManager implements Observer {
     /**
      * Constructs a new ConnectionManager instance.
      */
-    public ConnectionManager() {
+    public ConnectionManager() throws SQLException {
         this(DefaultProperties.fromEnvironment());
     }
 
@@ -85,7 +87,7 @@ public class ConnectionManager implements Observer {
         return connection;
     }
 
-    private void expandPool() {
+    private synchronized void expandPool() {
         if (ALLOW_EXPANSION && extendedPoolSize + INITIAL_POOL_SIZE+2 < MAX_POOL_SIZE) {
             extendedPoolSize +=2;
         }
@@ -104,12 +106,11 @@ public class ConnectionManager implements Observer {
         }
     }
 
-    private void refillPool() {
+    private synchronized void refillPool() {
         CompletableFuture.runAsync(() -> {
             while (connectionPool.size() < INITIAL_POOL_SIZE + extendedPoolSize) {
                 try {
-                    Connection connection = dataSource.getConnection();
-                    connectionPool.push(connection);
+                    createConnection();
                 } catch (SQLException e) {
                     error(e.getMessage(), this.getClass());
                 }
@@ -117,7 +118,7 @@ public class ConnectionManager implements Observer {
         }, executorService);
     }
 
-    private void createConnection() throws SQLException {
+    private synchronized void createConnection() throws SQLException {
         Connection connection;
         connection = dataSource.getConnection();
         connectionPool.push(connection);
@@ -126,13 +127,17 @@ public class ConnectionManager implements Observer {
     /**
      * Closes all database connections.
      */
-    public synchronized void closeAllConnections() {
-        for (Connection connection : usedConnections) {
-            try {
-                releaseConnection(connection);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+    public synchronized void closeAllConnections() throws SQLException {
+        if (debounce)
+            return;
+        debounce = true;
+        Iterator<Connection> iterator = usedConnections.iterator();
+        while (iterator.hasNext()) {
+            Connection connection = iterator.next();
+            if (!connection.isClosed()) {
+                connection.close();
             }
+            iterator.remove();
         }
         for (Connection connection : connectionPool) {
             try {
@@ -143,10 +148,11 @@ public class ConnectionManager implements Observer {
         }
         connectionPool.clear();
         info("All connections to the database are closed");
+        debounce = false;
     }
 
     @Override
-    public void update() {
+    public void update() throws SQLException {
         this.URL = defaultProperties.getUrl();
         this.USER = defaultProperties.getUsername();
         this.PASSWORD = defaultProperties.getPassword();
@@ -154,7 +160,7 @@ public class ConnectionManager implements Observer {
         createDataSource(false);
     }
 
-    private void createDataSource(boolean isFirstInit) {
+    private void createDataSource(boolean isFirstInit) throws SQLException {
         if (!isFirstInit)
             closeAllConnections();
         info("Set up data source...");

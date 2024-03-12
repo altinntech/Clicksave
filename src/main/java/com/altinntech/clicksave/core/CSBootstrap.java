@@ -48,11 +48,11 @@ public class CSBootstrap {
      * @throws FieldInitializationException if field initialization fails
      * @throws ClassCacheNotFoundException if class cache is not found
      */
-    public CSBootstrap() throws FieldInitializationException, ClassCacheNotFoundException {
+    public CSBootstrap() throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
         this(DefaultProperties.fromEnvironment());
     }
 
-    public CSBootstrap(DefaultProperties defaultProperties) throws FieldInitializationException, ClassCacheNotFoundException {
+    public CSBootstrap(DefaultProperties defaultProperties) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
         info("Start initialization...");
         this.defaultProperties = defaultProperties;
         instance = this;

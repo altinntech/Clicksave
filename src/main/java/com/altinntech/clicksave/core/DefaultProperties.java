@@ -2,6 +2,7 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.interfaces.Observer;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class DefaultProperties {
         return url;
     }
 
-    public void setUrl(String url) {
+    public void setUrl(String url) throws SQLException {
         this.url = url;
         notifyObservers();
     }
@@ -56,12 +57,12 @@ public class DefaultProperties {
         return username;
     }
 
-    public void setUsername(String username) {
+    public void setUsername(String username) throws SQLException {
         this.username = username;
         notifyObservers();
     }
 
-    public void setPassword(String password) {
+    public void setPassword(String password) throws SQLException {
         this.password = password;
         notifyObservers();
     }
@@ -118,7 +119,7 @@ public class DefaultProperties {
         observers.remove(observer);
     }
 
-    public void notifyObservers() {
+    public void notifyObservers() throws SQLException {
         for (Observer observer : observers) {
             observer.update();
         }

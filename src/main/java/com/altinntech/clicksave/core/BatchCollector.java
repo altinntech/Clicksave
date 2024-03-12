@@ -131,7 +131,7 @@ public class BatchCollector {
     /**
      * Saves and flushes all batches.
      */
-    public void saveAndFlushAll() throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public synchronized void saveAndFlushAll() throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
         for (Map.Entry<BatchedQueryData, List<List<Object>>> entry : batches.entrySet()) {
             BatchedQueryData batchedQueryData = entry.getKey();
             List<List<Object>> batch = entry.getValue();
