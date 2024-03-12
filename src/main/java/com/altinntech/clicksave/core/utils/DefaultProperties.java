@@ -1,4 +1,4 @@
-package com.altinntech.clicksave.core;
+package com.altinntech.clicksave.core.utils;
 
 import com.altinntech.clicksave.interfaces.Observer;
 
@@ -15,7 +15,7 @@ import java.util.List;
 
 public class DefaultProperties {
 
-    private List<Observer> observers = new ArrayList<>();
+    private final List<Observer> observers = new ArrayList<>();
 
     private String url;
     private String username;

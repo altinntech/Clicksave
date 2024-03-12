@@ -1,6 +1,4 @@
-package com.altinntech.clicksave.core;
-
-import com.altinntech.clicksave.log.CSLogger;
+package com.altinntech.clicksave.core.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
