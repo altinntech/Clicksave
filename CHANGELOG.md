@@ -1,5 +1,8 @@
 # Changelog
 
+### [1.1.7] - 2024-03-13
+- Return dependencies
+
 ### [1.1.6] - 2024-03-12
 - Disable Clicksave if not resolve properties
 - Improved table updater
