@@ -7,10 +7,14 @@ import com.altinntech.clicksave.enums.FieldType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static com.altinntech.clicksave.examples.utils.ImgParser.*;
 
 @Data
 @AllArgsConstructor
@@ -44,13 +48,15 @@ public class Person {
     CompanyMetadata companyMetadataSingle;
     @Lob
     int[][][] matrix;
+    @Lob
+    byte[] image;
     @Column(FieldType.DATE_TIME)
     LocalDateTime timestamp;
     @Column(FieldType.BOOL)
     Boolean enabled;
     String noSaveField; // this field will not be saved
 
-    public Person(UUID id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) {
+    public Person(UUID id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) throws IOException {
         this.id = id;
         this.name = name;
         this.lastName = lastName;
@@ -68,10 +74,11 @@ public class Person {
         this.companyMetadataSingle = buildMockCompanyMetadata();
         this.matrix = buildMockMatrix();
         this.timestamp = LocalDateTime.now();
+        saveImage("src/main/resources/images/91672317.png");
         this.enabled = true;
     }
 
-    public static Person buildMockPerson() {
+    public static Person buildMockPerson() throws IOException {
         Person person = new Person();
         person.name = CSUtils.generateRandomString(5);
         person.lastName = CSUtils.generateRandomString(10);
@@ -88,6 +95,7 @@ public class Person {
         person.companyMetadataSingle = buildMockCompanyMetadata();
         person.matrix = buildMockMatrix();
         person.timestamp = LocalDateTime.now();
+        person.saveImage("src/main/resources/images/91672317.png");
         person.enabled = true;
         return person;
     }
@@ -124,5 +132,14 @@ public class Person {
             }
         }
         return matrix;
+    }
+
+    public void saveImage(String filename) throws IOException {
+        this.image = readImageToByteArray(filename);
+    }
+
+    public void loadImage() throws IOException {
+        BufferedImage image = byteArrayToImage(this.image);
+        saveImageToFile(image, "src/main/resources/images/from_db.png");
     }
 }

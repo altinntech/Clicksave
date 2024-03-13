@@ -5,7 +5,6 @@ import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
-import com.altinntech.clicksave.examples.entity.CompanyMetadata;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
@@ -225,13 +224,11 @@ public class CSUtils {
     }
 
     private static boolean isBoolean(FieldDataCache fieldData, Object value) {
-        Optional<Column> columnOptional = fieldData.getColumnAnnotation();
-        return columnOptional.isPresent() && columnOptional.get().value() == FieldType.BOOL;
+        return fieldData.getFieldType() == FieldType.BOOL;
     }
 
     private static boolean isDateTime(FieldDataCache fieldData, Object value) {
-        Optional<Column> columnOptional = fieldData.getColumnAnnotation();
-        return columnOptional.isPresent() && columnOptional.get().value() == FieldType.DATE_TIME;
+        return fieldData.getFieldType() == FieldType.DATE_TIME;
     }
 
     private static boolean isEnumAndString(Class<?> fieldType, Object value) {

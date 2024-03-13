@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public class ClicksaveTests {
     private Person TEST_PERSON_5;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         jpaPersonRepository.deleteAll();
         TEST_PERSON_1 = new Person(null, "John", "Doe", 30, "some_address", Gender.MALE, Job.THREE_D_ARTIST, null);
         TEST_PERSON_2 = new Person(null, "Kent", "Martinez", 28, "some_address_2", Gender.MALE, Job.PROGRAMMER, null);
@@ -77,10 +78,11 @@ public class ClicksaveTests {
     }
 
     @Test
-    void find() {
+    void find() throws IOException {
         jpaPersonRepository.save(TEST_PERSON_1);
         Optional<Person> fetched = jpaPersonRepository.findById(TEST_PERSON_1.getId());
         assertTrue(fetched.isPresent());
+        fetched.get().loadImage();
         assertEquals(TEST_PERSON_1, fetched.get());
     }
 
@@ -276,7 +278,7 @@ public class ClicksaveTests {
     }
 
     @Test
-    void multipleSaving() {
+    void multipleSaving() throws IOException {
         int iterations = 30;
         List<Person> persons = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
@@ -297,7 +299,7 @@ public class ClicksaveTests {
 
     @Disabled
     @Test
-    void saveStressTest() {
+    void saveStressTest() throws IOException {
         int iterations = 100_000;
         List<Person> persons = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
