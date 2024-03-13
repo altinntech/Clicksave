@@ -88,6 +88,12 @@
 			<groupId>cc.blynk.clickhouse</groupId>
 			<artifactId>clickhouse4j</artifactId>
 			<version>1.4.4</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-nop</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.reflections</groupId>
