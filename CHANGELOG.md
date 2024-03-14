@@ -1,5 +1,9 @@
 # Changelog
 
+### [1.1.8] - 2024-03-14
+- Fix ConnectionManager memory leaks
+- Fix properties resolver error
+
 ### [1.1.7] - 2024-03-13
 - Return dependencies
 
