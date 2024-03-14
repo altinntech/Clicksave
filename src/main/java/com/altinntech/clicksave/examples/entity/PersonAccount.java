@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Data
 @AllArgsConstructor
-@ClickHouseEntity
+@ClickHouseEntity(forTest = true)
 public class PersonAccount {
 
     public PersonAccount() {

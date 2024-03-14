@@ -51,21 +51,29 @@ public class CSRequestHandler implements MethodHandler {
         Class<?> entityIdType = findEntityIdType(methodMetadata);
         Class<?> methodReturnType = getParameterType(methodMetadata);
 
-        switch (methodMetadata.getSourceMethod().getName()) {
-            case "save" -> {
-                return handleSave(arguments, entityIdType);
+        try {
+            switch (methodMetadata.getSourceMethod().getName()) {
+                case "save" -> {
+                    return handleSave(arguments, entityIdType);
+                }
+                case "findById" -> {
+                    return handleFindById(entityType, arguments);
+                }
+                case "findAll" -> {
+                    return handleFindAll(entityType);
+                }
+                case "delete" -> handleDelete(arguments[0]);
+                case "deleteAll" -> handleDeleteAll(entityType);
+                default -> {
+                    return handleQuery(methodReturnType, entityType, arguments, methodMetadata);
+                }
             }
-            case "findById" -> {
-                return handleFindById(entityType, arguments);
-            }
-            case "findAll" -> {
-                return handleFindAll(entityType);
-            }
-            case "delete" -> handleDelete(arguments[0]);
-            case "deleteAll" -> handleDeleteAll(entityType);
-            default -> {
-                return handleQuery(methodReturnType, entityType, arguments, methodMetadata);
-            }
+        } catch (SQLException e) {
+            error("Error while processing SQL query", this.getClass());
+        } catch (ClassCacheNotFoundException e) {
+            error("ClassDataCache not found for " + entityType + ". Make sure that entity has an @ClickHouseEntity annotation", this.getClass());
+        } catch (IllegalAccessException e) {
+            error("Illegal access to entity", this.getClass());
         }
         return null;
     }
@@ -113,55 +121,27 @@ public class CSRequestHandler implements MethodHandler {
         return null;
     }
 
-    private Object handleFindAll(Class<?> entityType) {
-        try {
-            return repository.findAll(entityType);
-        } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage(), this.getClass());
-        }
-        return new ArrayList<>();
+    private Object handleFindAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        return repository.findAll(entityType);
     }
 
-    private Object handleSave(Object[] arguments, Class<?> entityIdType) {
-        try {
-            return repository.save(arguments[0], entityIdType);
-        } catch (FieldInitializationException | ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage(), this.getClass());
-        }
-        return null;
+    private Object handleSave(Object[] arguments, Class<?> entityIdType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        return repository.save(arguments[0], entityIdType);
     }
 
-    private Object handleFindById(Class<?> entityType, Object[] arguments) {
-        try {
-            return Optional.ofNullable(repository.findById(entityType, arguments[0]));
-        } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage(), this.getClass());
-        }
-        return Optional.empty();
+    private Object handleFindById(Class<?> entityType, Object[] arguments) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        return Optional.ofNullable(repository.findById(entityType, arguments[0]));
     }
 
-    private void handleDelete(Object argument) {
-        try {
-            repository.delete(argument);
-        } catch (ClassCacheNotFoundException | IllegalAccessException | SQLException e) {
-            error(e.getMessage(), this.getClass());
-        }
+    private void handleDelete(Object argument) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        repository.delete(argument);
     }
 
-    private void handleDeleteAll(Class<?> entityType) {
-        try {
-            repository.deleteAll(entityType);
-        } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage(), this.getClass());
-        }
+    private void handleDeleteAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        repository.deleteAll(entityType);
     }
 
-    private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) {
-        try {
-            return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
-        } catch (ClassCacheNotFoundException | SQLException | IllegalAccessException e) {
-            error(e.getMessage(), this.getClass());
-        }
-        return null;
+    private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
     }
 }

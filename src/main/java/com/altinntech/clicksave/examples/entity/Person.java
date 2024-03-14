@@ -14,12 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.altinntech.clicksave.examples.utils.ImgParser.*;
-
 @Data
 @AllArgsConstructor
-@ClickHouseEntity // you should use this annotation for persistence entity
-@Batching(batchSize = 10) // add batch for saving
+@ClickHouseEntity(forTest = true) // you should use this annotation for persistence entity
+@Batching(batchSize = 10000) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor
@@ -48,8 +46,6 @@ public class Person {
     CompanyMetadata companyMetadataSingle;
     @Lob
     int[][][] matrix;
-    @Lob
-    byte[] image;
     @Column(FieldType.DATE_TIME)
     LocalDateTime timestamp;
     @Column(FieldType.BOOL)
@@ -74,7 +70,6 @@ public class Person {
         this.companyMetadataSingle = buildMockCompanyMetadata();
         this.matrix = buildMockMatrix();
         this.timestamp = LocalDateTime.now();
-        saveImage("src/main/resources/images/91672317.png");
         this.enabled = true;
     }
 
@@ -95,7 +90,6 @@ public class Person {
         person.companyMetadataSingle = buildMockCompanyMetadata();
         person.matrix = buildMockMatrix();
         person.timestamp = LocalDateTime.now();
-        person.saveImage("src/main/resources/images/91672317.png");
         person.enabled = true;
         return person;
     }
@@ -132,14 +126,5 @@ public class Person {
             }
         }
         return matrix;
-    }
-
-    public void saveImage(String filename) throws IOException {
-        this.image = readImageToByteArray(filename);
-    }
-
-    public void loadImage() throws IOException {
-        BufferedImage image = byteArrayToImage(this.image);
-        saveImageToFile(image, "src/main/resources/images/from_db.png");
     }
 }

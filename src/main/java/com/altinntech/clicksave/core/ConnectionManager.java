@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,8 +33,7 @@ public class ConnectionManager implements Observer {
     private final int MAX_POOL_SIZE;
     private final boolean ALLOW_EXPANSION;
 
-    private final Stack<Connection> connectionPool = new Stack<>();
-    private final List<Connection> usedConnections = new ArrayList<>();
+    private final Deque<Connection> connectionPool = new ConcurrentLinkedDeque<>();
     private ClickHouseDataSource dataSource;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -65,7 +65,7 @@ public class ConnectionManager implements Observer {
      * Constructs a new ConnectionManager instance.
      */
     public ConnectionManager() throws SQLException {
-        this(DefaultProperties.fromEnvironment());
+        this(DefaultProperties.fromPropertyFile());
     }
 
     /**
@@ -84,7 +84,6 @@ public class ConnectionManager implements Observer {
         }
 
         Connection connection = connectionPool.pop();
-        usedConnections.add(connection);
         return connection;
     }
 
@@ -101,7 +100,6 @@ public class ConnectionManager implements Observer {
      * @throws SQLException if a SQL exception occurs
      */
     public synchronized void releaseConnection(Connection connection) throws SQLException {
-        usedConnections.remove(connection);
         if (!connection.isClosed()) {
             connection.close();
         }
@@ -132,14 +130,6 @@ public class ConnectionManager implements Observer {
         if (debounce)
             return;
         debounce = true;
-        Iterator<Connection> iterator = usedConnections.iterator();
-        while (iterator.hasNext()) {
-            Connection connection = iterator.next();
-            if (!connection.isClosed()) {
-                connection.close();
-            }
-            iterator.remove();
-        }
         for (Connection connection : connectionPool) {
             try {
                 connection.close();

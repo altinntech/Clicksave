@@ -1,6 +1,8 @@
 package com.altinntech.clicksave.core.utils;
 
 import com.altinntech.clicksave.interfaces.Observer;
+import lombok.Getter;
+import org.springframework.core.env.Environment;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.List;
  * <p>Author: Fyodor Plotnikov</p>
  */
 
+@Getter
 public class DefaultProperties {
 
     private final List<Observer> observers = new ArrayList<>();
@@ -25,8 +28,9 @@ public class DefaultProperties {
     private String maxConnectionPoolSize;
     private String allowConnectionsPoolExpansion;
     private String rootPackageToScan;
+    private String testEnv;
 
-    public static DefaultProperties fromEnvironment() {
+    public static DefaultProperties fromPropertyFile() {
         DefaultProperties defaultProperties = new DefaultProperties();
         PropertyReader propertyReader = PropertyReader.getInstance();
         defaultProperties.url = propertyReader.getProperty("clicksave.connection.datasource.url", "");
@@ -37,6 +41,21 @@ public class DefaultProperties {
         defaultProperties.maxConnectionPoolSize = propertyReader.getProperty("clicksave.connection.pool.max-size", "50");
         defaultProperties.allowConnectionsPoolExpansion = propertyReader.getProperty("clicksave.connection.pool.allow-expansion", "true");
         defaultProperties.rootPackageToScan = propertyReader.getProperty("clicksave.core.root-package", "");
+        defaultProperties.testEnv = propertyReader.getProperty("clicksave.test-env", "false");
+        return defaultProperties;
+    }
+
+    public static DefaultProperties fromEnvironment(Environment environment) {
+        DefaultProperties defaultProperties = new DefaultProperties();
+        defaultProperties.url = environment.getProperty("clicksave.connection.datasource.url", "");
+        defaultProperties.username = environment.getProperty("clicksave.connection.datasource.username");
+        defaultProperties.password = environment.getProperty("clicksave.connection.datasource.password");
+        defaultProperties.initialConnectionsPoolSize = environment.getProperty("clicksave.connection.pool.initial-size", "20");
+        defaultProperties.connectionsPoolSizeRefillThreshold = environment.getProperty("clicksave.connection.pool.refill-threshold", "5");
+        defaultProperties.maxConnectionPoolSize = environment.getProperty("clicksave.connection.pool.max-size", "50");
+        defaultProperties.allowConnectionsPoolExpansion = environment.getProperty("clicksave.connection.pool.allow-expansion", "true");
+        defaultProperties.rootPackageToScan = environment.getProperty("clicksave.core.root-package", "");
+        defaultProperties.testEnv = environment.getProperty("clicksave.test-env", "false");
         return defaultProperties;
     }
 

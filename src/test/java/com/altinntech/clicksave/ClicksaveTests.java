@@ -82,7 +82,6 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_1);
         Optional<Person> fetched = jpaPersonRepository.findById(TEST_PERSON_1.getId());
         assertTrue(fetched.isPresent());
-        fetched.get().loadImage();
         assertEquals(TEST_PERSON_1, fetched.get());
     }
 
@@ -299,22 +298,44 @@ public class ClicksaveTests {
 
     @Disabled
     @Test
-    void saveStressTest() throws IOException {
-        int iterations = 100_000;
-        List<Person> persons = new ArrayList<>();
+    void saveFindStressTest() throws IOException {
+        int iterations = 10_000;
+        long startTime = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
             Person person = Person.buildMockPerson();
-            persons.add(person);
+            jpaPersonRepository.save(person);
+            jpaPersonRepository.findById(person.getId());
         }
+        long endTime = System.nanoTime();
+        double executionTime =  (endTime - startTime) / 1_000_000.0;
+        System.out.println("Time to saving: " + executionTime);
+    }
+
+    @Disabled
+    @Test
+    void saveStressTest() throws IOException {
+        int iterations = 100_000;
         long startTime = System.nanoTime();
-        for (Person person : persons) {
+        for (int i = 0; i < iterations; i++) {
+            Person person = Person.buildMockPerson();
             jpaPersonRepository.save(person);
         }
         long endTime = System.nanoTime();
         double executionTime =  (endTime - startTime) / 1_000_000.0;
+        System.out.println("Time to saving: " + executionTime);
+    }
 
-        List<Person> fetched = jpaPersonRepository.findAll();
-        assertEquals(iterations, fetched.size());
+    @Disabled
+    @Test
+    void saveOneMStressTest() throws IOException {
+        int iterations = 1_000_000;
+        long startTime = System.nanoTime();
+        for (int i = 0; i < iterations; i++) {
+            Person person = Person.buildMockPerson();
+            jpaPersonRepository.save(person);
+        }
+        long endTime = System.nanoTime();
+        double executionTime =  (endTime - startTime) / 1_000_000.0;
         System.out.println("Time to saving: " + executionTime);
     }
 
