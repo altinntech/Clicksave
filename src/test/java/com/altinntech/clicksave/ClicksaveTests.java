@@ -1,5 +1,6 @@
 package com.altinntech.clicksave;
 
+import com.altinntech.clicksave.examples.dto.ExampleResponse;
 import com.altinntech.clicksave.examples.dto.PersonResponse;
 import com.altinntech.clicksave.examples.entity.Gender;
 import com.altinntech.clicksave.examples.entity.Job;
@@ -274,6 +275,21 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_5);
         List<PersonResponse> fetched = jpaPersonRepository.annotationBasedQueryFindAll_Projection_FieldsOverload();
         assertEquals(5, fetched.size());
+    }
+
+    @Test
+    void aggregateQuery_SumAgeByGender() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        ExampleResponse males = new ExampleResponse(99L, Gender.MALE);
+        ExampleResponse females = new ExampleResponse(62L, Gender.FEMALE);
+        List<ExampleResponse> fetched = jpaPersonRepository.aggregationSumAgeByGender();
+        assertEquals(2, fetched.size());
+        assertEquals(males, fetched.get(0));
+        assertEquals(females, fetched.get(1));
     }
 
     @Test

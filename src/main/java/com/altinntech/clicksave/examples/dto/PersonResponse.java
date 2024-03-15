@@ -1,6 +1,10 @@
 package com.altinntech.clicksave.examples.dto;
 
+import com.altinntech.clicksave.annotations.Column;
+import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.annotations.Reference;
+import com.altinntech.clicksave.enums.EnumType;
+import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.examples.entity.CompanyMetadata;
 import com.altinntech.clicksave.examples.entity.Job;
 import com.altinntech.clicksave.examples.entity.Person;
@@ -11,10 +15,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PersonResponse { // you can use dto projections
 
+    @Column(FieldType.STRING)
     @Reference("name") // this annotation is used to determine the column in source entity
     String some_name;
+    @Column(FieldType.STRING)
     String lastName;
+    @EnumColumn(EnumType.BY_ID)
     Job job;
+    @Column(FieldType.STRING)
     @Reference("description")
     String description;
     String this_field_doesnt_exist;

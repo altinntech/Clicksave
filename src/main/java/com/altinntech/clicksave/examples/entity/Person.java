@@ -4,6 +4,8 @@ import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.CSUtils;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -17,6 +19,8 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @ClickHouseEntity(forTest = true) // you should use this annotation for persistence entity
+@PartitionBy("toYYYYMM(timestamp)")
+@OrderBy("")
 @Batching(batchSize = 10000) // add batch for saving
 public class Person {
 

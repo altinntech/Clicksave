@@ -113,7 +113,7 @@ public class QueryExecutor {
                         if (resultSet.next()) {
                             Object entity;
                             if (!returnClass.equals(entityClass))
-                                entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet, classDataCache);
+                                entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet);
                             else
                                 entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache);
                             bootstrap.releaseConnection(connection);
@@ -131,7 +131,7 @@ public class QueryExecutor {
                         while (resultSet.next()) {
                             Object entity;
                             if (!returnClass.equals(entityClass))
-                                entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet, classDataCache);
+                                entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet);
                             else
                                 entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache);
                             entities.add(entity);
@@ -180,7 +180,7 @@ public class QueryExecutor {
         List<FieldData> fieldsToFetch;
 
         if (!returnClass.equals(entityClass)) {
-            ProjectionClassData projectionClassData = projectionClassDataCache.get(returnClass, fieldDataCacheList);
+            ProjectionClassData projectionClassData = projectionClassDataCache.get(returnClass);
             fieldsToFetch = new ArrayList<>(projectionClassData.getFields());
         } else {
             fieldsToFetch = getFieldsToFetch(fieldDataCacheList);

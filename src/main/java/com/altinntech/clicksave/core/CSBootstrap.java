@@ -1,10 +1,7 @@
 package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.*;
-import com.altinntech.clicksave.core.dto.ClassDataCache;
-import com.altinntech.clicksave.core.dto.ColumnData;
-import com.altinntech.clicksave.core.dto.EmbeddableClassData;
-import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
@@ -82,7 +79,9 @@ public class CSBootstrap {
 
             classDataCache.setTableName(buildTableName(clazz));
             classDataCache.setBatchingAnnotation(clazz.getAnnotation(Batching.class));
-            getFieldsData(clazz, classDataCache);
+            PreparedFieldsData preparedFieldsData = getFieldsData(clazz);
+            classDataCache.setFields(preparedFieldsData.getFields());
+            classDataCache.setIdField(preparedFieldsData.getIdField());
 
             classDataCacheMap.put(clazz, classDataCache);
             debug("Find class: " + clazz);
@@ -90,7 +89,8 @@ public class CSBootstrap {
 
         for (Class<?> clazz : embeddableClasses) {
             EmbeddableClassData embeddableClassData = new EmbeddableClassData();
-            getFieldsData(clazz, embeddableClassData);
+            PreparedFieldsData preparedFieldsData = getFieldsData(clazz);
+            embeddableClassData.setFields(preparedFieldsData.getFields());
 
             embeddableClassDataCacheMap.put(clazz, embeddableClassData);
             debug("Find embeddable class: " + clazz);

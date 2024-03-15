@@ -69,11 +69,11 @@ public class CSRequestHandler implements MethodHandler {
                 }
             }
         } catch (SQLException e) {
-            error("Error while processing SQL query", this.getClass());
+            error("Error while processing SQL query: " + e.getMessage(), this.getClass());
         } catch (ClassCacheNotFoundException e) {
             error("ClassDataCache not found for " + entityType + ". Make sure that entity has an @ClickHouseEntity annotation", this.getClass());
         } catch (IllegalAccessException e) {
-            error("Illegal access to entity", this.getClass());
+            error("Illegal access to entity " + entityType + ": " + e.getMessage(), this.getClass());
         }
         return null;
     }

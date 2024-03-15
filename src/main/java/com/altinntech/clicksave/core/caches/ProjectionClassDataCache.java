@@ -3,12 +3,13 @@ package com.altinntech.clicksave.core.caches;
 import com.altinntech.clicksave.annotations.Reference;
 import com.altinntech.clicksave.core.CSUtils;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.core.dto.PreparedFieldsData;
 import com.altinntech.clicksave.core.dto.ProjectionClassData;
-import com.altinntech.clicksave.core.dto.ProjectionFieldData;
 
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static com.altinntech.clicksave.core.CSUtils.getFieldsData;
 
 /**
  * The {@code ProjectionClassDataCache} class is a cache for storing metadata about projection classes.
@@ -36,6 +37,8 @@ public class ProjectionClassDataCache {
     private ProjectionClassDataCache() {
     }
 
+
+
     /**
      * Retrieves the ProjectionClassData for a given class.
      *
@@ -43,48 +46,15 @@ public class ProjectionClassDataCache {
      * @return the ProjectionClassData for the specified class
      */
     public ProjectionClassData get(Class<?> clazz) {
-        return cache.get(clazz);
-    }
-
-    /**
-     * Retrieves the ProjectionClassData for a given class.
-     * If the class is not cached, it populates the cache with the provided originalEntityFieldDataList.
-     *
-     * @param clazz                       the class for which to retrieve ProjectionClassData
-     * @param originalEntityFieldDataList the list of FieldDataCache representing fields in the original entity
-     * @return the ProjectionClassData for the specified class
-     */
-    public ProjectionClassData get(Class<?> clazz, List<FieldDataCache> originalEntityFieldDataList) {
         if (!cache.containsKey(clazz))
-            put(clazz, originalEntityFieldDataList);
+            put(clazz);
         return cache.get(clazz);
     }
 
-    private void put(Class<?> clazz, List<FieldDataCache> originalEntityFieldDataList) {
+    private void put(Class<?> clazz) {
         ProjectionClassData projectionClassData = new ProjectionClassData();
-        List<ProjectionFieldData> projectionFieldDataList = new ArrayList<>();
-
-        Set<String> originalFieldNames = originalEntityFieldDataList.stream()
-                .map(FieldDataCache::getFieldInTableName)
-                .collect(Collectors.toSet());
-
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            ProjectionFieldData projectionFieldData = new ProjectionFieldData();
-            projectionFieldData.setField(field);
-            projectionFieldData.setFieldName(field.getName());
-            projectionFieldData.setReferenceAnnotation(field.getAnnotation(Reference.class));
-            if (projectionFieldData.getReferenceAnnotationOptional().isPresent()) {
-                projectionFieldData.setFieldInTableName(CSUtils.toSnakeCase(projectionFieldData.getReferenceAnnotationOptional().get().value()));
-            } else {
-                projectionFieldData.setFieldInTableName(CSUtils.toSnakeCase(projectionFieldData.getFieldName()));
-            }
-
-            if (originalFieldNames.contains(projectionFieldData.getFieldInTableName()) || projectionFieldData.getReferenceAnnotationOptional().isPresent())
-                projectionFieldDataList.add(projectionFieldData);
-        }
-
-        projectionClassData.setFields(projectionFieldDataList);
+        PreparedFieldsData preparedFieldsData = getFieldsData(clazz);
+        projectionClassData.setFields(preparedFieldsData.getFields());
         cache.put(clazz, projectionClassData);
     }
 }

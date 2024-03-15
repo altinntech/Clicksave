@@ -82,11 +82,10 @@ public class CSUtils {
      * Retrieves and initializes the data of fields for the given class and stores it in the provided ClassDataCache.
      *
      * @param clazz          the class
-     * @param classDataCache the class data cache
      * @return the list of field data caches
      * @throws FieldInitializationException if there is an issue initializing the fields
      */
-    static List<FieldDataCache> getFieldsData(Class<?> clazz, ClassData classDataCache) throws FieldInitializationException {
+    public static PreparedFieldsData getFieldsData(Class<?> clazz) throws FieldInitializationException {
         Field[] fields = clazz.getDeclaredFields();
         List<FieldDataCache> result = new ArrayList<>();
         // always must be one
@@ -137,6 +136,8 @@ public class CSUtils {
                     fieldData.setLob(true);
                     fieldData.setFieldType(FieldType.STRING);
                     fieldData.setLobAnnotation(lob);
+                } else if (annotation instanceof Reference reference) {
+                    fieldData.setReferenceAnnotation(reference);
                 }
             }
 
@@ -151,11 +152,11 @@ public class CSUtils {
                 }
             }
         }
-        if (idFieldsCount != 1 && classDataCache instanceof ClassDataCache)
-            throw new EntityInitializationException("Entity must have one id field");
-        classDataCache.setFields(result);
-        classDataCache.setIdField(idField);
-        return result;
+        PreparedFieldsData preparedFieldsData = new PreparedFieldsData();
+        preparedFieldsData.setFields(result);
+        preparedFieldsData.setIdField(idField);
+        preparedFieldsData.setIdFieldsCount(idFieldsCount);
+        return preparedFieldsData;
     }
 
     /**
@@ -184,6 +185,8 @@ public class CSUtils {
             setEnumOrdinalFieldValue(entity, field, (Integer) value, fieldData);
         } else if (isValidFieldValue(fieldType, value)) {
             setField(entity, field, value);
+        } else {
+            warn("Field " + fieldData.getFieldName() + "(" + fieldData.getType() + ")" + " is not valid for type " + value.getClass());
         }
     }
 
@@ -337,30 +340,29 @@ public class CSUtils {
      * @param <T>            the type parameter
      * @param returnType     the return type of the DTO entity
      * @param resultSet      the ResultSet containing data
-     * @param classDataCache the ClassDataCache containing field metadata
      * @return the DTO entity object created from the ResultSet
      * @throws SQLException the SQL exception
      */
-    public static <T> T createDtoEntityFromResultSet(Class<T> returnType, ResultSet resultSet, ClassDataCache classDataCache) throws SQLException {
+    public static <T> T createDtoEntityFromResultSet(Class<T> returnType, ResultSet resultSet) throws SQLException {
         T entity = null;
         ProjectionClassDataCache projectionClassDataCache = ProjectionClassDataCache.getInstance();
-        ProjectionClassData projectionClassData = projectionClassDataCache.get(returnType, classDataCache.getFields());
+        ProjectionClassData projectionClassData = projectionClassDataCache.get(returnType);
 
         try {
             entity = returnType.getDeclaredConstructor().newInstance();
-            List<ProjectionFieldData> fieldDataList = projectionClassData.getFields();
-            for (ProjectionFieldData fieldData : fieldDataList) {
+            List<FieldDataCache> fieldDataList = projectionClassData.getFields();
+            for (FieldDataCache fieldData : fieldDataList) {
                 Field field = fieldData.getField();
                 field.setAccessible(true);
                 Optional<Reference> referenceAnnotationOptional = fieldData.getReferenceAnnotationOptional();
 
-                String fieldNameInEntity;
+                String fieldNameInResultSet;
                 if (referenceAnnotationOptional.isPresent()) {
-                    fieldNameInEntity = referenceAnnotationOptional.get().value();
+                    fieldNameInResultSet = referenceAnnotationOptional.get().value();
                 } else {
-                    fieldNameInEntity = fieldData.getFieldName();
+                    fieldNameInResultSet = fieldData.getFieldInTableName();
                 }
-                setValueFromResultSet(resultSet, classDataCache, entity, field, fieldNameInEntity);
+                setValueFromResultSet(resultSet, fieldData, entity, field, fieldNameInResultSet);
 
             }
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | IllegalArgumentException |
@@ -370,17 +372,19 @@ public class CSUtils {
         return entity;
     }
 
-    private static <T> void setValueFromResultSet(ResultSet resultSet, ClassData classDataCache, T entity, Field field, String fieldNameInEntity) throws SQLException, IllegalAccessException, ClassCacheNotFoundException {
-        FieldDataCache fieldDataCache = findFieldDataCache(fieldNameInEntity, classDataCache);
-        if (fieldDataCache != null) {
-            String columnName = fieldDataCache.getFieldInTableName();
-            boolean columnFound = isColumnFound(resultSet, columnName);
-            if(columnFound) {
-                Object value = resultSet.getObject(columnName);
-                setFieldValue(entity, field, value, fieldDataCache);
-            } else {
-                warn("Column '" + columnName + "' not found in resultSet");
-            }
+    private static <T> void setValueFromResultSet(ResultSet resultSet, FieldDataCache fieldDataCache, T entity, Field field, String fieldNameInEntity) throws SQLException, IllegalAccessException, ClassCacheNotFoundException {
+        String columnName;
+        if (fieldNameInEntity != null) {
+            columnName = fieldNameInEntity;
+        } else {
+            columnName = fieldDataCache.getFieldInTableName();
+        }
+        boolean columnFound = isColumnFound(resultSet, columnName);
+        if(columnFound) {
+            Object value = resultSet.getObject(columnName);
+            setFieldValue(entity, field, value, fieldDataCache);
+        } else {
+            warn("Column '" + columnName + "' not found in resultSet");
         }
     }
 
@@ -409,7 +413,7 @@ public class CSUtils {
                     Field field = fieldDataCache.getField();
                     setField(entity, field, value);
                 } else {
-                    setValueFromResultSet(resultSet, classDataCache, entity, fieldDataCache.getField(), fieldDataCache.getFieldName());
+                    setValueFromResultSet(resultSet, fieldDataCache, entity, fieldDataCache.getField(), null);
                 }
             }
         } catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchMethodException |

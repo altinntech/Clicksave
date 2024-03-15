@@ -19,6 +19,6 @@ import java.util.List;
 @NoArgsConstructor
 public class ProjectionClassData {
 
-    private List<ProjectionFieldData> fields;
+    private List<FieldDataCache> fields;
 }
 

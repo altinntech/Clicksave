@@ -1,9 +1,6 @@
 package com.altinntech.clicksave.core.dto;
 
-import com.altinntech.clicksave.annotations.Column;
-import com.altinntech.clicksave.annotations.Embedded;
-import com.altinntech.clicksave.annotations.EnumColumn;
-import com.altinntech.clicksave.annotations.Lob;
+import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.CSUtils;
 import com.altinntech.clicksave.enums.FieldType;
 import lombok.Data;
@@ -49,6 +46,7 @@ public class FieldDataCache implements FieldData {
     private EnumColumn enumColumnAnnotation;
     private Embedded embeddedAnnotation;
     private Lob lobAnnotation;
+    private Reference referenceAnnotation;
 
     /**
      * Retrieves the optional Column annotation associated with the field.
@@ -84,6 +82,23 @@ public class FieldDataCache implements FieldData {
      */
     public Optional<Lob> getLobAnnotation() {
         return Optional.ofNullable(lobAnnotation);
+    }
+
+    /**
+     * Retrieves the optional Reference annotation associated with the field.
+     *
+     * @return the optional Reference annotation
+     */
+    public Optional<Reference> getReferenceAnnotationOptional() {
+        return Optional.ofNullable(referenceAnnotation);
+    }
+
+    public String getFieldInTableName() {
+        if (referenceAnnotation != null) {
+            return referenceAnnotation.value();
+        } else {
+            return fieldInTableName;
+        }
     }
 
     /**
