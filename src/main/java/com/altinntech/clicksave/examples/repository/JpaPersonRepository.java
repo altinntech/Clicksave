@@ -53,5 +53,8 @@ public interface JpaPersonRepository extends ClickHouseJpa<Person, UUID> {
     List<PersonResponse> annotationBasedQueryFindAll_Projection_FieldsOverload();
 
     @Query("SELECT gender, sum(age) AS age FROM person GROUP BY gender")
-    List<ExampleResponse> aggregationSumAgeByGender();
+    List<ExampleResponse> aggregationSumAgeByGender(); // supports aggregation functions
+
+    @Query("SELECT gender, sum(age) AS age, avg(experience) AS experience FROM person GROUP BY gender")
+    List<ExampleResponse> aggregationSumAgeAvgExpByGender();
 }

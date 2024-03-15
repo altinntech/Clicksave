@@ -20,7 +20,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @ClickHouseEntity(forTest = true) // you should use this annotation for persistence entity
 @PartitionBy("toYYYYMM(timestamp)")
-@OrderBy("")
+@OrderBy("(gender)")
 @Batching(batchSize = 10000) // add batch for saving
 public class Person {
 
@@ -101,7 +101,7 @@ public class Person {
     public static EmployeeInfo buildMockEmployeeInfo() {
         EmployeeInfo employeeInfo = new EmployeeInfo();
         employeeInfo.description = CSUtils.generateRandomString(15);
-        employeeInfo.experience = (float) CSUtils.generateRandomNumber(1, 99);
+        employeeInfo.experience = (double) CSUtils.generateRandomNumber(1, 99);
         employeeInfo.setWorkInfo(buildMockWorkInfo());
         return employeeInfo;
     }

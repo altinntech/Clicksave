@@ -17,8 +17,8 @@ public class EmployeeInfo {
 
     @Column(FieldType.STRING)
     String description;
-    @Column(FieldType.FLOAT)
-    Float experience;
+    @Column(FieldType.DOUBLE)
+    Double experience;
     @Embedded
     WorkInfo workInfo;
 }

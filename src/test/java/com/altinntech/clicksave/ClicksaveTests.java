@@ -79,7 +79,7 @@ public class ClicksaveTests {
     }
 
     @Test
-    void find() throws IOException {
+    void find() {
         jpaPersonRepository.save(TEST_PERSON_1);
         Optional<Person> fetched = jpaPersonRepository.findById(TEST_PERSON_1.getId());
         assertTrue(fetched.isPresent());
@@ -284,9 +284,27 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_3);
         jpaPersonRepository.save(TEST_PERSON_4);
         jpaPersonRepository.save(TEST_PERSON_5);
-        ExampleResponse males = new ExampleResponse(99L, Gender.MALE);
-        ExampleResponse females = new ExampleResponse(62L, Gender.FEMALE);
+        ExampleResponse males = new ExampleResponse(99L, Gender.MALE, null);
+        ExampleResponse females = new ExampleResponse(62L, Gender.FEMALE, null);
         List<ExampleResponse> fetched = jpaPersonRepository.aggregationSumAgeByGender();
+        assertEquals(2, fetched.size());
+        assertEquals(males, fetched.get(0));
+        assertEquals(females, fetched.get(1));
+    }
+
+    @Test
+    void aggregateQuery_SumAgeAvgExpByGender() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        ExampleResponse males = new ExampleResponse(99L, Gender.MALE, ((TEST_PERSON_1.getEmployeeInfo().getExperience()
+                        + TEST_PERSON_2.getEmployeeInfo().getExperience()
+                        + TEST_PERSON_3.getEmployeeInfo().getExperience()) / 3));
+        ExampleResponse females = new ExampleResponse(62L, Gender.FEMALE, ((TEST_PERSON_4.getEmployeeInfo().getExperience()
+                + TEST_PERSON_5.getEmployeeInfo().getExperience()) / 2));
+        List<ExampleResponse> fetched = jpaPersonRepository.aggregationSumAgeAvgExpByGender();
         assertEquals(2, fetched.size());
         assertEquals(males, fetched.get(0));
         assertEquals(females, fetched.get(1));
@@ -442,7 +460,7 @@ public class ClicksaveTests {
     }
 
     String calculatePerformanceStatus(double valueToTest, double epsilon, double maxTime) {
-        double exmValue = 0.0;
+        double exmValue;
         String status = "";
 
         exmValue = valueToTest;

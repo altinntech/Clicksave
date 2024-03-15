@@ -19,4 +19,6 @@ public class ExampleResponse {
     Long age;
     @EnumColumn(EnumType.STRING)
     Gender gender;
+    @Column(FieldType.DOUBLE)
+    Double experience;
 }
