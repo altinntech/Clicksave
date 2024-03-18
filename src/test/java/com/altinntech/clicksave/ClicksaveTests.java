@@ -72,7 +72,7 @@ public class ClicksaveTests {
         Person person = fetched.get();
         person.setAge(40);
         jpaPersonRepository.save(person);
-        Thread.sleep(500);
+        Thread.sleep(5000);
         Optional<Person> fetched2 = jpaPersonRepository.findById(person.getId());
         assertTrue(fetched2.isPresent());
         assertEquals(person, fetched2.get());

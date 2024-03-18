@@ -84,8 +84,8 @@ public class CSBootstrap {
             classDataCache.setPartitionByAnnotation(clazz.getAnnotation(PartitionBy.class));
             classDataCache.setOrderByAnnotation(clazz.getAnnotation(OrderBy.class));
             PreparedFieldsData preparedFieldsData = getFieldsData(clazz);
-            if (preparedFieldsData.getIdFieldsCount() != 0) {
-                throw new EntityInitializationException("Entity must have at least one id field");
+            if (preparedFieldsData.getIdFieldsCount() != 1) {
+                throw new EntityInitializationException("Entity must have at least one id field: " + classDataCache.getTableName());
             }
             classDataCache.setFields(preparedFieldsData.getFields());
             classDataCache.setIdField(preparedFieldsData.getIdField());
@@ -262,8 +262,11 @@ public class CSBootstrap {
         parseQueryForCreate(primaryKey, fields, query);
 
         query.delete(query.length() - 2, query.length()).append(") ");
-        query.append("ENGINE = MergeTree ").append("PRIMARY KEY (").append(primaryKey).append(")")
-                .append(TableAdditionsResolver.getAdditions(classDataCache));
+        query.append("ENGINE = MergeTree ");
+        if (primaryKey.length() > 0) {
+            query.append("PRIMARY KEY (").append(primaryKey).append(")");
+        }
+        query.append(TableAdditionsResolver.getAdditions(classDataCache));
         return query.toString();
     }
 
@@ -288,7 +291,7 @@ public class CSBootstrap {
                 query.append(fieldName).append(" ");
                 query.append(fieldData.getFieldType().getType());
 
-                if (fieldData.isPk() || fieldData.isId()) {
+                if (fieldData.isPk()) {
                     if (primaryKey.length() == 0) {
                         primaryKey.append(fieldName);
                     } else {
@@ -368,6 +371,7 @@ public class CSBootstrap {
             connectionManager.releaseConnection(connection);
         } catch (SQLException e) {
             error("Query execution error: " + e.getMessage());
+            System.exit(-1);
         }
     }
 }

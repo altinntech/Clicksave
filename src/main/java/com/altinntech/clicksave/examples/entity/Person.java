@@ -20,15 +20,15 @@ import java.util.UUID;
 @AllArgsConstructor
 @ClickHouseEntity(forTest = true) // you should use this annotation for persistence entity
 @PartitionBy("toYYYYMM(timestamp)")
-@OrderBy("(gender)")
-@Batching(batchSize = 10000) // add batch for saving
+@OrderBy("(id, gender)")
+//@Batching(batchSize = 10000) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor
     public Person() {
     }
 
-    @Column(value = FieldType.UUID, id = true) // it is recommended to make the id field a UUID type
+    @Column(value = FieldType.UUID, id = true, primaryKey = true) // it is recommended to make the id field a UUID type
     UUID id;
     @Column(FieldType.STRING)
     String name;

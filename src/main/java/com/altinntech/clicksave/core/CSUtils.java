@@ -108,7 +108,6 @@ public class CSUtils {
                         idFieldsCount++;
                         isId = true;
                         fieldData.setId(true);
-                        fieldData.setPk(true);
                     }
                     if (column.primaryKey()) {
                         fieldData.setPk(true);
