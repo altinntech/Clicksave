@@ -4,7 +4,9 @@ import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
+import com.altinntech.clicksave.core.utils.TableAdditionsResolver;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import org.reflections.Reflections;
 
@@ -79,12 +81,17 @@ public class CSBootstrap {
 
             classDataCache.setTableName(buildTableName(clazz));
             classDataCache.setBatchingAnnotation(clazz.getAnnotation(Batching.class));
+            classDataCache.setPartitionByAnnotation(clazz.getAnnotation(PartitionBy.class));
+            classDataCache.setOrderByAnnotation(clazz.getAnnotation(OrderBy.class));
             PreparedFieldsData preparedFieldsData = getFieldsData(clazz);
+            if (preparedFieldsData.getIdFieldsCount() != 0) {
+                throw new EntityInitializationException("Entity must have at least one id field");
+            }
             classDataCache.setFields(preparedFieldsData.getFields());
             classDataCache.setIdField(preparedFieldsData.getIdField());
 
             classDataCacheMap.put(clazz, classDataCache);
-            debug("Find class: " + clazz);
+            debug("Find entity class: " + clazz);
         }
 
         for (Class<?> clazz : embeddableClasses) {
@@ -184,6 +191,7 @@ public class CSBootstrap {
             if (!isTableExists(tableName)) {
                 String createTableQuery = generateCreateTableQuery(clazz);
                 executeQuery(createTableQuery);
+                info("Table created: " + tableName);
             } else {
                 updateTable(clazz);
             }
@@ -254,7 +262,8 @@ public class CSBootstrap {
         parseQueryForCreate(primaryKey, fields, query);
 
         query.delete(query.length() - 2, query.length()).append(") ");
-        query.append("ENGINE = MergeTree ").append("PRIMARY KEY (").append(primaryKey).append(")");
+        query.append("ENGINE = MergeTree ").append("PRIMARY KEY (").append(primaryKey).append(")")
+                .append(TableAdditionsResolver.getAdditions(classDataCache));
         return query.toString();
     }
 

@@ -1,6 +1,8 @@
 package com.altinntech.clicksave.core.dto;
 
 import com.altinntech.clicksave.annotations.Batching;
+import com.altinntech.clicksave.annotations.OrderBy;
+import com.altinntech.clicksave.annotations.PartitionBy;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -23,6 +25,8 @@ public class ClassDataCache implements ClassData {
     private List<FieldDataCache> fields;
     private FieldDataCache idField;
     private Batching batchingAnnotation;
+    private PartitionBy partitionByAnnotation;
+    private OrderBy orderByAnnotation;
 
     /**
      * Retrieves the optional batching annotation associated with the class.
@@ -31,6 +35,24 @@ public class ClassDataCache implements ClassData {
      */
     public Optional<Batching> getBatchingAnnotationOptional() {
         return Optional.ofNullable(batchingAnnotation);
+    }
+
+    /**
+     * Retrieves the optional partitionBy annotation associated with the class.
+     *
+     * @return the optional partitionBy annotation
+     */
+    public Optional<PartitionBy> getPartitionByAnnotationOptional() {
+        return Optional.ofNullable(partitionByAnnotation);
+    }
+
+    /**
+     * Retrieves the optional orderBy annotation associated with the class.
+     *
+     * @return the optional orderBy annotation
+     */
+    public Optional<OrderBy> getOrderByAnnotationOptional() {
+        return Optional.ofNullable(orderByAnnotation);
     }
 }
 
