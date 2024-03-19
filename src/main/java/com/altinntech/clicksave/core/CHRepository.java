@@ -5,8 +5,10 @@ import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.EmbeddableClassData;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.enums.EngineType;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
+import com.altinntech.clicksave.enums.SystemField;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
@@ -89,11 +91,7 @@ public class CHRepository {
         List<Object> fieldValues = new ArrayList<>();
 
         extractFieldValuesForCreate(entity, idType, classDataCache, insertQuery, valuesPlaceholder, fields, fieldValues);
-
-        insertQuery.delete(insertQuery.length() - 2, insertQuery.length()).append(")");
-        valuesPlaceholder.delete(valuesPlaceholder.length() - 2, valuesPlaceholder.length()).append(")");
-
-        String query = insertQuery + valuesPlaceholder.toString();
+        String query = buildInsertQuery(insertQuery, valuesPlaceholder, classDataCache, fieldValues);
 
         Optional<Batching> batchSizeAnnotation = classDataCache.getBatchingAnnotationOptional();
         if (batchSizeAnnotation.isPresent()) {
@@ -117,6 +115,19 @@ public class CHRepository {
         }
 
         return entity;
+    }
+
+    private String buildInsertQuery(StringBuilder insertQuery, StringBuilder valuesPlaceholder, ClassDataCache classDataCache, List<Object> fieldValues) {
+        if (classDataCache.getEngineType() == EngineType.VersionedCollapsingMergeTree) {
+            insertQuery.append(SystemField.Sign.getName()).append(", ").append(SystemField.Version.getName()).append(", ");
+            valuesPlaceholder.append("?, ?, ");
+            fieldValues.add(1);
+            fieldValues.add(1);
+        }
+        insertQuery.delete(insertQuery.length() - 2, insertQuery.length()).append(")");
+        valuesPlaceholder.delete(valuesPlaceholder.length() - 2, valuesPlaceholder.length()).append(")");
+
+        return insertQuery + valuesPlaceholder.toString();
     }
 
     private <T, ID> void extractFieldValuesForCreate(T entity, ID idType, ClassDataCache classDataCache, StringBuilder insertQuery, StringBuilder valuesPlaceholder, List<FieldDataCache> fields, List<Object> fieldValues) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {

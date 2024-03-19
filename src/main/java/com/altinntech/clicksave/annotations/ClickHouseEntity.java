@@ -1,5 +1,7 @@
 package com.altinntech.clicksave.annotations;
 
+import com.altinntech.clicksave.enums.EngineType;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,4 +17,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface ClickHouseEntity {
     boolean forTest() default false;
+
+    EngineType engine() default EngineType.MergeTree;
 }

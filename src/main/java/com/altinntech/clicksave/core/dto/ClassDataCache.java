@@ -1,12 +1,12 @@
 package com.altinntech.clicksave.core.dto;
 
-import com.altinntech.clicksave.annotations.Batching;
-import com.altinntech.clicksave.annotations.OrderBy;
-import com.altinntech.clicksave.annotations.PartitionBy;
+import com.altinntech.clicksave.annotations.*;
+import com.altinntech.clicksave.enums.EngineType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -21,12 +21,15 @@ import java.util.Optional;
 @NoArgsConstructor
 public class ClassDataCache implements ClassData {
 
+    private ClickHouseEntity CHEAnnotation;
     private String tableName;
     private List<FieldDataCache> fields;
     private FieldDataCache idField;
+    private EngineType engineType;
     private Batching batchingAnnotation;
     private PartitionBy partitionByAnnotation;
     private OrderBy orderByAnnotation;
+    private SystemTable systemTableAnnotation;
 
     /**
      * Retrieves the optional batching annotation associated with the class.
@@ -53,6 +56,33 @@ public class ClassDataCache implements ClassData {
      */
     public Optional<OrderBy> getOrderByAnnotationOptional() {
         return Optional.ofNullable(orderByAnnotation);
+    }
+
+    /**
+     * Retrieves the optional system table annotation associated with the class.
+     *
+     * @return the optional system table annotation
+     */
+    public Optional<SystemTable> getSystemTableAnnotationOptional() {
+        return Optional.ofNullable(systemTableAnnotation);
+    }
+
+    /**
+     * Retrieves the optional CHE annotation associated with the class.
+     *
+     * @return the optional CHE annotation
+     */
+    public Optional<ClickHouseEntity> getCHEAnnotationOptional() {
+        return Optional.ofNullable(CHEAnnotation);
+    }
+
+    public void setCHEAnnotation(ClickHouseEntity annotation) {
+        if (Objects.nonNull(annotation)) {
+            this.engineType = annotation.engine();
+        } else {
+            this.engineType = EngineType.MergeTree;
+        }
+        this.CHEAnnotation = annotation;
     }
 }
 

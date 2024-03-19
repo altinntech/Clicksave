@@ -2,14 +2,12 @@ package com.altinntech.clicksave.examples.entity;
 
 import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.CSUtils;
+import com.altinntech.clicksave.enums.EngineType;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -18,7 +16,7 @@ import java.util.UUID;
 
 @Data
 @AllArgsConstructor
-@ClickHouseEntity(forTest = true) // you should use this annotation for persistence entity
+@ClickHouseEntity(forTest = true, engine = EngineType.VersionedCollapsingMergeTree) // you should use this annotation for persistence entity
 @PartitionBy("toYYYYMM(timestamp)")
 @OrderBy("(id, gender)")
 //@Batching(batchSize = 10000) // add batch for saving
@@ -77,7 +75,7 @@ public class Person {
         this.enabled = true;
     }
 
-    public static Person buildMockPerson() throws IOException {
+    public static Person buildMockPerson() {
         Person person = new Person();
         person.name = CSUtils.generateRandomString(5);
         person.lastName = CSUtils.generateRandomString(10);
