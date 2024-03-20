@@ -76,8 +76,6 @@ public class CSBootstrap {
         Set<Class<?>> embeddableClasses = reflections.getTypesAnnotatedWith(Embeddable.class);
 
         for (Class<?> clazz : entityClasses) {
-            if (clazz.getAnnotation(ClickHouseEntity.class) != null && clazz.getAnnotation(ClickHouseEntity.class).forTest() && !Boolean.parseBoolean(defaultProperties.getTestEnv()))
-                return;
             ClassDataCache classDataCache = new ClassDataCache();
 
             classDataCache.setTableName(buildTableName(clazz));
@@ -179,6 +177,8 @@ public class CSBootstrap {
 
     private void createTablesFromAnnotatedClasses() throws FieldInitializationException, ClassCacheNotFoundException {
         for (Class<?> clazz : entityClasses) {
+            if (clazz.getAnnotation(ClickHouseEntity.class) != null && clazz.getAnnotation(ClickHouseEntity.class).forTest() && !Boolean.parseBoolean(defaultProperties.getTestEnv()))
+                continue;
             ClassDataCache classDataCache = getClassDataCache(clazz);
             String tableName = classDataCache.getTableName();
             if (!isTableExists(tableName)) {
