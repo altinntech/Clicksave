@@ -16,10 +16,10 @@ import java.util.UUID;
 
 @Data
 @AllArgsConstructor
-@ClickHouseEntity(forTest = true, engine = EngineType.VersionedCollapsingMergeTree) // you should use this annotation for persistence entity
-@PartitionBy("toYYYYMM(timestamp)")
-@OrderBy("(id, gender)")
-//@Batching(batchSize = 10000) // add batch for saving
+@ClickHouseEntity(forTest = true, engine = EngineType.MergeTree) // you should use this annotation for persistence entity
+//@PartitionBy("toYYYYMM(timestamp)")
+//@OrderBy("(id, gender)")
+@Batching(batchSize = 10000) // add batch for saving
 public class Person {
 
     // entity class must have a no arguments constructor

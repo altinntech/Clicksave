@@ -1,11 +1,13 @@
 package com.altinntech.clicksave.core.utils;
 
 import com.altinntech.clicksave.annotations.Column;
+import com.altinntech.clicksave.annotations.OrderBy;
 import com.altinntech.clicksave.annotations.SystemTable;
 import com.altinntech.clicksave.enums.FieldType;
 import lombok.Data;
 
 @SystemTable
+@OrderBy("(timestamp)")
 @Data
 public class ClicksaveSequence {
 

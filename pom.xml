@@ -34,7 +34,7 @@
 		</developer>
 	</developers>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>17</java.version>
 		<spring.boot.version>3.2.1</spring.boot.version>
 		<apache.camel.version>4.3.0</apache.camel.version>
 	</properties>

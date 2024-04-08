@@ -52,7 +52,7 @@ public class PartParser {
      */
     public void parse(String methodName) {
         List<String> fieldParts = new ArrayList<>(Arrays.stream(methodName.split(fieldPartSplitPattern)).toList());
-        fieldParts.set(0, removeServiceParts(fieldParts.getFirst()));
+        fieldParts.set(0, removeServiceParts(fieldParts.get(0)));
         serviceParts = extractServiceParts(methodName);
 
         for (int i = 0; i < serviceParts.size(); i++) {
@@ -63,7 +63,7 @@ public class PartParser {
             }
         }
 
-        if (!parts.getFirst().isServicePart()) {
+        if (!parts.get(0).isServicePart()) {
             throw new WrongQueryMethodException(methodName + " is not valid query method");
         }
     }

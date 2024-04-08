@@ -123,8 +123,8 @@ public class ClicksaveTests {
         List<Person> fetchedByString = jpaPersonRepository.findAllByGender(Gender.MALE);
         assertEquals(1, fetchedById.size());
         assertEquals(1, fetchedByString.size());
-        Person personOne = fetchedById.getFirst();
-        Person personTwo = fetchedById.getFirst();
+        Person personOne = fetchedById.get(0);
+        Person personTwo = fetchedById.get(0);
         assertEquals(personOne, TEST_PERSON_1);
         assertEquals(personTwo, TEST_PERSON_1);
     }

@@ -55,7 +55,7 @@ public class QueryBuilder {
      * @return the custom query metadata
      */
     public CustomQueryMetadata createQuery() {
-        qualifierPart = (CommonPart) parts.getFirst();
+        qualifierPart = (CommonPart) parts.get(0);
         QueryType queryType = qualifierPart.getQualifier();
         switch (queryType) {
             case SELECT -> buildSelectQuery();
