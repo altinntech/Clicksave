@@ -1,5 +1,16 @@
 # Changelog
 
+### [1.1.10 - Experimental] - 2024-04-14
+- Add support for custom replaceable queries
+
+### [1.1.9 - Experimental] - 2024-04-13
+- Add support for aggregate functions
+- Added indexes
+- Added VersionedCollapsingMergeTree engine (IN PROGRESS)
+- Downgrade to java 17
+- Fix table creation
+- Fix id fields counting
+
 ### [1.1.8] - 2024-03-14
 - Fix ConnectionManager memory leaks
 - Fix properties resolver error
