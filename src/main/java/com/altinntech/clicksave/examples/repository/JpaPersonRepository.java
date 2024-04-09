@@ -2,6 +2,7 @@ package com.altinntech.clicksave.examples.repository;
 
 import com.altinntech.clicksave.annotations.ClickHouseRepository;
 import com.altinntech.clicksave.annotations.Query;
+import com.altinntech.clicksave.annotations.SettableQuery;
 import com.altinntech.clicksave.examples.dto.ExampleResponse;
 import com.altinntech.clicksave.examples.dto.PersonResponse;
 import com.altinntech.clicksave.examples.entity.Gender;
@@ -57,4 +58,13 @@ public interface JpaPersonRepository extends ClickHouseJpa<Person, UUID> {
 
     @Query("SELECT gender, sum(age) AS age, avg(experience) AS experience FROM person GROUP BY gender")
     List<ExampleResponse> aggregationSumAgeAvgExpByGender();
+
+    @Query("SELECT * FROM person WHERE name = ?")
+    List<Person> findAllByName(String name);
+
+    @Query("SELECT * FROM person WHERE name = ? AND age = ?")
+    List<Person> findAllByNameAndAge(String name, Integer age);
+
+    @SettableQuery
+    List<Person> findAllByName_Settable(Class<?> producer, String query, Object ... params);
 }

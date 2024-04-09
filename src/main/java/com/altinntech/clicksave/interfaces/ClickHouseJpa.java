@@ -1,8 +1,9 @@
 package com.altinntech.clicksave.interfaces;
 
+import com.altinntech.clicksave.annotations.SettableQuery;
+
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * The {@code ClickHouseJpa} interface defines common JPA-like methods for interacting with ClickHouse databases.
@@ -49,4 +50,13 @@ public interface ClickHouseJpa<T, ID> {
      * Deletes all entities of type T.
      */
     void deleteAll();
+
+    /**
+     * Performs a custom query and returns the result.
+     *
+     * @param query the custom query to perform
+     * @return the result of the custom query
+     */
+    @SettableQuery
+    <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object... params);
 }

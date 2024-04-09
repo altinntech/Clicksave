@@ -293,6 +293,146 @@ public class ClicksaveTests {
     }
 
     @Test
+    void findAllByName() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        List<Person> fetched = jpaPersonRepository.findAllByName(TEST_PERSON_1.getName());
+        assertEquals(TEST_PERSON_1, fetched.get(0));
+    }
+
+    @Test
+    void findAllByNameAndAge() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+        List<Person> fetched = jpaPersonRepository.findAllByNameAndAge(TEST_PERSON_1.getName(), TEST_PERSON_1.getAge());
+        assertEquals(TEST_PERSON_1, fetched.get(0));
+    }
+
+    @Test
+    void findAllByName_settable() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+
+        String query = "SELECT * FROM person WHERE name = ?";
+        List<Person> fetched = jpaPersonRepository.findAllByName_Settable(Person.class, query, TEST_PERSON_1.getName());
+        assertEquals(TEST_PERSON_1, fetched.get(0));
+
+        query = "SELECT * FROM person WHERE name = ?";
+        fetched = jpaPersonRepository.findAllByName_Settable(Person.class, query, TEST_PERSON_2.getName());
+        assertEquals(TEST_PERSON_2, fetched.get(0));
+    }
+
+    @Test
+    void customReplaceableQuery() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+
+        String query = "SELECT * FROM person WHERE name = ?";
+        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, TEST_PERSON_1.getName());
+        assertEquals(TEST_PERSON_1, fetched.get(0));
+
+        query = "SELECT * FROM person WHERE name = ?";
+        fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, TEST_PERSON_2.getName());
+        assertEquals(TEST_PERSON_2, fetched.get(0));
+
+        query = "SELECT * FROM person WHERE name = ? AND age = ?";
+        fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, TEST_PERSON_3.getName(), TEST_PERSON_3.getAge());
+        assertEquals(TEST_PERSON_3, fetched.get(0));
+    }
+
+    @Test
+    void customReplaceableQuery_projection() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+
+        PersonResponse expected = PersonResponse.create(TEST_PERSON_1);
+        String query = "SELECT * FROM person WHERE name = ?";
+        List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query, TEST_PERSON_1.getName());
+        assertEquals(expected, fetched.get(0));
+    }
+
+    @Test
+    void customReplaceableQuery_projection_findAllByAge() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+
+        String query = "SELECT * FROM person WHERE age > ?";
+        List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query, 30);
+        assertEquals(2, fetched.size());
+    }
+
+    @Test
+    void customReplaceableQuery_projection_findAllByAgeAndGender() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+
+        String query = "SELECT * FROM person WHERE age > ? AND gender = ?";
+        List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query,
+                20, Gender.MALE);
+        assertEquals(3, fetched.size());
+    }
+
+    @Test
+    void customReplaceableQuery_aggregateQuery_SumAgeAvgExpByGender() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+
+        ExampleResponse males = new ExampleResponse(99L, Gender.MALE, ((TEST_PERSON_1.getEmployeeInfo().getExperience()
+                + TEST_PERSON_2.getEmployeeInfo().getExperience()
+                + TEST_PERSON_3.getEmployeeInfo().getExperience()) / 3));
+        ExampleResponse females = new ExampleResponse(62L, Gender.FEMALE, ((TEST_PERSON_4.getEmployeeInfo().getExperience()
+                + TEST_PERSON_5.getEmployeeInfo().getExperience()) / 2));
+
+        String query = "SELECT gender, sum(age) AS age, avg(experience) AS experience FROM person GROUP BY gender";
+        List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query);
+        assertEquals(2, fetched.size());
+        assertEquals(males, fetched.get(0));
+        assertEquals(females, fetched.get(1));
+    }
+
+    @Test
+    void customReplaceableQuery_aggregateQuery_SumAgeAvgExpByGenderAndJob() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+
+        ExampleResponse males = new ExampleResponse(28L, Gender.MALE, TEST_PERSON_2.getEmployeeInfo().getExperience());
+        ExampleResponse females = new ExampleResponse(34L, Gender.FEMALE, TEST_PERSON_5.getEmployeeInfo().getExperience());
+
+        String query = "SELECT gender, sum(age) AS age, avg(experience) AS experience FROM person WHERE job = ? GROUP BY gender";
+        List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query, Job.PROGRAMMER.getId());
+        assertEquals(2, fetched.size());
+        assertEquals(males, fetched.get(0));
+        assertEquals(females, fetched.get(1));
+    }
+
+    @Test
     void aggregateQuery_SumAgeAvgExpByGender() {
         jpaPersonRepository.save(TEST_PERSON_1);
         jpaPersonRepository.save(TEST_PERSON_2);

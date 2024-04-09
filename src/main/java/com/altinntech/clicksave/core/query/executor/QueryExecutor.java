@@ -2,6 +2,7 @@ package com.altinntech.clicksave.core.query.executor;
 
 import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.annotations.Query;
+import com.altinntech.clicksave.annotations.SettableQuery;
 import com.altinntech.clicksave.core.BatchCollector;
 import com.altinntech.clicksave.core.CSBootstrap;
 import com.altinntech.clicksave.core.CSUtils;
@@ -26,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,41 +70,23 @@ public class QueryExecutor {
      * @throws SQLException                if an SQL exception occurs
      */
     public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
-        String methodName = methodMetadata.getSourceMethod().getName();
         ClassDataCache classDataCache = bootstrap.getClassDataCache(entityClass);
         batchCollector.saveAndFlush(classDataCache);
 
-        if (!queryMetadataCache.containsKey(methodName)) {
-            Annotation[] annotations = methodMetadata.getSourceMethod().getAnnotations();
-            Query queryAnnotation = null;
-            for (Annotation annotation : annotations) {
-                if (annotation.annotationType() == Query.class) {
-                    queryAnnotation = (Query) annotation;
-                    break;
-                }
-            }
+        List<Object> argumentsList = new ArrayList<>(Arrays.asList(arguments));
 
-            if (queryAnnotation != null) {
-                CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
-                customQueryMetadata.setQueryBody(queryAnnotation.value());
-                customQueryMetadata.setPullType(getPullType(methodMetadata));
-                customQueryMetadata.setIsQueryFromAnnotation(true);
-                queryMetadataCache.addToCache(methodName, customQueryMetadata);
-            } else {
-                parseQueryMethod(returnClass, entityClass, methodName, classDataCache, methodMetadata);
-            }
-        }
+        String methodName = preprocessQueryObject(returnClass, entityClass, argumentsList, methodMetadata, classDataCache);
 
         CustomQueryMetadata query = (CustomQueryMetadata) queryMetadataCache.getFromCache(methodName);
         try(Connection connection = bootstrap.getConnection();
             PreparedStatement statement = connection.prepareStatement(query.getQueryBody())) {
             if (query.getIsQueryFromAnnotation()) {
-                for (int i = 1; i < arguments.length + 1; i++) {
-                    statement.setObject(i, arguments[i - 1]);
+                for (int i = 1; i < argumentsList.size() + 1; i++) {
+                    statement.setObject(i, argumentsList.get(i - 1));
                 }
             } else {
-                for (int i = 1; i < arguments.length + 1; i++) {
-                    setStatementArgument(arguments, query, statement, i);
+                for (int i = 1; i < argumentsList.size() + 1; i++) {
+                    setStatementArgument(argumentsList, query, statement, i);
                 }
             }
 
@@ -147,27 +131,75 @@ public class QueryExecutor {
         return null;
     }
 
-    private static void setStatementArgument(Object[] arguments, CustomQueryMetadata query, PreparedStatement statement, int i) throws SQLException {
+    //todo: refactor
+    private String preprocessQueryObject(Class<?> returnClass, Class<?> entityClass, List<Object> arguments, MethodMetadata methodMetadata, ClassDataCache classDataCache) throws ClassCacheNotFoundException {
+        String methodName = methodMetadata.getSourceMethod().getName();
+        Annotation[] annotations = methodMetadata.getSourceMethod().getAnnotations();
+        String queryBody = "";
+        Query queryAnnotation = null;
+        SettableQuery settableQuery = null;
+        for (Annotation annotation : annotations) {
+            if (annotation.annotationType() == Query.class) {
+                queryAnnotation = (Query) annotation;
+                break;
+            } else if (annotation.annotationType() == SettableQuery.class) {
+                settableQuery = (SettableQuery) annotation;
+                break;
+            }
+        }
+
+        if (settableQuery != null) {
+            arguments.remove(0);
+            methodName = String.valueOf((methodName + (String) arguments.get(0)).hashCode());
+            queryBody = (String) arguments.get(0);
+            arguments.remove(0);
+
+            Object[] array = (Object[]) arguments.get(0);
+            arguments.remove(0);
+            arguments.addAll(Arrays.asList(array));
+        }
+
+        if (!queryMetadataCache.containsKey(methodName)) {
+            if (queryAnnotation != null) {
+                CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
+                customQueryMetadata.setQueryBody(queryAnnotation.value());
+                customQueryMetadata.setPullType(getPullType(methodMetadata));
+                customQueryMetadata.setIsQueryFromAnnotation(true);
+                queryMetadataCache.addToCache(methodName, customQueryMetadata);
+            } else if (settableQuery != null) {
+                CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
+                customQueryMetadata.setQueryBody(queryBody);
+                customQueryMetadata.setPullType(getPullType(methodMetadata));
+                customQueryMetadata.setIsQueryFromAnnotation(true);
+                queryMetadataCache.addToCache(methodName, customQueryMetadata);
+            } else {
+                parseQueryMethod(returnClass, entityClass, methodName, classDataCache, methodMetadata);
+            }
+        }
+        return methodName;
+    }
+
+    private static void setStatementArgument(List<Object> arguments, CustomQueryMetadata query, PreparedStatement statement, int i) throws SQLException {
         FieldDataCache currentFieldData = query.getFields().get(i - 1);
         Optional<EnumColumn> enumColumnOptional = currentFieldData.getEnumColumnAnnotation();
         if (enumColumnOptional.isPresent()) {
             EnumColumn enumColumn = enumColumnOptional.get();
             switch (enumColumn.value()) {
                 case STRING -> {
-                    Enum<?> enumValue = (Enum<?>) arguments[i - 1];
+                    Enum<?> enumValue = (Enum<?>) arguments.get(i - 1);
                     statement.setObject(i, enumValue.toString());
                 }
                 case ORDINAL -> {
-                    Enum<?> enumValue = (Enum<?>) arguments[i - 1];
+                    Enum<?> enumValue = (Enum<?>) arguments.get(i - 1);
                     statement.setObject(i, enumValue.ordinal());
                 }
                 case BY_ID -> {
-                    EnumId enumValue = (EnumId) arguments[i - 1];
+                    EnumId enumValue = (EnumId) arguments.get(i - 1);
                     statement.setObject(i, enumValue.getId());
                 }
             }
         } else {
-            statement.setObject(i, arguments[i - 1]);
+            statement.setObject(i, arguments.get(i - 1));
         }
     }
 

@@ -2,7 +2,6 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.core.query.executor.QueryExecutor;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
-import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.ClickHouseJpa;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -12,7 +11,6 @@ import org.thepavel.icomponent.metadata.MethodMetadata;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Optional;
 
 import static com.altinntech.clicksave.log.CSLogger.error;
@@ -64,6 +62,9 @@ public class CSRequestHandler implements MethodHandler {
                 }
                 case "delete" -> handleDelete(arguments[0]);
                 case "deleteAll" -> handleDeleteAll(entityType);
+                case "findAllCustomQuery" -> {
+                    return handleCustomQuery(methodReturnType, entityType, arguments, methodMetadata);
+                }
                 default -> {
                     return handleQuery(methodReturnType, entityType, arguments, methodMetadata);
                 }
@@ -139,6 +140,11 @@ public class CSRequestHandler implements MethodHandler {
 
     private void handleDeleteAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
         repository.deleteAll(entityType);
+    }
+
+    private Object handleCustomQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+        methodReturnType = (Class<?>) arguments[0];
+        return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
     }
 
     private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
