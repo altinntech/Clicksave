@@ -27,7 +27,79 @@ developers can significantly reduce the time spent interacting with the database
 
 - Testing and Reliability: Clicksave comes with a set of unit tests, ensuring high reliability and stability in operation.
 
-## How to Install and Configure
+## How to Install and Configure (equals or above 1.1.9)
+
+1. Create settings.xml and configure it
+
+    - Edit maven settings.xml
+      ```bash
+      nano ~/.m2/settings.xml
+       ```
+
+    - Paste text into file
+       ```xml
+      <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+       http://maven.apache.org/xsd/settings-1.0.0.xsd">
+       
+            <mirrors>
+                <mirror>
+                    <id>my-repository-http-unblocker</id>
+                    <mirrorOf>snapshots</mirrorOf>
+                    <name></name>
+                    <url>http://217.25.90.14:8081/artifactory/libs-snapshot</url>
+                </mirror>
+            </mirrors>
+       </settings>
+       ```
+
+2. Import maven dependency to you project
+
+   Example:
+   ```xml
+   <repositories>
+        <repository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>libs-snapshot</name>
+            <url>http://217.25.90.14:8081/artifactory/libs-snapshot</url>
+        </repository>
+   </repositories>
+   
+   <dependency>
+        <groupId>com.altinntech</groupId>
+        <artifactId>clicksave</artifactId>
+        <version>1.1.9-EXPERIMENTAL</version>
+   </dependency>
+   ```
+
+3. Reload pom
+
+4. Add config class
+
+   ```java
+       @Configuration
+       @InterfaceComponentScan(basePackages = {"com.altinntech.gameprovider.historyservice.repositories.clicksave.clicksavejpa"})
+       @ComponentScan(basePackages = {"com.altinntech.clicksave"})
+       public class ClicksaveConfig {
+
+            @Autowired
+            Environment environment;
+
+            @Bean
+            public CSBootstrap csBootstrap() throws ClassCacheNotFoundException, SQLException {
+                DefaultProperties defaultProperties = DefaultProperties.fromEnvironment(environment);
+                return new CSBootstrap(defaultProperties);
+            }
+       }
+   ```
+5. Add to properties
+    ```properties
+   spring.main.allow-bean-definition-overriding=true
+    ```
+
+## How to Install and Configure (below 1.1.9)
 
 1. Create settings.xml and configure it
 
