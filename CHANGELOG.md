@@ -1,9 +1,12 @@
 # Changelog
 
-### [1.1.10 - Experimental] - 2024-04-14
+### [1.1.11 - Experimental] - 2024-04-10
+- Fix query params overload exception
+
+### [1.1.10 - Experimental] - 2024-04-08
 - Add support for custom replaceable queries
 
-### [1.1.9 - Experimental] - 2024-04-13
+### [1.1.9 - Experimental] - 2024-04-08
 - Add support for aggregate functions
 - Added indexes
 - Added VersionedCollapsingMergeTree engine (IN PROGRESS)
