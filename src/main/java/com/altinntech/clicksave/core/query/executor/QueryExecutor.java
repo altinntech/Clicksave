@@ -22,10 +22,7 @@ import org.thepavel.icomponent.metadata.MethodMetadata;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -80,13 +77,18 @@ public class QueryExecutor {
         CustomQueryMetadata query = (CustomQueryMetadata) queryMetadataCache.getFromCache(methodName);
         try(Connection connection = bootstrap.getConnection();
             PreparedStatement statement = connection.prepareStatement(query.getQueryBody())) {
+            int paramCount = countParameters(query.getQueryBody());
             if (query.getIsQueryFromAnnotation()) {
                 for (int i = 1; i < argumentsList.size() + 1; i++) {
-                    statement.setObject(i, argumentsList.get(i - 1));
+                    if (i <= paramCount) {
+                        statement.setObject(i, argumentsList.get(i - 1));
+                    }
                 }
             } else {
                 for (int i = 1; i < argumentsList.size() + 1; i++) {
-                    setStatementArgument(argumentsList, query, statement, i);
+                    if (i <= paramCount) {
+                        setStatementArgument(argumentsList, query, statement, i);
+                    }
                 }
             }
 
@@ -126,6 +128,8 @@ public class QueryExecutor {
 
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return null;
@@ -257,5 +261,17 @@ public class QueryExecutor {
         }
 
         return null;
+    }
+
+    private static int countParameters(String query) {
+        int count = 0;
+        int index = 0;
+
+        while ((index = query.indexOf("?", index)) != -1) {
+            count++;
+            index += 1;
+        }
+
+        return count;
     }
 }

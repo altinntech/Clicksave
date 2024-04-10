@@ -433,6 +433,19 @@ public class ClicksaveTests {
     }
 
     @Test
+    void customReplaceableQuery_paramsOverload() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        jpaPersonRepository.save(TEST_PERSON_4);
+        jpaPersonRepository.save(TEST_PERSON_5);
+
+        String query = "SELECT * FROM person WHERE name = ? AND last_name = ?";
+        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, TEST_PERSON_1.getName(), TEST_PERSON_1.getLastName(), TEST_PERSON_1.getGender());
+        assertEquals(TEST_PERSON_1, fetched.get(0));
+    }
+
+    @Test
     void aggregateQuery_SumAgeAvgExpByGender() {
         jpaPersonRepository.save(TEST_PERSON_1);
         jpaPersonRepository.save(TEST_PERSON_2);
