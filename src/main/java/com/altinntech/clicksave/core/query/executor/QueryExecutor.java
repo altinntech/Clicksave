@@ -23,10 +23,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * The {@code QueryExecutor} class is responsible for executing assembled queries.
@@ -161,8 +158,9 @@ public class QueryExecutor {
             Object[] array = (Object[]) arguments.get(0);
             arguments.remove(0);
             arguments.addAll(Arrays.asList(array));
-        }
 
+            arguments.removeIf(Objects::isNull);
+        }
         if (!queryMetadataCache.containsKey(methodName)) {
             if (queryAnnotation != null) {
                 CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();

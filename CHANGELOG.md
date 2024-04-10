@@ -1,5 +1,8 @@
 # Changelog
 
+### [1.1.12 - Experimental] - 2024-04-10
+- Fix nulls params in query
+
 ### [1.1.11 - Experimental] - 2024-04-10
 - Fix query params overload exception
 

@@ -441,7 +441,7 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_5);
 
         String query = "SELECT * FROM person WHERE name = ? AND last_name = ?";
-        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, TEST_PERSON_1.getName(), TEST_PERSON_1.getLastName(), TEST_PERSON_1.getGender());
+        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, null, TEST_PERSON_1.getName(), TEST_PERSON_1.getLastName(), TEST_PERSON_1.getGender(), null, null, null);
         assertEquals(TEST_PERSON_1, fetched.get(0));
     }
 
