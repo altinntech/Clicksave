@@ -10,26 +10,24 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExampleResponse {
+public class DateResponse {
 
-    public ExampleResponse(Long age, Gender gender, Double experience) {
-        this.age = age;
-        this.gender = gender;
-        this.experience = experience;
-    }
+    @Reference("date")
+    @Column(FieldType.DATE)
+    LocalDate localDate;
 
-    @Column(FieldType.LONG)
-    Long age;
-    @EnumColumn(EnumType.STRING)
-    Gender gender;
-    @Column(FieldType.DOUBLE)
-    Double experience;
-    @Column(FieldType.BIG_INT)
-    BigInteger count;
+    @Reference("sqlTimestamp")
+    @Column(FieldType.DATE_TIME)
+    LocalDateTime localDateSqlTimestamp;
+
+    @Reference("timestamp")
+    @Column(FieldType.DATE_TIME)
+    LocalDateTime localDateTime;
 }

@@ -21,6 +21,11 @@ public enum FieldType {
     INT("Int32"),
 
     /**
+     * Represents a big integer field type.
+     */
+    BIG_INT("Int128"),
+
+    /**
      * Represents a long field type.
      */
     LONG("Int64"),
@@ -59,6 +64,11 @@ public enum FieldType {
      * Represents a Date time field type.
      */
     DATE_TIME("DateTime64(9)"),
+
+    /**
+     * Represents a Date field type.
+     */
+    DATE("DateTime()"),
 
     /**
      * Represents a Bool field type.

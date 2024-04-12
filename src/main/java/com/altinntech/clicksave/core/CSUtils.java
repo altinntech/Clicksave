@@ -17,9 +17,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
+import java.sql.*;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -176,6 +176,8 @@ public class CSUtils {
             setBoolean(entity, field, value, fieldData);
         } else if (isDateTime(fieldData, value)) {
             setDateTimeValue(entity, field, value, fieldData);
+        } else if (isDate(fieldData, value)) {
+            setDateValue(entity, field, value, fieldData);
         } else if (isEnumAndString(fieldType, value)) {
             setEnumFieldValue(entity, field, (String) value, fieldData);
         } else if (isEnumIdAndLong(fieldType, value, fieldData)) {
@@ -211,8 +213,27 @@ public class CSUtils {
     }
 
     private static void setDateTimeValue(Object entity, Field field, Object value, FieldDataCache fieldData) {
-        LocalDateTime localDateTime = LocalDateTime.parse((String) value, formatter);
+        LocalDateTime localDateTime;
+        if (value instanceof Date) {
+            localDateTime = ((Date) value).toLocalDate().atStartOfDay();
+        } else if (value instanceof Timestamp) {
+            localDateTime = ((Timestamp) value).toLocalDateTime();
+        } else {
+            localDateTime = LocalDateTime.parse((String) value, formatter);
+        }
         setField(entity, field, localDateTime);
+    }
+
+    private static void setDateValue(Object entity, Field field, Object value, FieldDataCache fieldData) {
+        LocalDate localDate;
+        if (value instanceof Date) {
+            localDate = ((Date) value).toLocalDate();
+        } else if (value instanceof Timestamp) {
+            localDate = ((Timestamp) value).toLocalDateTime().toLocalDate();
+        } else {
+            localDate = LocalDate.parse((String) value, formatter);
+        }
+        setField(entity, field, localDate);
     }
 
     private static void setBoolean(Object entity, Field field, Object value, FieldDataCache fieldData) {
@@ -231,6 +252,10 @@ public class CSUtils {
 
     private static boolean isDateTime(FieldDataCache fieldData, Object value) {
         return fieldData.getFieldType() == FieldType.DATE_TIME;
+    }
+
+    private static boolean isDate(FieldDataCache fieldData, Object value) {
+        return fieldData.getFieldType() == FieldType.DATE;
     }
 
     private static boolean isEnumAndString(Class<?> fieldType, Object value) {
