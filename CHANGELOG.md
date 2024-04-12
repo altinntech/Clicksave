@@ -1,5 +1,8 @@
 # Changelog
 
+### [1.1.14 - Experimental] - 2024-04-12
+- New deleteAll method
+
 ### [1.1.13 - Experimental] - 2024-04-12
 - Added support for LocalDate
 - Fix error when convert sql.Date to java time

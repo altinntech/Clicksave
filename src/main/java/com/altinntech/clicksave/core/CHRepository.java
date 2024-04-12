@@ -383,7 +383,7 @@ public class CHRepository {
     public void deleteAll(Class<?> entityClass) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
-        StringBuilder deleteQuery = new StringBuilder("ALTER TABLE ").append(tableName).append(" DELETE WHERE true");
+        StringBuilder deleteQuery = new StringBuilder("TRUNCATE TABLE IF EXISTS ").append(tableName);
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = CSBootstrap.getConnection();
