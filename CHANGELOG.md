@@ -1,5 +1,9 @@
 # Changelog
 
+### [1.1.13 - Experimental] - 2024-04-12
+- Added support for LocalDate
+- Fix error when convert sql.Date to java time
+
 ### [1.1.12 - Experimental] - 2024-04-10
 - Fix nulls params in query
 
