@@ -1,5 +1,8 @@
 # Changelog
 
+### [1.1.15 - Experimental] - 2024-04-16
+- Added entity functions like @PrePersist, @PreUpdate and @PostLoad
+
 ### [1.1.14 - Experimental] - 2024-04-12
 - New deleteAll method
 
