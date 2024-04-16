@@ -5,6 +5,7 @@ import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -58,7 +59,7 @@ public class BatchCollector {
      * @param batchQueryData the batch query data
      * @param fieldsData     the field data
      */
-    public void put(BatchedQueryData batchQueryData, List<Object> fieldsData) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public void put(BatchedQueryData batchQueryData, List<Object> fieldsData) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = batchQueryData.getClassDataCache();
         if (!batches.containsKey(batchQueryData)) {
             batches.put(batchQueryData, new ArrayList<>());
@@ -79,7 +80,7 @@ public class BatchCollector {
      *
      * @param classDataCache the class data cache
      */
-    public void saveAndFlush(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public void saveAndFlush(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         for (Map.Entry<BatchedQueryData, List<List<Object>>> entry : batches.entrySet()) {
             BatchedQueryData batchedQueryData = entry.getKey();
             ClassDataCache cacheInMap = batchedQueryData.getClassDataCache();
@@ -99,7 +100,7 @@ public class BatchCollector {
      * @param queryMeta the query
      * @param batch the batch
      */
-    public void saveAndFlush(BatchedQueryData queryMeta, List<List<Object>> batch) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public void saveAndFlush(BatchedQueryData queryMeta, List<List<Object>> batch) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         String query = queryMeta.getQuery();
         try(Connection connection = bootstrap.getConnection()) {
             PreparedStatement statement = connection.prepareStatement(query);
@@ -131,7 +132,7 @@ public class BatchCollector {
     /**
      * Saves and flushes all batches.
      */
-    public synchronized void saveAndFlushAll() throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public synchronized void saveAndFlushAll() throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         for (Map.Entry<BatchedQueryData, List<List<Object>>> entry : batches.entrySet()) {
             BatchedQueryData batchedQueryData = entry.getKey();
             List<List<Object>> batch = entry.getValue();

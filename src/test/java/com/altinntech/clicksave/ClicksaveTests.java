@@ -7,10 +7,7 @@ import com.altinntech.clicksave.examples.entity.Gender;
 import com.altinntech.clicksave.examples.entity.Job;
 import com.altinntech.clicksave.examples.entity.Person;
 import com.altinntech.clicksave.examples.repository.JpaPersonRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -496,6 +493,28 @@ public class ClicksaveTests {
     }
 
     @Test
+    void prePersist() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        assertTrue(TEST_PERSON_1.isTestFieldForPrePersist());
+    }
+
+    @Test
+    void preUpdate() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        TEST_PERSON_1.setAddress("New address");
+        jpaPersonRepository.save(TEST_PERSON_1);
+        assertTrue(TEST_PERSON_1.isTestFieldForPreUpdate());
+    }
+
+    @Test
+    void postLoad() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        Optional<Person> fetched = jpaPersonRepository.findById(TEST_PERSON_1.getId());
+        assertTrue(fetched.isPresent());
+        assertTrue(fetched.get().isTestFieldForPostLoad());
+    }
+
+    @Test
     void multipleSaving() throws IOException {
         int iterations = 30;
         List<Person> persons = new ArrayList<>();
@@ -542,6 +561,7 @@ public class ClicksaveTests {
         long endTime = System.nanoTime();
         double executionTime =  (endTime - startTime) / 1_000_000.0;
         System.out.println("Time to saving: " + executionTime);
+        System.out.println("Entities per second: " + Math.floor((iterations / (executionTime / 1000.0))) + " e/s");
     }
 
     @Disabled

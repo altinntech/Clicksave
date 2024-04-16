@@ -1,10 +1,7 @@
 package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.*;
-import com.altinntech.clicksave.core.dto.BatchedQueryData;
-import com.altinntech.clicksave.core.dto.ClassDataCache;
-import com.altinntech.clicksave.core.dto.EmbeddableClassData;
-import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EngineType;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
@@ -15,6 +12,8 @@ import com.altinntech.clicksave.interfaces.EnumId;
 import com.google.gson.Gson;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -70,7 +69,7 @@ public class CHRepository {
      * @throws IllegalAccessException      if illegal access occurs
      * @throws SQLException                 if a SQL exception occurs
      */
-    public <T, ID> T save(T entity, ID idType) throws FieldInitializationException, ClassCacheNotFoundException, IllegalAccessException, SQLException {
+    public <T, ID> T save(T entity, ID idType) throws FieldInitializationException, ClassCacheNotFoundException, IllegalAccessException, SQLException, InvocationTargetException {
         Class<?> entityClass = entity.getClass();
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         FieldDataCache idFieldData = classDataCache.getIdField();
@@ -86,6 +85,8 @@ public class CHRepository {
         String tableName = classDataCache.getTableName();
         StringBuilder insertQuery = new StringBuilder("INSERT INTO ").append(tableName).append(" (");
         StringBuilder valuesPlaceholder = new StringBuilder(" VALUES (");
+
+        executePrePersistedMethods(entity, classDataCache);
 
         List<FieldDataCache> fields = classDataCache.getFields();
         List<Object> fieldValues = new ArrayList<>();
@@ -117,6 +118,30 @@ public class CHRepository {
         return entity;
     }
 
+    private static <T> void executePrePersistedMethods(T entity, ClassDataCache classDataCache) throws IllegalAccessException, InvocationTargetException {
+        MethodDataCache methodDataCache = classDataCache.getMethodData();
+        for (Method method : methodDataCache.getPrePersistedMethods()) {
+            method.invoke(entity);
+        }
+    }
+
+    private static <T> void executePreUpdatedMethods(T entity, ClassDataCache classDataCache) throws IllegalAccessException, InvocationTargetException {
+        MethodDataCache methodDataCache = classDataCache.getMethodData();
+        for (Method method : methodDataCache.getPreUpdatedMethods()) {
+            method.invoke(entity);
+        }
+    }
+
+    public static <T> void executePostLoadedMethods(T entity, ClassDataCache classDataCache) throws IllegalAccessException, InvocationTargetException {
+        if (Objects.isNull(entity) || classDataCache.getEntityClass() != entity.getClass()) {
+            return;
+        }
+        MethodDataCache methodDataCache = classDataCache.getMethodData();
+        for (Method method : methodDataCache.getPostLoadedMethods()) {
+            method.invoke(entity);
+        }
+    }
+
     private String buildInsertQuery(StringBuilder insertQuery, StringBuilder valuesPlaceholder, ClassDataCache classDataCache, List<Object> fieldValues) {
         if (classDataCache.getEngineType() == EngineType.VersionedCollapsingMergeTree) {
             insertQuery.append(SystemField.Sign.getName()).append(", ").append(SystemField.Version.getName()).append(", ");
@@ -130,7 +155,7 @@ public class CHRepository {
         return insertQuery + valuesPlaceholder.toString();
     }
 
-    private <T, ID> void extractFieldValuesForCreate(T entity, ID idType, ClassDataCache classDataCache, StringBuilder insertQuery, StringBuilder valuesPlaceholder, List<FieldDataCache> fields, List<Object> fieldValues) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    private <T, ID> void extractFieldValuesForCreate(T entity, ID idType, ClassDataCache classDataCache, StringBuilder insertQuery, StringBuilder valuesPlaceholder, List<FieldDataCache> fields, List<Object> fieldValues) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         if (entity == null) {
             return;
         }
@@ -216,10 +241,12 @@ public class CHRepository {
      * @throws SQLException                 if a SQL exception occurs
      */
     // todo: refactor
-    private <T, ID> T update(T entity, ClassDataCache classDataCache, FieldDataCache idFieldData, ID id) throws IllegalAccessException, SQLException, ClassCacheNotFoundException {
+    private <T, ID> T update(T entity, ClassDataCache classDataCache, FieldDataCache idFieldData, ID id) throws IllegalAccessException, SQLException, ClassCacheNotFoundException, InvocationTargetException {
         String tableName = classDataCache.getTableName();
         StringBuilder updateQuery = new StringBuilder("ALTER TABLE ").append(tableName).append(" UPDATE ");
         batchCollector.saveAndFlush(classDataCache);
+
+        executePreUpdatedMethods(entity, classDataCache);
 
         List<FieldDataCache> fields = classDataCache.getFields();
         extractFieldValuesForUpdate(entity, updateQuery, fields);
@@ -293,7 +320,7 @@ public class CHRepository {
      * @return the entity if found, otherwise null
      * @throws ClassCacheNotFoundException if the class cache is not found
      */
-    public <T, ID> T findById(Class<T> entityClass, ID id) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
+    public <T, ID> T findById(Class<T> entityClass, ID id) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         StringBuilder selectQuery = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE ");
@@ -311,6 +338,7 @@ public class CHRepository {
                 if (resultSet.next()) {
                     T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache);
                     CSBootstrap.releaseConnection(connection);
+                    executePostLoadedMethods(entity, classDataCache);
                     return entity;
                 }
             }
@@ -330,7 +358,7 @@ public class CHRepository {
      * @throws ClassCacheNotFoundException if the class cache is not found
      * @throws SQLException                if a SQL exception occurs
      */
-    public <T> List<T> findAll(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
+    public <T> List<T> findAll(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         String selectQuery = "SELECT * FROM " + tableName;
@@ -342,6 +370,7 @@ public class CHRepository {
             List<T> entities = new ArrayList<>();
             while (resultSet.next()) {
                 T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache);
+                executePostLoadedMethods(entity, classDataCache);
                 entities.add(entity);
             }
             CSBootstrap.releaseConnection(connection);
@@ -349,7 +378,7 @@ public class CHRepository {
         }
     }
 
-    <T> Optional<T> findLast(Class<T> entityClass, Properties properties) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
+    <T> Optional<T> findLast(Class<T> entityClass, Properties properties) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         FieldDataCache idFieldData = classDataCache.getIdField();
@@ -366,6 +395,7 @@ public class CHRepository {
                 if (resultSet.next()) {
                     T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache);
                     CSBootstrap.releaseConnection(connection);
+                    executePostLoadedMethods(entity, classDataCache);
                     return Optional.ofNullable(entity);
                 }
             }
@@ -380,7 +410,7 @@ public class CHRepository {
      * @param entityClass the entity class
      * @throws ClassCacheNotFoundException if the class cache is not found
      */
-    public void deleteAll(Class<?> entityClass) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
+    public void deleteAll(Class<?> entityClass) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         StringBuilder deleteQuery = new StringBuilder("TRUNCATE TABLE IF EXISTS ").append(tableName);
@@ -403,7 +433,7 @@ public class CHRepository {
      * @throws ClassCacheNotFoundException if the class cache is not found
      * @throws IllegalAccessException      if there is illegal access to the entity's fields
      */
-    public <T> void delete(T entity) throws ClassCacheNotFoundException, IllegalAccessException, SQLException {
+    public <T> void delete(T entity) throws ClassCacheNotFoundException, IllegalAccessException, SQLException, InvocationTargetException {
         Class<?> entityClass = entity.getClass();
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         FieldDataCache idFieldData = classDataCache.getIdField();
@@ -435,7 +465,7 @@ public class CHRepository {
      * @return true if the entity exists, false otherwise
      * @throws ClassCacheNotFoundException if the class cache is not found
      */
-    public <T, ID> boolean entityExists(Class<T> entityClass, ID id) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
+    public <T, ID> boolean entityExists(Class<T> entityClass, ID id) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         batchCollector.saveAndFlush(classDataCache);
         String tableName = classDataCache.getTableName();

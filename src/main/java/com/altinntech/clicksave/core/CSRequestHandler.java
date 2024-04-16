@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.thepavel.icomponent.handler.MethodHandler;
 import org.thepavel.icomponent.metadata.MethodMetadata;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.SQLException;
@@ -75,6 +76,8 @@ public class CSRequestHandler implements MethodHandler {
             error("ClassDataCache not found for " + entityType + ". Make sure that entity has an @ClickHouseEntity annotation", this.getClass());
         } catch (IllegalAccessException e) {
             error("Illegal access to entity " + entityType + ": " + e.getMessage(), this.getClass());
+        } catch (InvocationTargetException e) {
+            error("Illegal invocation method; Entity: " + entityType + ": " + e.getMessage(), this.getClass());
         }
         return null;
     }
@@ -122,32 +125,32 @@ public class CSRequestHandler implements MethodHandler {
         return null;
     }
 
-    private Object handleFindAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    private Object handleFindAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         return repository.findAll(entityType);
     }
 
-    private Object handleSave(Object[] arguments, Class<?> entityIdType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    private Object handleSave(Object[] arguments, Class<?> entityIdType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         return repository.save(arguments[0], entityIdType);
     }
 
-    private Object handleFindById(Class<?> entityType, Object[] arguments) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    private Object handleFindById(Class<?> entityType, Object[] arguments) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         return Optional.ofNullable(repository.findById(entityType, arguments[0]));
     }
 
-    private void handleDelete(Object argument) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    private void handleDelete(Object argument) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         repository.delete(argument);
     }
 
-    private void handleDeleteAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    private void handleDeleteAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         repository.deleteAll(entityType);
     }
 
-    private Object handleCustomQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    private Object handleCustomQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         methodReturnType = (Class<?>) arguments[0];
         return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
     }
 
-    private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
     }
 }

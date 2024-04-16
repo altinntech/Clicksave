@@ -1,33 +1,36 @@
 package com.altinntech.clicksave.examples.entity;
 
 import com.altinntech.clicksave.annotations.*;
+import com.altinntech.clicksave.annotations.method.PostLoad;
+import com.altinntech.clicksave.annotations.method.PrePersist;
+import com.altinntech.clicksave.annotations.method.PreUpdate;
 import com.altinntech.clicksave.core.CSUtils;
 import com.altinntech.clicksave.enums.EngineType;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Data
 @AllArgsConstructor
 @ClickHouseEntity(forTest = true, engine = EngineType.MergeTree) // you should use this annotation for persistence entity
 //@PartitionBy("toYYYYMM(timestamp)")
 //@OrderBy("(id, gender)")
-@Batching(batchSize = 10000) // add batch for saving
+@Batching(batchSize = 1000) // add batch for saving
 public class Person {
 
-    // entity class must have a no arguments constructor
+    // entity class must have a no argument constructor
     public Person() {
     }
 
-    @Column(value = FieldType.UUID, id = true, primaryKey = true) // it is recommended to make the id field a UUID type
-    UUID id;
+    @Column(value = FieldType.LONG, id = true, primaryKey = true) // it is recommended to make the id field a UUID type
+    Long id;
     @Column(FieldType.STRING)
     String name;
     @Column(FieldType.STRING)
@@ -54,7 +57,29 @@ public class Person {
     Boolean enabled;
     String noSaveField; // this field will not be saved
 
-    public Person(UUID id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) throws IOException {
+    @Getter
+    boolean testFieldForPrePersist;
+    @Getter
+    boolean testFieldForPreUpdate;
+    @Getter
+    boolean testFieldForPostLoad;
+
+    @PrePersist
+    public void initMethod() {
+        this.testFieldForPrePersist = true;
+    }
+
+    @PreUpdate
+    public void preUpdateMethod() {
+        this.testFieldForPreUpdate = true;
+    }
+
+    @PostLoad
+    public void postLoadMethod() {
+        this.testFieldForPostLoad = true;
+    }
+
+    public Person(Long id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) throws IOException {
         this.id = id;
         this.name = name;
         this.lastName = lastName;
@@ -128,5 +153,19 @@ public class Person {
             }
         }
         return matrix;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Person person)) return false;
+        return Objects.equals(getId(), person.getId()) && Objects.equals(getName(), person.getName()) && Objects.equals(getLastName(), person.getLastName()) && Objects.equals(getAge(), person.getAge()) && Objects.equals(getAddress(), person.getAddress()) && getGender() == person.getGender() && getJob() == person.getJob() && Objects.equals(getEmployeeInfo(), person.getEmployeeInfo()) && Objects.equals(getCompanyMetadata(), person.getCompanyMetadata()) && Objects.equals(getCompanyMetadataSingle(), person.getCompanyMetadataSingle()) && Arrays.deepEquals(getMatrix(), person.getMatrix()) && Objects.equals(getTimestamp(), person.getTimestamp()) && Objects.equals(getEnabled(), person.getEnabled()) && Objects.equals(getNoSaveField(), person.getNoSaveField());
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(getId(), getName(), getLastName(), getAge(), getAddress(), getGender(), getJob(), getEmployeeInfo(), getCompanyMetadata(), getCompanyMetadataSingle(), getTimestamp(), getEnabled(), getNoSaveField());
+        result = 31 * result + Arrays.deepHashCode(getMatrix());
+        return result;
     }
 }

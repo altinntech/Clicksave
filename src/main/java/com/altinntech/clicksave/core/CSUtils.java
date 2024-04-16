@@ -1,22 +1,21 @@
 package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.*;
+import com.altinntech.clicksave.annotations.method.PostLoad;
+import com.altinntech.clicksave.annotations.method.PrePersist;
+import com.altinntech.clicksave.annotations.method.PreUpdate;
 import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
-import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -156,6 +155,22 @@ public class CSUtils {
         preparedFieldsData.setIdField(idField);
         preparedFieldsData.setIdFieldsCount(idFieldsCount);
         return preparedFieldsData;
+    }
+
+    public static MethodDataCache getMethodData(Class<?> clazz) {
+        MethodDataCache methodDataCache = new MethodDataCache();
+        for (Method method : clazz.getMethods()) {
+            if (method.isAnnotationPresent(PrePersist.class)) {
+                methodDataCache.addPrePersistedMethod(method);
+            }
+            if (method.isAnnotationPresent(PreUpdate.class)) {
+                methodDataCache.addPreUpdatedMethod(method);
+            }
+            if (method.isAnnotationPresent(PostLoad.class)) {
+                methodDataCache.addPostLoadedMethod(method);
+            }
+        }
+        return methodDataCache;
     }
 
     /**

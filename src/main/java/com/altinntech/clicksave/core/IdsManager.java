@@ -7,6 +7,7 @@ import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.enums.IDTypes;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -42,7 +43,7 @@ public class IdsManager {
         idCache.put(classDataCache, lastId);
     }
 
-    public Object getLastId(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public Object getLastId(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         Object lastId = idCache.get(classDataCache);
         if (lastId == null) {
             adaptiveSync(classDataCache);
@@ -56,7 +57,7 @@ public class IdsManager {
         return lastId;
     }
 
-    void sync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    void sync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         Object refreshedId = null;
         CHRepository repository = CHRepository.getInstance();
         Properties properties = new Properties();
@@ -87,13 +88,13 @@ public class IdsManager {
         }
     }
 
-    public void adaptiveSync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public void adaptiveSync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         if (classDataCache.getIdField().getType() != IDTypes.UUID.getType()) {
             sync(classDataCache);
         }
     }
 
-    public <ID> ID getNextId(ClassDataCache classDataCache, FieldDataCache idFieldData, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public <ID> ID getNextId(ClassDataCache classDataCache, FieldDataCache idFieldData, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         ID currentId = (ID) getLastId(classDataCache);
         ID nextId = null;
 
@@ -119,7 +120,7 @@ public class IdsManager {
         return nextId;
     }
 
-    public <ID> void lockIds(ClassDataCache classDataCache, int range, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException {
+    public <ID> void lockIds(ClassDataCache classDataCache, int range, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         ID startId = (ID) getLastId(classDataCache);
         ID endId = null;
 

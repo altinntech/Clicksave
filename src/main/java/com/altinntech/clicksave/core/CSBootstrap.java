@@ -11,6 +11,7 @@ import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import org.reflections.Reflections;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,11 +25,9 @@ import static com.altinntech.clicksave.log.CSLogger.*;
  * The {@code CSBootstrap} class initializes the application and manages the configuration setup.
  * It sets up connections, initializes entities, and handles shutdown procedures.
  *
- * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
  *
  * <p>Author: Fyodor Plotnikov</p>
  */
-//@Component
 public class CSBootstrap {
 
     private Set<Class<?>> entityClasses;
@@ -77,6 +76,7 @@ public class CSBootstrap {
 
         for (Class<?> clazz : entityClasses) {
             ClassDataCache classDataCache = new ClassDataCache();
+            classDataCache.setEntityClass(clazz);
             classDataCache.setTableName(buildTableName(clazz));
             classDataCache.setBatchingAnnotation(clazz.getAnnotation(Batching.class));
             classDataCache.setPartitionByAnnotation(clazz.getAnnotation(PartitionBy.class));
@@ -90,6 +90,7 @@ public class CSBootstrap {
             }
             classDataCache.setFields(preparedFieldsData.getFields());
             classDataCache.setIdField(preparedFieldsData.getIdField());
+            classDataCache.setMethodData(getMethodData(clazz));
 
             classDataCacheMap.put(clazz, classDataCache);
             debug("Find entity class: " + clazz);
@@ -121,7 +122,7 @@ public class CSBootstrap {
             batchCollector.saveAndFlushAll();
             connectionManager.closeAllConnections();
             info("Shutdown completed");
-        } catch (SQLException | ClassCacheNotFoundException | IllegalAccessException e) {
+        } catch (SQLException | ClassCacheNotFoundException | IllegalAccessException | InvocationTargetException e) {
             error("Error while saving batches: " + e.getMessage());
         }
     }

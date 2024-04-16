@@ -21,9 +21,11 @@ import java.util.Optional;
 @NoArgsConstructor
 public class ClassDataCache implements ClassData {
 
+    private Class<?> entityClass;
     private ClickHouseEntity CHEAnnotation;
     private String tableName;
     private List<FieldDataCache> fields;
+    private MethodDataCache methodData;
     private FieldDataCache idField;
     private EngineType engineType;
     private Batching batchingAnnotation;

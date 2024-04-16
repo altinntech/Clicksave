@@ -20,10 +20,13 @@ import org.springframework.stereotype.Component;
 import org.thepavel.icomponent.metadata.MethodMetadata;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.*;
 import java.util.*;
+
+import static com.altinntech.clicksave.core.CHRepository.executePostLoadedMethods;
 
 /**
  * The {@code QueryExecutor} class is responsible for executing assembled queries.
@@ -63,7 +66,7 @@ public class QueryExecutor {
      * @throws ClassCacheNotFoundException if class cache is not found
      * @throws SQLException                if an SQL exception occurs
      */
-    public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException, IllegalAccessException {
+    public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = bootstrap.getClassDataCache(entityClass);
         batchCollector.saveAndFlush(classDataCache);
 
@@ -100,6 +103,7 @@ public class QueryExecutor {
                             else
                                 entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache);
                             bootstrap.releaseConnection(connection);
+                            executePostLoadedMethods(entity, classDataCache);
                             return Optional.ofNullable(entity);
                         } else {
                             return Optional.empty();
@@ -113,10 +117,13 @@ public class QueryExecutor {
                         List<Object> entities = new ArrayList<>();
                         while (resultSet.next()) {
                             Object entity;
-                            if (!returnClass.equals(entityClass))
+                            if (!returnClass.equals(entityClass)) {
                                 entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet);
-                            else
+                            }
+                            else {
                                 entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache);
+                                executePostLoadedMethods(entity, classDataCache);
+                            }
                             entities.add(entity);
                         }
                         bootstrap.releaseConnection(connection);
