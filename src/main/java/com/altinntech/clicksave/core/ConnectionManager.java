@@ -1,8 +1,8 @@
 package com.altinntech.clicksave.core;
 
-import cc.blynk.clickhouse.ClickHouseDataSource;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.interfaces.Observer;
+import com.clickhouse.jdbc.ClickHouseDataSource;
 
 import java.sql.Connection;
 import java.sql.SQLException;

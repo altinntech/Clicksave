@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.altinntech</groupId>
 	<artifactId>clicksave</artifactId>
-	<version>1.1.15-EXPERIMENTAL</version>
+	<version>1.1.15-TEST01-EXPERIMENTAL</version>
 	<name>clicksave</name>
 	<description>ClickSave is an Object-Relational Mapping (ORM) system written in Java specifically designed for interacting with ClickHouse databases. It provides a seamless interface for Java applications to interact with ClickHouse databases, allowing for efficient data manipulation, retrieval, and management. ClickSave simplifies the integration of ClickHouse databases into Java-based projects, offering developers a powerful toolset to work with ClickHouse databases within their applications.</description>
 	<developers>
@@ -133,9 +133,11 @@
 		</dependency>
 
 		<dependency>
-			<groupId>cc.blynk.clickhouse</groupId>
-			<artifactId>clickhouse4j</artifactId>
-			<version>1.4.4</version>
+			<groupId>com.clickhouse</groupId>
+			<artifactId>clickhouse-jdbc</artifactId>
+			<version>0.6.0</version>
+			<!-- use uber jar with all dependencies included, change classifier to http for smaller jar -->
+			<classifier>all</classifier>
 		</dependency>
 		<dependency>
 			<groupId>org.reflections</groupId>

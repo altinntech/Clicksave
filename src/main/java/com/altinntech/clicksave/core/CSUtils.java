@@ -16,10 +16,13 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.IntStream;
@@ -201,7 +204,7 @@ public class CSUtils {
             setEnumOrdinalFieldValue(entity, field, (Integer) value, fieldData);
         } else if (isValidFieldValue(fieldType, value)) {
             setField(entity, field, value);
-        } else {
+        } else if (!tryConvertAndSetField(entity, field, value)) {
             warn("Field " + fieldData.getFieldName() + "(" + fieldData.getType() + ")" + " is not valid for type " + value.getClass());
         }
     }
@@ -233,8 +236,10 @@ public class CSUtils {
             localDateTime = ((Date) value).toLocalDate().atStartOfDay();
         } else if (value instanceof Timestamp) {
             localDateTime = ((Timestamp) value).toLocalDateTime();
-        } else {
+        } else if (value instanceof String) {
             localDateTime = LocalDateTime.parse((String) value, formatter);
+        } else {
+            localDateTime = (LocalDateTime) value;
         }
         setField(entity, field, localDateTime);
     }
@@ -245,14 +250,21 @@ public class CSUtils {
             localDate = ((Date) value).toLocalDate();
         } else if (value instanceof Timestamp) {
             localDate = ((Timestamp) value).toLocalDateTime().toLocalDate();
-        } else {
+        } else if (value instanceof String) {
             localDate = LocalDate.parse((String) value, formatter);
+        } else {
+            localDate = (LocalDate) value;
         }
         setField(entity, field, localDate);
     }
 
     private static void setBoolean(Object entity, Field field, Object value, FieldDataCache fieldData) {
-        Boolean booleanValue = Boolean.parseBoolean((String) value);
+        Boolean booleanValue;
+        if (value instanceof String) {
+            booleanValue = Boolean.parseBoolean((String) value);
+        } else {
+            booleanValue = (Boolean) value;
+        }
         setField(entity, field, booleanValue);
     }
 
@@ -321,6 +333,67 @@ public class CSUtils {
         } catch (IllegalAccessException e) {
             error(e.getMessage(), CSUtils.class);
         }
+    }
+
+    public static boolean tryConvertAndSetField(Object entity, Field field, Object value) {
+        try {
+            field.setAccessible(true);
+            Class<?> fieldType = field.getType();
+            Object convertedValue = convertValueToType(value, fieldType);
+            field.set(entity, convertedValue);
+            return true;
+        } catch (IllegalAccessException e) {
+            error(e.getMessage(), CSUtils.class);
+            return false;
+        }
+    }
+
+    private static Object convertValueToType(Object value, Class<?> targetType) {
+        if (value == null) {
+            return null;
+        }
+        if (targetType.isAssignableFrom(value.getClass())) {
+            return value;
+        }
+        if (targetType.equals(Integer.TYPE) || targetType.equals(Integer.class)) {
+            return Integer.parseInt(value.toString());
+        }
+        if (targetType.equals(Long.TYPE) || targetType.equals(Long.class)) {
+            return Long.parseLong(value.toString());
+        }
+        if (targetType.equals(Double.TYPE) || targetType.equals(Double.class)) {
+            return Double.parseDouble(value.toString());
+        }
+        if (targetType.equals(Float.TYPE) || targetType.equals(Float.class)) {
+            return Float.parseFloat(value.toString());
+        }
+        if (targetType.equals(Short.TYPE) || targetType.equals(Short.class)) {
+            return Short.parseShort(value.toString());
+        }
+        if (targetType.equals(Byte.TYPE) || targetType.equals(Byte.class)) {
+            return Byte.parseByte(value.toString());
+        }
+        if (targetType.equals(Boolean.TYPE) || targetType.equals(Boolean.class)) {
+            return Boolean.parseBoolean(value.toString());
+        }
+        if (targetType.equals(Character.TYPE) || targetType.equals(Character.class)) {
+            return value.toString().charAt(0);
+        }
+        if (targetType.equals(BigInteger.class)) {
+            return new BigInteger(value.toString());
+        }
+        if (targetType.equals(Timestamp.class)) {
+            LocalDateTime localDateTime = LocalDateTime.parse(value.toString());
+            return Timestamp.valueOf(localDateTime);
+        }
+        if (targetType.equals(Date.class)) {
+            LocalDateTime localDateTime = LocalDateTime.parse(value.toString());
+            return Date.from(localDateTime.toInstant(ZoneOffset.UTC));
+        }
+        if (targetType.equals(BigDecimal.class)) {
+            return new BigDecimal(value.toString());
+        }
+        return value;
     }
 
     /**

@@ -388,7 +388,7 @@ public class ClicksaveTests {
 
         String query = "SELECT * FROM person WHERE age > ? AND gender = ?";
         List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query,
-                20, Gender.MALE);
+                20, Gender.MALE.toString());
         assertEquals(3, fetched.size());
     }
 
@@ -442,7 +442,7 @@ public class ClicksaveTests {
         String query = "SELECT count(DISTINCT id) AS count FROM person WHERE job = ?";
         List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query, Job.PROGRAMMER.getId());
         assertEquals(1, fetched.size());
-        assertEquals(BigInteger.valueOf(2), fetched.get(0).getCount());
+        assertEquals(2L, fetched.get(0).getCount());
     }
 
     @Test

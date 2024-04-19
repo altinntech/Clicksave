@@ -30,6 +30,6 @@ public class ExampleResponse {
     Gender gender;
     @Column(FieldType.DOUBLE)
     Double experience;
-    @Column(FieldType.BIG_INT)
-    BigInteger count;
+    @Column(FieldType.LONG)
+    Long count;
 }
