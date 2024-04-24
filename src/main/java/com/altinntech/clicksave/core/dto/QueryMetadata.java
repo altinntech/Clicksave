@@ -6,7 +6,7 @@ package com.altinntech.clicksave.core.dto;
  *
  * <p>This interface is intended to be implemented by classes that provide query metadata.</p>
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public interface QueryMetadata {
 

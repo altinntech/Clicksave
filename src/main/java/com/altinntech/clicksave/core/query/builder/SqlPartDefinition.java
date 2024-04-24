@@ -9,7 +9,7 @@ import java.util.Map;
  * The {@code SqlPartDefinition} class provides static definitions for SQL parts used in queries.
  * It maps common parts of queries to their corresponding SQL representations.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public abstract class SqlPartDefinition {
 

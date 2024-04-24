@@ -4,7 +4,7 @@ package com.altinntech.clicksave.exceptions;
  * The {@code WrongQueryMethodException} class represents an exception thrown when an incorrect query method is encountered.
  * It is a subclass of {@code RuntimeException}.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class WrongQueryMethodException extends RuntimeException {
 

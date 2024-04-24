@@ -4,7 +4,7 @@ package com.altinntech.clicksave.core.query.parser;
  * The {@code Part} interface represents a part of a query.
  * It defines methods to retrieve the part name and determine if the part is a service part.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public interface Part {
     /**

@@ -26,7 +26,7 @@ import java.util.Optional;
  *
  * <p>The constructor initializes the FieldDataCache instance with field-related information.</p>
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 @Data
 @NoArgsConstructor

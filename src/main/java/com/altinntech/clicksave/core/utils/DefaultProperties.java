@@ -12,7 +12,7 @@ import java.util.List;
  * The {@code DefaultProperties} class provides default properties for configuring the application.
  * It retrieves properties from the environment and provides default values if not specified.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 
 @Getter

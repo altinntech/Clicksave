@@ -21,7 +21,7 @@ import static com.altinntech.clicksave.log.CSLogger.info;
  * The {@code BatchCollector} class is responsible for collecting batches of queries.
  * It accumulates queries and sends them for processing when a threshold is reached.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class BatchCollector {
 

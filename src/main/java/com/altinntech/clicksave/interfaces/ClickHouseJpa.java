@@ -9,7 +9,7 @@ import java.util.Optional;
  * The {@code ClickHouseJpa} interface defines common JPA-like methods for interacting with ClickHouse databases.
  * It is parameterized by the entity type {@code T}.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  *
  * @param <T> the type parameter representing the entity type
  */

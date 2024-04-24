@@ -25,7 +25,7 @@ import static com.altinntech.clicksave.log.CSLogger.error;
  * The {@code CHRepository} class represents a service repository that facilitates communication between the ORM and the database.
  * It handles basic CRUD operations.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class CHRepository {
 

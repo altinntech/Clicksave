@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 /**
  * The {@code PartParser} class parses query methods by breaking down the method name into its constituent parts.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class PartParser {
 

@@ -4,7 +4,7 @@ package com.altinntech.clicksave.core.query.parser;
  * The {@code FieldPart} class represents parts of a query that correspond to fields.
  * It stores the name of the part.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class FieldPart implements Part {
 

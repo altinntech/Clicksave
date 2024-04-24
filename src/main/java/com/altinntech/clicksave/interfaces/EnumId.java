@@ -3,7 +3,7 @@ package com.altinntech.clicksave.interfaces;
 /**
  * The {@code EnumId} interface defines a method to retrieve the ID of an enum.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public interface EnumId {
     /**

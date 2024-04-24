@@ -9,7 +9,7 @@ import static com.altinntech.clicksave.log.CSLogger.error;
  * The {@code ClicksaveApplication} class represents the main entry point of the Clicksave application.
  * It is annotated with Spring Boot's {@code SpringBootApplication} annotation to enable autoconfiguration and component scanning.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 @SpringBootApplication
 public class ClicksaveApplication {

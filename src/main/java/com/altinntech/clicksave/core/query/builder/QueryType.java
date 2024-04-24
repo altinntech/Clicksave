@@ -4,7 +4,7 @@ package com.altinntech.clicksave.core.query.builder;
  * The {@code QueryType} enum is used to specify the type of query.
  * It defines different types such as SELECT, INSERT, UPDATE, DELETE, or ANY.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public enum QueryType {
 

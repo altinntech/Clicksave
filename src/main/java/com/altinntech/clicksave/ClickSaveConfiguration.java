@@ -10,7 +10,7 @@ import org.thepavel.icomponent.InterfaceComponentScan;
  * It is annotated with Spring's {@code Configuration} annotation to indicate that it contains bean definitions.
  * It also uses {@code ComponentScan} to automatically register Spring beans within the specified packages.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 @Configuration
 @ComponentScan

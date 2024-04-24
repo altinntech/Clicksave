@@ -26,7 +26,7 @@ import static com.altinntech.clicksave.log.CSLogger.*;
  * It sets up connections, initializes entities, and handles shutdown procedures.
  *
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class CSBootstrap {
 

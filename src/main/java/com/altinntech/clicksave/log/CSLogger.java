@@ -9,7 +9,7 @@ import org.slf4j.MarkerFactory;
  * The {@code CSLogger} class provides logging functionality for the application.
  * It uses SLF4J as the logging framework.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class CSLogger {
     private static final Logger logger = LoggerFactory.getLogger(CSLogger.class);

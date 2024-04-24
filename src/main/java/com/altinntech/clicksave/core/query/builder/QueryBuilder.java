@@ -20,7 +20,7 @@ import static com.altinntech.clicksave.core.query.builder.SqlPartDefinition.sqlP
  *
  * <p>This class constructs queries based on provided parts, table name, field data, and fields to fetch.</p>
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class QueryBuilder {
 

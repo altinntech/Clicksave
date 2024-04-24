@@ -4,7 +4,7 @@ package com.altinntech.clicksave.exceptions;
  * The {@code FieldInitializationException} class represents an exception thrown when field initialization fails.
  * It is a subclass of {@code RuntimeException}.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class FieldInitializationException extends RuntimeException {
 

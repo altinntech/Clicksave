@@ -32,7 +32,7 @@ import static com.altinntech.clicksave.log.CSLogger.*;
 /**
  * The {@code CSUtils} class provides various utility methods for common operations.
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public class CSUtils {
 

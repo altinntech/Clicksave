@@ -22,7 +22,7 @@ import static com.altinntech.clicksave.log.CSLogger.error;
  *
  * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 @Component
 public class CSRequestHandler implements MethodHandler {

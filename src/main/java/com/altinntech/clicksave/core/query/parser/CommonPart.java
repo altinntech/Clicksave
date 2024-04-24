@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  *
  * <p>The {@code getPattern()} method returns a regular expression pattern for matching part names.</p>
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public enum CommonPart implements Part {
 

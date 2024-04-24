@@ -6,7 +6,7 @@ package com.altinntech.clicksave.enums;
  *
  * <p>Each enum constant includes a corresponding type name.</p>
  *
- * <p>Author: Fyodor Plotnikov</p>
+ * @author Fyodor Plotnikov
  */
 public enum FieldType {
 
