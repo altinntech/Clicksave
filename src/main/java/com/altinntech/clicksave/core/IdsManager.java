@@ -43,7 +43,7 @@ public class IdsManager {
         idCache.put(classDataCache, lastId);
     }
 
-    public Object getLastId(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+    public synchronized Object getLastId(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         Object lastId = idCache.get(classDataCache);
         if (lastId == null) {
             adaptiveSync(classDataCache);
@@ -57,7 +57,7 @@ public class IdsManager {
         return lastId;
     }
 
-    void sync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+    synchronized void sync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         Object refreshedId = null;
         CHRepository repository = CHRepository.getInstance();
         Properties properties = new Properties();
@@ -88,13 +88,13 @@ public class IdsManager {
         }
     }
 
-    public void adaptiveSync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+    public synchronized void adaptiveSync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         if (classDataCache.getIdField().getType() != IDTypes.UUID.getType()) {
             sync(classDataCache);
         }
     }
 
-    public <ID> ID getNextId(ClassDataCache classDataCache, FieldDataCache idFieldData, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+    public synchronized <ID> ID getNextId(ClassDataCache classDataCache, FieldDataCache idFieldData, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         ID currentId = (ID) getLastId(classDataCache);
         ID nextId = null;
 
@@ -120,7 +120,7 @@ public class IdsManager {
         return nextId;
     }
 
-    public <ID> void lockIds(ClassDataCache classDataCache, int range, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+    public synchronized  <ID> void lockIds(ClassDataCache classDataCache, int range, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         ID startId = (ID) getLastId(classDataCache);
         ID endId = null;
 
@@ -142,7 +142,7 @@ public class IdsManager {
         repository.save(lockRecord, lockRecord.getTimestamp().getClass());
     }
 
-    private static <ID> ClicksaveSequence createLockRecord(ClassDataCache classDataCache, Long startId, Long endId, boolean isLocked) {
+    private synchronized static <ID> ClicksaveSequence createLockRecord(ClassDataCache classDataCache, Long startId, Long endId, boolean isLocked) {
         ClicksaveSequence lockRecord = new ClicksaveSequence();
         lockRecord.setTimestamp(System.nanoTime());
         lockRecord.setStartLockId(startId);

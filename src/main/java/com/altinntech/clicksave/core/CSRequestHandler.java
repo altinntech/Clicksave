@@ -13,6 +13,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.Optional;
+import java.util.concurrent.Future;
 
 import static com.altinntech.clicksave.log.CSLogger.error;
 
@@ -30,6 +31,7 @@ public class CSRequestHandler implements MethodHandler {
     private final CHRepository repository;
     private final QueryExecutor queryExecutor;
     private final CSBootstrap bootstrap;
+    private final ThreadPoolManager threadPoolManager;
 
     /**
      * Constructs a new CSRequestHandler instance.
@@ -42,6 +44,7 @@ public class CSRequestHandler implements MethodHandler {
         this.bootstrap = bootstrap;
         this.repository = CHRepository.getInstance();
         this.queryExecutor = queryExecutor;
+        this.threadPoolManager = bootstrap.getThreadPoolManager();
     }
 
     @Override
@@ -54,6 +57,9 @@ public class CSRequestHandler implements MethodHandler {
             switch (methodMetadata.getSourceMethod().getName()) {
                 case "save" -> {
                     return handleSave(arguments, entityIdType);
+                }
+                case "saveAsync" -> {
+                    return handleSaveAsync(arguments, entityIdType);
                 }
                 case "findById" -> {
                     return handleFindById(entityType, arguments);
@@ -78,6 +84,8 @@ public class CSRequestHandler implements MethodHandler {
             error("Illegal access to entity " + entityType + ": " + e.getMessage(), this.getClass());
         } catch (InvocationTargetException e) {
             error("Illegal invocation method; Entity: " + entityType + ": " + e.getMessage(), this.getClass());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
         return null;
     }
@@ -131,6 +139,11 @@ public class CSRequestHandler implements MethodHandler {
 
     private Object handleSave(Object[] arguments, Class<?> entityIdType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         return repository.save(arguments[0], entityIdType);
+    }
+
+    private <T> Future<T> handleSaveAsync(Object[] arguments, Class<T> entityIdType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException, InterruptedException {
+        Future<T> future = threadPoolManager.saveAsync(arguments, entityIdType, repository);
+        return future;
     }
 
     private Object handleFindById(Class<?> entityType, Object[] arguments) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {

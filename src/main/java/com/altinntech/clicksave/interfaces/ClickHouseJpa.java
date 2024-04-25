@@ -4,6 +4,7 @@ import com.altinntech.clicksave.annotations.SettableQuery;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Future;
 
 /**
  * The {@code ClickHouseJpa} interface defines common JPA-like methods for interacting with ClickHouse databases.
@@ -22,6 +23,14 @@ public interface ClickHouseJpa<T, ID> {
      * @return the saved entity
      */
     <S extends T> S save(S entity);
+
+    /**
+     * Saves async the given entity.
+     *
+     * @param entity the entity to save
+     * @return the saved entity
+     */
+    <S extends T> Future<S> saveAsync(S entity);
 
 
     /**

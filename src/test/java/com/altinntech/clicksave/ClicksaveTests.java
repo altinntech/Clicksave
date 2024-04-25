@@ -19,6 +19,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,11 +58,13 @@ public class ClicksaveTests {
     }
 
     @Test
-    void save() {
+    void save() throws InterruptedException, ExecutionException {
         jpaPersonRepository.save(TEST_PERSON_1);
         jpaPersonRepository.save(TEST_PERSON_2);
+        Future<Person> personFuture = jpaPersonRepository.saveAsync(TEST_PERSON_3);
         assertNotNull(TEST_PERSON_1.getId());
         assertNotNull(TEST_PERSON_2.getId());
+        assertNotNull(personFuture.get().getId());
     }
 
     @Test
@@ -515,8 +519,8 @@ public class ClicksaveTests {
     }
 
     @Test
-    void multipleSaving() throws IOException {
-        int iterations = 30;
+    void multipleSaving() throws IOException, InterruptedException {
+        int iterations = 1000;
         List<Person> persons = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
             Person person = Person.buildMockPerson();
@@ -532,6 +536,7 @@ public class ClicksaveTests {
         List<Person> fetched = jpaPersonRepository.findAll();
         assertEquals(iterations, fetched.size());
         System.out.println("Time to saving: " + executionTime);
+        System.out.println("Entities per second: " + Math.floor((iterations / (executionTime / 1000.0))) + " e/s");
     }
 
     @Disabled
@@ -547,6 +552,7 @@ public class ClicksaveTests {
         long endTime = System.nanoTime();
         double executionTime =  (endTime - startTime) / 1_000_000.0;
         System.out.println("Time to saving: " + executionTime);
+        System.out.println("Entities per second: " + Math.floor((iterations / (executionTime / 1000.0))) + " e/s");
     }
 
     @Disabled
@@ -556,7 +562,7 @@ public class ClicksaveTests {
         long startTime = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
             Person person = Person.buildMockPerson();
-            jpaPersonRepository.save(person);
+            jpaPersonRepository.saveAsync(person);
         }
         long endTime = System.nanoTime();
         double executionTime =  (endTime - startTime) / 1_000_000.0;
@@ -571,11 +577,12 @@ public class ClicksaveTests {
         long startTime = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
             Person person = Person.buildMockPerson();
-            jpaPersonRepository.save(person);
+            jpaPersonRepository.saveAsync(person);
         }
         long endTime = System.nanoTime();
         double executionTime =  (endTime - startTime) / 1_000_000.0;
         System.out.println("Time to saving: " + executionTime);
+        System.out.println("Entities per second: " + Math.floor((iterations / (executionTime / 1000.0))) + " e/s");
     }
 
     @Test

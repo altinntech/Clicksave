@@ -4,7 +4,6 @@ import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
-import com.altinntech.clicksave.core.utils.tb.TableAdditionsResolver;
 import com.altinntech.clicksave.core.utils.tb.TableBuilder;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
@@ -36,9 +35,10 @@ public class CSBootstrap {
 
     private final ConnectionManager connectionManager;
     private final BatchCollector batchCollector;
+    private final ThreadPoolManager threadPoolManager;
     private static CSBootstrap instance;
 
-    private DefaultProperties defaultProperties;
+    private final DefaultProperties defaultProperties;
 
     /**
      * Constructs a new CSBootstrap instance.
@@ -56,6 +56,7 @@ public class CSBootstrap {
         instance = this;
         this.connectionManager = new ConnectionManager(defaultProperties);
         this.batchCollector = BatchCollector.getInstance();
+        this.threadPoolManager = new ThreadPoolManager();
         if (defaultProperties.validate()) {
             initialize();
             info("Initializing completed");
@@ -66,6 +67,10 @@ public class CSBootstrap {
 
     public static CSBootstrap getInstance() {
         return instance;
+    }
+
+    public ThreadPoolManager getThreadPoolManager() {
+        return threadPoolManager;
     }
 
     private void initialize() throws FieldInitializationException, ClassCacheNotFoundException {
@@ -119,11 +124,12 @@ public class CSBootstrap {
     private void shutdownProcess() {
         info("Shutdown initiated! Saving batches...");
         try {
+            threadPoolManager.shutdown();
             batchCollector.saveAndFlushAll();
             connectionManager.closeAllConnections();
             info("Shutdown completed");
         } catch (SQLException | ClassCacheNotFoundException | IllegalAccessException | InvocationTargetException e) {
-            error("Error while saving batches: " + e.getMessage());
+            error("Error while stopping: " + e.getMessage());
         }
     }
 
