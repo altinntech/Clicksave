@@ -67,6 +67,9 @@ public class CSRequestHandler implements MethodHandler {
                 case "findAll" -> {
                     return handleFindAll(entityType);
                 }
+                case "count" -> {
+                    return handleCount(entityType);
+                }
                 case "delete" -> handleDelete(arguments[0]);
                 case "deleteAll" -> handleDeleteAll(entityType);
                 case "findAllCustomQuery" -> {
@@ -135,6 +138,10 @@ public class CSRequestHandler implements MethodHandler {
 
     private Object handleFindAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         return repository.findAll(entityType);
+    }
+
+    private long handleCount(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+        return repository.count(entityType);
     }
 
     private Object handleSave(Object[] arguments, Class<?> entityIdType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {

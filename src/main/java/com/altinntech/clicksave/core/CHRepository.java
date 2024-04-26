@@ -378,6 +378,26 @@ public class CHRepository {
         }
     }
 
+    public <T> long count(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException, InvocationTargetException, IllegalAccessException {
+        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        String tableName = classDataCache.getTableName();
+        String idField = classDataCache.getIdField().getFieldInTableName();
+        String selectQuery = "SELECT count(" + idField + ") AS cnt FROM " + tableName;
+        batchCollector.saveAndFlush(classDataCache);
+
+        try(Connection connection = CSBootstrap.getConnection();
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(selectQuery)) {
+            if (resultSet.next()) {
+                long count = resultSet.getLong("cnt");
+                CSBootstrap.releaseConnection(connection);
+                return count;
+            }
+            CSBootstrap.releaseConnection(connection);
+            return 0L;
+        }
+    }
+
     <T> Optional<T> findLast(Class<T> entityClass, Properties properties) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();

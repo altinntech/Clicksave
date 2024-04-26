@@ -42,6 +42,13 @@ public interface ClickHouseJpa<T, ID> {
     Optional<T> findById(ID id);
 
     /**
+     * Retrieves a count of entities.
+     *
+     * @return count of entities
+     */
+    long count();
+
+    /**
      * Retrieves all entities of type T.
      *
      * @return a list containing all entities

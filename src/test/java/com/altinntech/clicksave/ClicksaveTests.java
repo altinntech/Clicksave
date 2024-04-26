@@ -497,6 +497,16 @@ public class ClicksaveTests {
     }
 
     @Test
+    void count() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        long expected = 3L;
+        long actual = jpaPersonRepository.count();
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void prePersist() {
         jpaPersonRepository.save(TEST_PERSON_1);
         assertTrue(TEST_PERSON_1.isTestFieldForPrePersist());
