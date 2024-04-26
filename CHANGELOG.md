@@ -1,5 +1,9 @@
 # Changelog
 
+### [1.1.16-SNAPSHOT] - 2024-04-16
+- Added asyncSave method (~12000 e/s)
+- Added count() method
+
 ### [1.1.15 - Experimental] - 2024-04-16
 - Added entity functions like @PrePersist, @PreUpdate and @PostLoad
 
