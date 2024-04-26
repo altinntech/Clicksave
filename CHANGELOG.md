@@ -1,6 +1,6 @@
 # Changelog
 
-### [1.1.16-SNAPSHOT] - 2024-04-16
+### [1.1.16-SNAPSHOT] - 2024-04-26
 - Added asyncSave method (~12000 e/s)
 - Added count() method
 
