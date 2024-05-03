@@ -80,7 +80,7 @@ developers can significantly reduce the time spent interacting with the database
 
    ```java
        @Configuration
-       @InterfaceComponentScan(basePackages = {"com.altinntech.gameprovider.historyservice.repositories.clicksave.clicksavejpa"})
+       @InterfaceComponentScan(basePackages = {"path.to.your.repository"})
        @ComponentScan(basePackages = {"com.altinntech.clicksave"})
        public class ClicksaveConfig {
 
