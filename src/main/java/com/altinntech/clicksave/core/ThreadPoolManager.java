@@ -1,5 +1,6 @@
 package com.altinntech.clicksave.core;
 
+import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -15,8 +16,20 @@ public class ThreadPoolManager {
 
     public ThreadPoolManager() {
         int processors = Runtime.getRuntime().availableProcessors();
+        executor = initThreadPool(processors);
+    }
+
+    public ThreadPoolManager(DefaultProperties properties) {
+        int processors = Integer.parseInt(properties.getThreadManagerMaxProcessors());
+        if (processors <= 0) {
+            processors = Runtime.getRuntime().availableProcessors();
+        }
+        executor = initThreadPool(processors);
+    }
+
+    private ThreadPoolExecutor initThreadPool(int processors) {
         RejectedExecutionHandler handler = new ThreadPoolExecutor.CallerRunsPolicy();
-        this.executor = new ThreadPoolExecutor(
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
                 processors,
                 processors,
                 100,
@@ -24,6 +37,7 @@ public class ThreadPoolManager {
                 new LinkedBlockingQueue<>(1000),
                 handler);
         info("ThreadPoolManager started with " + processors + " processors");
+        return executor;
     }
 
     public <T> Future<T> saveAsync(Object[] arguments, Class<T> entityIdType, CHRepository repository) throws InterruptedException {
