@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.altinntech.clicksave.log.CSLogger.debug;
+import static com.altinntech.clicksave.log.CSLogger.info;
 
 /**
  * The {@code BatchCollector} class is responsible for collecting batches of queries.
@@ -49,7 +50,11 @@ public class BatchCollector {
 
     public static BatchCollector create(DefaultProperties properties) {
         BatchCollector batchCollector = new BatchCollector();
-        batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 2000, Long.parseLong(properties.getBatchSaveRate()), TimeUnit.MILLISECONDS);
+        long batchSaveRate = Long.parseLong(properties.getBatchSaveRate());
+        if (batchSaveRate > 0) {
+            batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 2000, batchSaveRate, TimeUnit.MILLISECONDS);
+            info("Batch save scheduler active");
+        }
         return batchCollector;
     }
 

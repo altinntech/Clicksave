@@ -27,56 +27,31 @@ developers can significantly reduce the time spent interacting with the database
 
 - Testing and Reliability: Clicksave comes with a set of unit tests, ensuring high reliability and stability in operation.
 
-## How to Install and Configure (equals or above 1.1.9)
+## How to Install and Configure
 
-1. Create settings.xml and configure it
-
-    - Edit maven settings.xml
-      ```bash
-      nano ~/.m2/settings.xml
-       ```
-
-    - Paste text into file
-       ```xml
-      <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-       http://maven.apache.org/xsd/settings-1.0.0.xsd">
-       
-            <mirrors>
-                <mirror>
-                    <id>my-repository-http-unblocker</id>
-                    <mirrorOf>snapshots</mirrorOf>
-                    <name></name>
-                    <url>http://217.25.90.14:8081/artifactory/libs-snapshot</url>
-                </mirror>
-            </mirrors>
-       </settings>
-       ```
-
-2. Import maven dependency to you project
+1. Import maven dependency to you project
 
    Example:
    ```xml
    <repositories>
         <repository>
             <snapshots />
-            <id>snapshots</id>
-            <name>libs-snapshot</name>
-            <url>http://217.25.90.14:8081/artifactory/libs-snapshot</url>
+            <id>nexus-server</id>
+            <name>maven-snapshots</name>
+            <url>https://maven.altinntech.com/repository/maven-snapshots/</url>
         </repository>
-   </repositories>
+    </repositories>
    
    <dependency>
         <groupId>com.altinntech</groupId>
         <artifactId>clicksave</artifactId>
-        <version>1.1.9-EXPERIMENTAL</version>
+        <version>1.1.16-SNAPSHOT</version>
    </dependency>
    ```
 
-3. Reload pom
+2. Reload pom
 
-4. Add config class
+3. Add config class
 
    ```java
        @Configuration
@@ -94,95 +69,9 @@ developers can significantly reduce the time spent interacting with the database
             }
        }
    ```
-5. Add to properties
+4. Add to properties
     ```properties
    spring.main.allow-bean-definition-overriding=true
-    ```
-
-## How to Install and Configure (below 1.1.9)
-
-1. Create settings.xml and configure it
-
-   - Create settings.xml
-      ```bash
-      touch ~/.m2/settings.xml
-      ```
-
-   - Edit settings.xml
-     ```bash
-     nano ~/.m2/settings.xml
-      ```
-
-   - Paste text into file
-      ```xml
-     <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-      http://maven.apache.org/xsd/settings-1.0.0.xsd">
-      
-        <activeProfiles>
-          <activeProfile>github</activeProfile>
-        </activeProfiles>
-      
-        <profiles>
-          <profile>
-            <id>github</id>
-            <repositories>
-              <repository>
-                <id>central</id>
-                <url>https://repo1.maven.org/maven2</url>
-              </repository>
-              <repository>
-                <id>github</id>
-                <url>https://maven.pkg.github.com/altinntech/Clicksave</url>
-                <snapshots>
-                  <enabled>true</enabled>
-                </snapshots>
-              </repository>
-            </repositories>
-          </profile>
-        </profiles>
-      
-        <servers>
-          <server>
-            <id>github</id>
-            <username>Diveloment</username>
-            <password>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</password>
-          </server>
-        </servers>
-      </settings>
-      ```
-
-2. Import maven dependency to you project
-
-   [Get maven package here](https://github.com/altinntech/Clicksave/packages/2084734)
-   
-   Example:
-   ```xml
-   <repositories>
-        <repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/altinntech/Clicksave</url>
-        </repository>
-   </repositories>
-   
-   <dependency>
-    <groupId>com.altinntech</groupId>
-    <artifactId>clicksave</artifactId>
-    <version>1.1.3</version> // set any version
-   </dependency>
-   ```
-   
-3. Reload pom
-
-4. Add config class
-
-    ```java
-    @InterfaceComponentScan(basePackages = {"path.to.repository.package"})
-    @ComponentScan(basePackages = {"com.altinntech.clicksave"})
-    public class AppConfiguration {
-    }
     ```
 
 ## Clicksave Configuration Properties
@@ -198,6 +87,10 @@ clicksave.connection.pool.refill-threshold=5
 clicksave.connection.pool.max-size=50
 clicksave.connection.pool.allow-expansion=true
 clicksave.core.root-package=
+clicksave.core.batch-save-rate=1200
+#Clicksave will use all host machine processors
+clicksave.core.thread-manager.max-processors=-1
+clicksave.core.core.thread-manager.max-queue-size=1000
 ```
 
 ### ClickHouse Database Connection Settings
@@ -250,7 +143,7 @@ When setting up the connection pool configuration for the ClickHouse database, i
 
 #### Large Values:
 
-1. **clicksave.connection.pool.max-size**: A significantly large maximum pool size may lead to excessive consumption of database server and application resources. It can overload the server and increase query response times.
+1. **clicksave.connection.pool.max-size**: A significantly larger maximum pool size may lead to excessive consumption of database server and application resources. It can overload the server and increase query response times.
 
 In general, optimal values for these parameters depend on the application workload, available resources, and database characteristics. It's recommended to conduct testing and optimization to ensure stable and efficient application performance.
 
@@ -277,10 +170,10 @@ In general, optimal values for these parameters depend on the application worklo
 
     ```java
     @ClickHouseEntity // you should use this annotation for persistence entity
-    @Batching(batchSize = 10) // add batch for saving
+    @Batching(batchSize = 100) // add batch for saving
     public class Person {
 
-    // entity class must have a no arguments constructor
+    // entity class must have a public no arguments constructor
     public Person() {
     }
 
@@ -293,9 +186,9 @@ In general, optimal values for these parameters depend on the application worklo
     String lastName;
     }
     ```
-   - Annotate your entity class with @ClickHouseEntity to mark it as a persistence entity.
+   - Annotate your entity class with ```@ClickHouseEntity``` to mark it as a persistence entity.
    - Use @Batching annotation to specify a batch size for saving multiple entities at once.
-   - Annotate the fields of your entity class with @Column to specify their types.
+   - Annotate the fields of your entity class with ```@Column``` to specify their types.
    - Supported id field types: UUID, Long, Integer
    - Not supported primitive types
 

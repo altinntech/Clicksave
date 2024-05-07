@@ -1,5 +1,11 @@
 # Changelog
 
+### [1.1.17-SNAPSHOT] - 2024-05-07
+- Added batch automatic saving
+- Added max processors property
+- Added max queue size property
+- Some code optimizations improvements
+
 ### [1.1.16-SNAPSHOT] - 2024-04-26
 - Added asyncSave method (~12000 e/s)
 - Added count() method
