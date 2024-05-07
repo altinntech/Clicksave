@@ -606,6 +606,16 @@ public class ClicksaveTests {
     }
 
     @Test
+    void serialSaving() throws InterruptedException {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        Thread.sleep(2000);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        Thread.sleep(2000);
+        jpaPersonRepository.save(TEST_PERSON_3);
+        Thread.sleep(2000);
+    }
+
+    @Test
     void performanceTest() {
         double maxTimeForSaveOperation = 0.2; // ms
         double maxTimeForUpdateOperation = 10.0; // ms

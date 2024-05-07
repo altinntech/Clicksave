@@ -2,6 +2,7 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
+import com.altinntech.clicksave.core.utils.BatchSaveCommand;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +12,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.altinntech.clicksave.log.CSLogger.debug;
 import static com.altinntech.clicksave.log.CSLogger.info;
@@ -37,9 +41,11 @@ public class BatchCollector {
 
     private static BatchCollector instance;
 
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
     public static BatchCollector getInstance() {
         if (instance == null) {
-            instance = new BatchCollector();
+            instance = create();
         }
         return instance;
     }
@@ -49,6 +55,25 @@ public class BatchCollector {
      */
     private BatchCollector() {
         this.bootstrap = CSBootstrap.getInstance();
+    }
+
+    private static BatchCollector create() {
+        BatchCollector batchCollector = new BatchCollector();
+        batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 1, 1, TimeUnit.SECONDS);
+        return batchCollector;
+    }
+
+    public synchronized void dispose() {
+        scheduler.shutdown();
+    }
+
+    public synchronized boolean isNotEmpty() {
+        for (List<List<Object>> list : batches.values()) {
+            if (!list.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -125,7 +150,7 @@ public class BatchCollector {
             throw new RuntimeException(e);
         }
         idsManager.sync(queryMeta.getClassDataCache());
-        info(query + " saved " + size);
+        debug("Batch", query + " saved " + size);
     }
 
     /**
@@ -139,6 +164,6 @@ public class BatchCollector {
                 continue;
             saveAndFlush(batchedQueryData, batch);
         }
-        info("All batches saved");
+        debug("All batches saved");
     }
 }

@@ -32,11 +32,8 @@ import static com.altinntech.clicksave.core.CHRepository.executePostLoadedMethod
  * The {@code QueryExecutor} class is responsible for executing assembled queries.
  * It processes queries and returns objects or lists of objects from the database.
  *
- * <p>This class is annotated with {@code @Component} for Spring dependency injection.</p>
- *
  * @author Fyodor Plotnikov
  */
-@Component
 public class QueryExecutor {
 
     private final CSBootstrap bootstrap;
@@ -49,10 +46,9 @@ public class QueryExecutor {
      *
      * @param bootstrap the bootstrap
      */
-    @Autowired
-    public QueryExecutor(CSBootstrap bootstrap) {
+    public QueryExecutor(CSBootstrap bootstrap, BatchCollector batchCollector) {
         this.bootstrap = bootstrap;
-        this.batchCollector = bootstrap.getBatchCollector();
+        this.batchCollector = batchCollector;
     }
 
     /**

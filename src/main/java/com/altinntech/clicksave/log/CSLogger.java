@@ -24,6 +24,10 @@ public class CSLogger {
         logger.info(message);
     }
 
+    public static void info(String context, String message) {
+        logger.info("<" + context + "> " + message);
+    }
+
     /**
      * Logs a warning message.
      *
@@ -42,6 +46,10 @@ public class CSLogger {
         if (logger.isDebugEnabled()) {
             logger.debug(message);
         }
+    }
+
+    public static void debug(String context, String message) {
+        debug("<" + context + "> " + message);
     }
 
     /**

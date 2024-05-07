@@ -2,6 +2,7 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.dto.*;
+import com.altinntech.clicksave.core.query.executor.QueryExecutor;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.core.utils.tb.TableBuilder;
@@ -36,9 +37,12 @@ public class CSBootstrap {
     private final ConnectionManager connectionManager;
     private final BatchCollector batchCollector;
     private final ThreadPoolManager threadPoolManager;
+    private final QueryExecutor queryExecutor;
     private static CSBootstrap instance;
 
     private final DefaultProperties defaultProperties;
+
+    private boolean isDisposed = false;
 
     /**
      * Constructs a new CSBootstrap instance.
@@ -51,26 +55,51 @@ public class CSBootstrap {
     }
 
     public CSBootstrap(DefaultProperties defaultProperties) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
-        info("Start initialization...");
-        this.defaultProperties = defaultProperties;
-        instance = this;
-        this.connectionManager = new ConnectionManager(defaultProperties);
-        this.batchCollector = BatchCollector.getInstance();
-        this.threadPoolManager = new ThreadPoolManager();
-        if (defaultProperties.validate()) {
-            initialize();
-            info("Initializing completed");
-        } else {
-            warn("Initialization skipped due to unrecognized properties. Check the configuration to ensure that all properties are correctly spelled and recognized");
+        synchronized (CSBootstrap.class) {
+            info("Start initialization...");
+            this.defaultProperties = defaultProperties;
+            instance = this;
+            this.connectionManager = new ConnectionManager(defaultProperties);
+            this.batchCollector = BatchCollector.getInstance();
+            this.queryExecutor = new QueryExecutor(instance, batchCollector);
+            this.threadPoolManager = new ThreadPoolManager();
+            if (defaultProperties.validate()) {
+                initialize();
+                info("Initializing completed");
+            } else {
+                warn("Initialization skipped due to unrecognized properties. Check the configuration to ensure that all properties are correctly spelled and recognized");
+            }
+            CSBootstrap.class.notifyAll();
         }
     }
 
-    public static CSBootstrap getInstance() {
+    private synchronized void dispose() {
+        isDisposed = true;
+        this.batchCollector.dispose();
+        this.classDataCacheMap.clear();
+        this.embeddableClassDataCacheMap.clear();
+        this.entityClasses.clear();
+        info("CSBootstrap", "Used resources disposed");
+    }
+
+    public static synchronized CSBootstrap getInstance() {
+        while (instance == null) {
+            try {
+                warn("Attempt to get instance of unavailable CSBootstrap instance");
+                CSBootstrap.class.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         return instance;
     }
 
     public ThreadPoolManager getThreadPoolManager() {
         return threadPoolManager;
+    }
+
+    public QueryExecutor getQueryExecutor() {
+        return queryExecutor;
     }
 
     private void initialize() throws FieldInitializationException, ClassCacheNotFoundException {
@@ -121,12 +150,16 @@ public class CSBootstrap {
     Thread shutdownThread = new Thread(this::shutdownProcess);
 
 
-    private void shutdownProcess() {
+    private synchronized void shutdownProcess() {
+        if (isDisposed) {
+            return;
+        }
         info("Shutdown initiated! Saving batches...");
         try {
             threadPoolManager.shutdown();
             batchCollector.saveAndFlushAll();
             connectionManager.closeAllConnections();
+            dispose();
             info("Shutdown completed");
         } catch (SQLException | ClassCacheNotFoundException | IllegalAccessException | InvocationTargetException e) {
             error("Error while stopping: " + e.getMessage());

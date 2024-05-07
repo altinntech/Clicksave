@@ -36,14 +36,13 @@ public class CSRequestHandler implements MethodHandler {
     /**
      * Constructs a new CSRequestHandler instance.
      *
-     * @param queryExecutor the query executor
      * @param bootstrap the bootstrap
      */
     @Autowired
-    public CSRequestHandler(QueryExecutor queryExecutor, CSBootstrap bootstrap) {
+    public CSRequestHandler(CSBootstrap bootstrap) {
         this.bootstrap = bootstrap;
         this.repository = CHRepository.getInstance();
-        this.queryExecutor = queryExecutor;
+        this.queryExecutor = bootstrap.getQueryExecutor();
         this.threadPoolManager = bootstrap.getThreadPoolManager();
     }
 
