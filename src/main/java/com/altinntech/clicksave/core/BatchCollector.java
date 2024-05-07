@@ -3,8 +3,8 @@ package com.altinntech.clicksave.core;
 import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.utils.BatchSaveCommand;
+import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -17,7 +17,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.altinntech.clicksave.log.CSLogger.debug;
-import static com.altinntech.clicksave.log.CSLogger.info;
 
 /**
  * The {@code BatchCollector} class is responsible for collecting batches of queries.
@@ -39,16 +38,7 @@ public class BatchCollector {
      */
     private final CSBootstrap bootstrap;
 
-    private static BatchCollector instance;
-
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
-    public static BatchCollector getInstance() {
-        if (instance == null) {
-            instance = create();
-        }
-        return instance;
-    }
 
     /**
      * Instantiates a new Batch collector.
@@ -57,9 +47,9 @@ public class BatchCollector {
         this.bootstrap = CSBootstrap.getInstance();
     }
 
-    private static BatchCollector create() {
+    public static BatchCollector create(DefaultProperties properties) {
         BatchCollector batchCollector = new BatchCollector();
-        batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 1, 1, TimeUnit.SECONDS);
+        batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 2000, Long.parseLong(properties.getBatchSaveRate()), TimeUnit.MILLISECONDS);
         return batchCollector;
     }
 

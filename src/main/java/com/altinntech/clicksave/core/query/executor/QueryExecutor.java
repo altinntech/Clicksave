@@ -15,8 +15,6 @@ import com.altinntech.clicksave.core.query.parser.Part;
 import com.altinntech.clicksave.core.query.parser.PartParser;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.interfaces.EnumId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.thepavel.icomponent.metadata.MethodMetadata;
 
 import java.lang.annotation.Annotation;

@@ -1,5 +1,7 @@
 package com.altinntech.clicksave.core.utils;
 
+import com.altinntech.clicksave.interfaces.PropertyEnvironment;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -7,7 +9,7 @@ import java.util.Set;
 
 import static com.altinntech.clicksave.log.CSLogger.error;
 
-public class PropertyReader {
+public class PropertyReader implements PropertyEnvironment {
 
     private static PropertyReader instance;
 
@@ -29,10 +31,12 @@ public class PropertyReader {
         return instance;
     }
 
+    @Override
     public String getProperty(String key) {
         return properties.getProperty(key);
     }
 
+    @Override
     public String getProperty(String key, String defaultValue) {
         if (containsKey(key)) {
             return getProperty(key);

@@ -1,6 +1,7 @@
 package com.altinntech.clicksave.core.utils;
 
 import com.altinntech.clicksave.interfaces.Observer;
+import com.altinntech.clicksave.interfaces.PropertyEnvironment;
 import lombok.Getter;
 import org.springframework.core.env.Environment;
 
@@ -29,33 +30,30 @@ public class DefaultProperties {
     private String allowConnectionsPoolExpansion;
     private String rootPackageToScan;
     private String testEnv;
+    private String batchSaveRate;
 
     public static DefaultProperties fromPropertyFile() {
-        DefaultProperties defaultProperties = new DefaultProperties();
         PropertyReader propertyReader = PropertyReader.getInstance();
-        defaultProperties.url = propertyReader.getProperty("clicksave.connection.datasource.url", "");
-        defaultProperties.username = propertyReader.getProperty("clicksave.connection.datasource.username");
-        defaultProperties.password = propertyReader.getProperty("clicksave.connection.datasource.password");
-        defaultProperties.initialConnectionsPoolSize = propertyReader.getProperty("clicksave.connection.pool.initial-size", "20");
-        defaultProperties.connectionsPoolSizeRefillThreshold = propertyReader.getProperty("clicksave.connection.pool.refill-threshold", "5");
-        defaultProperties.maxConnectionPoolSize = propertyReader.getProperty("clicksave.connection.pool.max-size", "50");
-        defaultProperties.allowConnectionsPoolExpansion = propertyReader.getProperty("clicksave.connection.pool.allow-expansion", "true");
-        defaultProperties.rootPackageToScan = propertyReader.getProperty("clicksave.core.root-package", "");
-        defaultProperties.testEnv = propertyReader.getProperty("clicksave.test-env", "false");
-        return defaultProperties;
+        return getProperties(propertyReader);
     }
 
     public static DefaultProperties fromEnvironment(Environment environment) {
+        SpringEnvironment springEnvironment = new SpringEnvironment(environment);
+        return getProperties(springEnvironment);
+    }
+
+    private static DefaultProperties getProperties(PropertyEnvironment propertyEnvironment) {
         DefaultProperties defaultProperties = new DefaultProperties();
-        defaultProperties.url = environment.getProperty("clicksave.connection.datasource.url", "");
-        defaultProperties.username = environment.getProperty("clicksave.connection.datasource.username");
-        defaultProperties.password = environment.getProperty("clicksave.connection.datasource.password");
-        defaultProperties.initialConnectionsPoolSize = environment.getProperty("clicksave.connection.pool.initial-size", "20");
-        defaultProperties.connectionsPoolSizeRefillThreshold = environment.getProperty("clicksave.connection.pool.refill-threshold", "5");
-        defaultProperties.maxConnectionPoolSize = environment.getProperty("clicksave.connection.pool.max-size", "50");
-        defaultProperties.allowConnectionsPoolExpansion = environment.getProperty("clicksave.connection.pool.allow-expansion", "true");
-        defaultProperties.rootPackageToScan = environment.getProperty("clicksave.core.root-package", "");
-        defaultProperties.testEnv = environment.getProperty("clicksave.test-env", "false");
+        defaultProperties.url = propertyEnvironment.getProperty("clicksave.connection.datasource.url", "");
+        defaultProperties.username = propertyEnvironment.getProperty("clicksave.connection.datasource.username");
+        defaultProperties.password = propertyEnvironment.getProperty("clicksave.connection.datasource.password");
+        defaultProperties.initialConnectionsPoolSize = propertyEnvironment.getProperty("clicksave.connection.pool.initial-size", "40");
+        defaultProperties.connectionsPoolSizeRefillThreshold = propertyEnvironment.getProperty("clicksave.connection.pool.refill-threshold", "5");
+        defaultProperties.maxConnectionPoolSize = propertyEnvironment.getProperty("clicksave.connection.pool.max-size", "50");
+        defaultProperties.allowConnectionsPoolExpansion = propertyEnvironment.getProperty("clicksave.connection.pool.allow-expansion", "true");
+        defaultProperties.rootPackageToScan = propertyEnvironment.getProperty("clicksave.core.root-package", "");
+        defaultProperties.testEnv = propertyEnvironment.getProperty("clicksave.test-env", "false");
+        defaultProperties.batchSaveRate = propertyEnvironment.getProperty("clicksave.core.batch-save-rate", "1200");
         return defaultProperties;
     }
 

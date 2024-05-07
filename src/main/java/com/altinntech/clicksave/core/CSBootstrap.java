@@ -60,7 +60,7 @@ public class CSBootstrap {
             this.defaultProperties = defaultProperties;
             instance = this;
             this.connectionManager = new ConnectionManager(defaultProperties);
-            this.batchCollector = BatchCollector.getInstance();
+            this.batchCollector = BatchCollector.create(defaultProperties);
             this.queryExecutor = new QueryExecutor(instance, batchCollector);
             this.threadPoolManager = new ThreadPoolManager();
             if (defaultProperties.validate()) {
