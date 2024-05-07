@@ -32,6 +32,7 @@ public class DefaultProperties {
     private String testEnv;
     private String batchSaveRate;
     private String threadManagerMaxProcessors;
+    private String threadManagerMaxQueueSize;
 
     public static DefaultProperties fromPropertyFile() {
         PropertyReader propertyReader = PropertyReader.getInstance();
@@ -55,7 +56,8 @@ public class DefaultProperties {
         defaultProperties.rootPackageToScan = propertyEnvironment.getProperty("clicksave.core.root-package", "");
         defaultProperties.testEnv = propertyEnvironment.getProperty("clicksave.test-env", "false");
         defaultProperties.batchSaveRate = propertyEnvironment.getProperty("clicksave.core.batch-save-rate", "1200");
-        defaultProperties.threadManagerMaxProcessors = propertyEnvironment.getProperty("clicksave.core.thread-manager.max-processors", "1");
+        defaultProperties.threadManagerMaxProcessors = propertyEnvironment.getProperty("clicksave.core.thread-manager.max-processors", "0");
+        defaultProperties.threadManagerMaxQueueSize = propertyEnvironment.getProperty("clicksave.core.core.thread-manager.max-queue-size", "1000");
         return defaultProperties;
     }
 

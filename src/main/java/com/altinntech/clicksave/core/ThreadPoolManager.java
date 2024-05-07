@@ -16,7 +16,7 @@ public class ThreadPoolManager {
 
     public ThreadPoolManager() {
         int processors = Runtime.getRuntime().availableProcessors();
-        executor = initThreadPool(processors);
+        executor = initThreadPool(processors, 1000);
     }
 
     public ThreadPoolManager(DefaultProperties properties) {
@@ -24,17 +24,17 @@ public class ThreadPoolManager {
         if (processors <= 0) {
             processors = Runtime.getRuntime().availableProcessors();
         }
-        executor = initThreadPool(processors);
+        executor = initThreadPool(processors, Integer.parseInt(properties.getThreadManagerMaxQueueSize()));
     }
 
-    private ThreadPoolExecutor initThreadPool(int processors) {
+    private ThreadPoolExecutor initThreadPool(int processors, int capacity) {
         RejectedExecutionHandler handler = new ThreadPoolExecutor.CallerRunsPolicy();
         ThreadPoolExecutor executor = new ThreadPoolExecutor(
                 processors,
                 processors,
                 100,
                 TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(1000),
+                new LinkedBlockingQueue<>(capacity),
                 handler);
         info("ThreadPoolManager started with " + processors + " processors");
         return executor;
