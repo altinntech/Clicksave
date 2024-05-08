@@ -3,7 +3,11 @@ package com.altinntech.clicksave.core;
 import cc.blynk.clickhouse.ClickHouseDataSource;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.interfaces.Observer;
+import lombok.SneakyThrows;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -12,8 +16,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.altinntech.clicksave.log.CSLogger.error;
-import static com.altinntech.clicksave.log.CSLogger.info;
+import static com.altinntech.clicksave.core.CSUtils.convertJdbcUrlToHttpUrl;
+import static com.altinntech.clicksave.log.CSLogger.*;
 
 /**
  * The {@code ConnectionManager} class manages connections to the database and serves as a connection pool.
@@ -26,12 +30,14 @@ public class ConnectionManager implements Observer {
     private final DefaultProperties defaultProperties;
 
     private String URL;
+    private String HTTP_URL;
     private String USER;
     private String PASSWORD;
     private final int INITIAL_POOL_SIZE;
     private final int REFILL_POOL_SIZE_THRESHOLD;
     private final int MAX_POOL_SIZE;
     private final boolean ALLOW_EXPANSION;
+    private final int CONNECTION_RETRY_TIME = 2000;
 
     private final Deque<Connection> connectionPool = new ConcurrentLinkedDeque<>();
     private ClickHouseDataSource dataSource;
@@ -54,6 +60,7 @@ public class ConnectionManager implements Observer {
 
         if (defaultProperties.validate()) {
             this.URL = defaultProperties.getUrl();
+            this.HTTP_URL = convertJdbcUrlToHttpUrl(URL);
             this.USER = defaultProperties.getUsername();
             this.PASSWORD = defaultProperties.getPassword();
 
@@ -158,6 +165,7 @@ public class ConnectionManager implements Observer {
         Properties properties = new Properties();
         properties.setProperty("user", USER);
         properties.setProperty("password", PASSWORD);
+        healthCheck();
         this.dataSource = new ClickHouseDataSource(URL, properties);
         try {
             for (int i = 0; i < INITIAL_POOL_SIZE; i++) {
@@ -166,6 +174,34 @@ public class ConnectionManager implements Observer {
             info("Connection to " + URL + " established");
         } catch (SQLException e) {
             error("Error while create connection: " + e.getMessage());
+        }
+    }
+
+    @SneakyThrows
+    private void healthCheck() {
+        while (!healthCheck(HTTP_URL)) {
+            debug("Health check", "Retry connect to " + HTTP_URL);
+            Thread.sleep(CONNECTION_RETRY_TIME);
+        }
+    }
+
+    private boolean healthCheck(String url) {
+        try {
+            java.net.URL healthCheckUrl = new java.net.URL(url);
+            HttpURLConnection connection = (HttpURLConnection) healthCheckUrl.openConnection();
+            connection.setRequestMethod("GET");
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                debug("Health check", "Ok. Response code from " + HTTP_URL + ": " + responseCode);
+                return true;
+            } else {
+                debug("Health check", "Failed. Response code from " + HTTP_URL + ": " + responseCode);
+                return false;
+            }
+        } catch (IOException e) {
+            debug("Health check", "Health check failed" + e.getMessage());
+            return false;
         }
     }
 }

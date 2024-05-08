@@ -13,11 +13,14 @@ import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import lombok.SneakyThrows;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -637,5 +640,22 @@ public class CSUtils {
         }
 
         return stringBuilder.toString();
+    }
+
+    @SneakyThrows
+    static String convertJdbcUrlToHttpUrl(String jdbcUrl) {
+        try {
+            URI uri = new URI(jdbcUrl.substring(5));
+            String host = uri.getHost();
+            int port = uri.getPort();
+
+            if (host != null && port != -1) {
+                return "http://" + host + ":" + port;
+            } else {
+                throw new IllegalArgumentException("Invalid JDBC URL format");
+            }
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid JDBC URL format", e);
+        }
     }
 }

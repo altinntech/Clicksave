@@ -53,7 +53,10 @@ public class BatchCollector {
         long batchSaveRate = Long.parseLong(properties.getBatchSaveRate());
         if (batchSaveRate > 0) {
             batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 2000, batchSaveRate, TimeUnit.MILLISECONDS);
-            info("Batch save scheduler active");
+            info("Batch save scheduler status: active");
+            debug("Batch save scheduler rate: every " + batchSaveRate + " ms");
+        } else {
+            info("Batch save scheduler status: inactive");
         }
         return batchCollector;
     }
