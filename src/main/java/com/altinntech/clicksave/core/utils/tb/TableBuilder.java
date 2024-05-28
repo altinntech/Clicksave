@@ -26,7 +26,7 @@ public class TableBuilder {
     public void generateTable(Class<?> clazz) throws ClassCacheNotFoundException {
         StringBuilder primaryKey = new StringBuilder();
 
-        ClassDataCache classDataCache = bootstrap.getClassDataCache(clazz);
+        ClassDataCache classDataCache = bootstrap.getClassDataCacheService().getClassDataCache(clazz);
         EngineType engineType = classDataCache.getEngineType();
 
         String tableName = classDataCache.getTableName();
@@ -58,7 +58,7 @@ public class TableBuilder {
             }
 
             if (embeddedOptional.isPresent()) {
-                EmbeddableClassData embeddableClassData = bootstrap.getEmbeddableClassDataCache(fieldData.getType());
+                EmbeddableClassData embeddableClassData = bootstrap.getClassDataCacheService().getEmbeddableClassDataCache(fieldData.getType());
                 if (embeddableClassData != null) {
                     prebuildTable(primaryKey, embeddableClassData.getFields(), query);
                     continue;
@@ -83,7 +83,7 @@ public class TableBuilder {
     }
 
     public void updateTable(Class<?> clazz) throws FieldInitializationException, ClassCacheNotFoundException {
-        ClassDataCache classDataCache = bootstrap.getClassDataCache(clazz);
+        ClassDataCache classDataCache = bootstrap.getClassDataCacheService().getClassDataCache(clazz);
         if (classDataCache.getSystemTableAnnotationOptional().isPresent()) {
             return;
         }
@@ -105,7 +105,7 @@ public class TableBuilder {
             if (!exists && fieldData.getEmbeddedAnnotation().isEmpty()) {
                 addColumn(tableName, fieldData);
             } else if (fieldData.getEmbeddedAnnotation().isPresent()) {
-                EmbeddableClassData embeddableClassData = bootstrap.getEmbeddableClassDataCache(fieldData.getType());
+                EmbeddableClassData embeddableClassData = bootstrap.getClassDataCacheService().getEmbeddableClassDataCache(fieldData.getType());
                 if (embeddableClassData != null) {
                     checkFields(tableName, embeddableClassData.getFields(), fieldsFromDB);
                 }

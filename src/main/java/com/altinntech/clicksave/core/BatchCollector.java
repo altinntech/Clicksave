@@ -32,24 +32,21 @@ public class BatchCollector {
      */
     private final ConcurrentHashMap<BatchedQueryData, List<List<Object>>> batches = new ConcurrentHashMap<>();
 
-    private final IdsManager idsManager = IdsManager.getInstance();
-
-    /**
-     * The bootstrap instance for database connectivity.
-     */
-    private final CSBootstrap bootstrap;
+    private final IdsManager idsManager;
+    private final ConnectionManager connectionManager;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     /**
      * Instantiates a new Batch collector.
      */
-    private BatchCollector() {
-        this.bootstrap = CSBootstrap.getInstance();
+    private BatchCollector(IdsManager idsManager, ConnectionManager connectionManager) {
+        this.idsManager = idsManager;
+        this.connectionManager = connectionManager;
     }
 
-    public static BatchCollector create(DefaultProperties properties) {
-        BatchCollector batchCollector = new BatchCollector();
+    public static BatchCollector create(IdsManager idsManager, ConnectionManager connectionManager, DefaultProperties properties) {
+        BatchCollector batchCollector = new BatchCollector(idsManager, connectionManager);
         long batchSaveRate = Long.parseLong(properties.getBatchSaveRate());
         if (batchSaveRate > 0) {
             batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 2000, batchSaveRate, TimeUnit.MILLISECONDS);
@@ -124,7 +121,7 @@ public class BatchCollector {
     public synchronized void saveAndFlush(BatchedQueryData queryMeta, List<List<Object>> batch) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         String query = queryMeta.getQuery();
         int size = batch.size();
-        try(Connection connection = bootstrap.getConnection()) {
+        try(Connection connection = connectionManager.getConnection()) {
             PreparedStatement statement = connection.prepareStatement(query);
 
             try {
@@ -140,7 +137,7 @@ public class BatchCollector {
                 if (statement != null) {
                     statement.close();
                 }
-                bootstrap.releaseConnection(connection);
+                connectionManager.releaseConnection(connection);
                 batch.clear();
             }
 

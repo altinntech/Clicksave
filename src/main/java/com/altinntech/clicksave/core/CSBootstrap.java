@@ -9,6 +9,7 @@ import com.altinntech.clicksave.core.utils.tb.TableBuilder;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
+import lombok.Getter;
 import org.reflections.Reflections;
 
 import java.lang.reflect.InvocationTargetException;
@@ -31,14 +32,15 @@ import static com.altinntech.clicksave.log.CSLogger.*;
 public class CSBootstrap {
 
     private Set<Class<?>> entityClasses;
-    private final Map<Class<?>, ClassDataCache> classDataCacheMap = new HashMap<>();
-    private final Map<Class<?>, EmbeddableClassData> embeddableClassDataCacheMap = new HashMap<>();
-
     private final ConnectionManager connectionManager;
+    @Getter
+    private final CHRepository repository;
+    private final IdsManager idsManager;
     private final BatchCollector batchCollector;
     private final ThreadPoolManager threadPoolManager;
     private final QueryExecutor queryExecutor;
-    private static CSBootstrap instance;
+    @Getter
+    private final ClassDataCacheService classDataCacheService;
 
     private final DefaultProperties defaultProperties;
 
@@ -55,43 +57,32 @@ public class CSBootstrap {
     }
 
     public CSBootstrap(DefaultProperties defaultProperties) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
-        synchronized (CSBootstrap.class) {
-            info("Start initialization...");
-            this.defaultProperties = defaultProperties;
-            instance = this;
-            this.connectionManager = new ConnectionManager(defaultProperties);
-            this.batchCollector = BatchCollector.create(defaultProperties);
-            this.queryExecutor = new QueryExecutor(instance, batchCollector);
-            this.threadPoolManager = new ThreadPoolManager(defaultProperties);
-            if (defaultProperties.validate()) {
-                initialize();
-                info("Initializing completed");
-            } else {
-                warn("Initialization skipped due to unrecognized properties. Check the configuration to ensure that all properties are correctly spelled and recognized");
-            }
-            CSBootstrap.class.notifyAll();
+        info("Start initialization...");
+
+        this.classDataCacheService = new ClassDataCacheService();
+        this.defaultProperties = defaultProperties;
+        this.connectionManager = new ConnectionManager(defaultProperties);
+        this.idsManager = new IdsManager(connectionManager);
+        this.batchCollector = BatchCollector.create(idsManager, connectionManager, defaultProperties);
+        this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager);
+        this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector);
+        this.threadPoolManager = new ThreadPoolManager(defaultProperties);
+        idsManager.setRepository(repository);
+
+        if (defaultProperties.validate()) {
+            initialize();
+            info("Initializing completed");
+        } else {
+            warn("Initialization skipped due to unrecognized properties. Check the configuration to ensure that all properties are correctly spelled and recognized");
         }
     }
 
     private synchronized void dispose() {
         isDisposed = true;
         this.batchCollector.dispose();
-        this.classDataCacheMap.clear();
-        this.embeddableClassDataCacheMap.clear();
+        this.classDataCacheService.dispose();
         this.entityClasses.clear();
         info("CSBootstrap", "Used resources disposed");
-    }
-
-    public static synchronized CSBootstrap getInstance() {
-        while (instance == null) {
-            try {
-                warn("Attempt to get instance of unavailable CSBootstrap instance");
-                CSBootstrap.class.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        return instance;
     }
 
     public ThreadPoolManager getThreadPoolManager() {
@@ -126,7 +117,7 @@ public class CSBootstrap {
             classDataCache.setIdField(preparedFieldsData.getIdField());
             classDataCache.setMethodData(getMethodData(clazz));
 
-            classDataCacheMap.put(clazz, classDataCache);
+            classDataCacheService.putClassDataCache(clazz, classDataCache);
             debug("Find entity class: " + clazz);
         }
 
@@ -135,7 +126,7 @@ public class CSBootstrap {
             PreparedFieldsData preparedFieldsData = getFieldsData(clazz);
             embeddableClassData.setFields(preparedFieldsData.getFields());
 
-            embeddableClassDataCacheMap.put(clazz, embeddableClassData);
+            classDataCacheService.putEmbeddableClassDataCache(clazz, embeddableClassData);
             debug("Find embeddable class: " + clazz);
         }
 
@@ -166,70 +157,11 @@ public class CSBootstrap {
         }
     }
 
-    /**
-     * Retrieves the class data cache for the specified class.
-     *
-     * @param clazz the class
-     * @return the class data cache
-     * @throws ClassCacheNotFoundException if class cache is not found
-     */
-    public ClassDataCache getClassDataCache(Class<?> clazz) throws ClassCacheNotFoundException {
-        Optional<ClassDataCache> classDataCacheOptional = Optional.ofNullable(classDataCacheMap.get(clazz));
-        if (classDataCacheOptional.isPresent()) {
-            return classDataCacheOptional.get();
-        }
-        throw new ClassCacheNotFoundException();
-    }
-
-    /**
-     * Retrieves the embeddable class data cache for the specified class.
-     *
-     * @param clazz the class
-     * @return the embeddable class data cache
-     * @throws ClassCacheNotFoundException if class cache is not found
-     */
-    public EmbeddableClassData getEmbeddableClassDataCache(Class<?> clazz) throws ClassCacheNotFoundException {
-        Optional<EmbeddableClassData> classDataCacheOptional = Optional.ofNullable(embeddableClassDataCacheMap.get(clazz));
-        if (classDataCacheOptional.isPresent()) {
-            return classDataCacheOptional.get();
-        }
-        throw new ClassCacheNotFoundException();
-    }
-
-    /**
-     * Retrieves the batch collector.
-     *
-     * @return the batch collector
-     */
-    public BatchCollector getBatchCollector() {
-        return batchCollector;
-    }
-
-    /**
-     * Retrieves a database connection.
-     *
-     * @return the database connection
-     * @throws SQLException if a SQL exception occurs
-     */
-    public Connection getConnection() throws SQLException {
-        return connectionManager.getConnection();
-    }
-
-    /**
-     * Releases a database connection.
-     *
-     * @param connection the database connection to release
-     * @throws SQLException if a SQL exception occurs
-     */
-    public void releaseConnection(Connection connection) throws SQLException {
-        connectionManager.releaseConnection(connection);
-    }
-
     private void createTablesFromAnnotatedClasses() throws FieldInitializationException, ClassCacheNotFoundException {
         for (Class<?> clazz : entityClasses) {
             if (clazz.getAnnotation(ClickHouseEntity.class) != null && clazz.getAnnotation(ClickHouseEntity.class).forTest() && !Boolean.parseBoolean(defaultProperties.getTestEnv()))
                 continue;
-            ClassDataCache classDataCache = getClassDataCache(clazz);
+            ClassDataCache classDataCache = classDataCacheService.getClassDataCache(clazz);
             String tableName = classDataCache.getTableName();
             TableBuilder tb = new TableBuilder(this);
             if (!isTableExists(tableName)) {

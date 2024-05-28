@@ -425,10 +425,10 @@ public class CSUtils {
      * @param classDataCache the ClassData containing field data
      * @return the FieldDataCache object corresponding to the field name, or null if not found
      */
-    private static FieldDataCache findFieldDataCache(String fieldName, ClassData classDataCache) throws ClassCacheNotFoundException {
+    private static FieldDataCache findFieldDataCache(String fieldName, ClassData classDataCache, ClassDataCacheService classDataCacheService) throws ClassCacheNotFoundException {
         List<FieldDataCache> fetchedEntityFieldsData = new ArrayList<>();
         for (FieldDataCache fieldDataCache : classDataCache.getFields()) {
-            findEmbeddedFieldDataCache(fetchedEntityFieldsData, fieldDataCache);
+            findEmbeddedFieldDataCache(fetchedEntityFieldsData, fieldDataCache, classDataCacheService);
         }
         return fetchedEntityFieldsData.stream()
                 .filter(fieldDataCache -> fieldDataCache.getFieldName().equals(fieldName))
@@ -436,13 +436,12 @@ public class CSUtils {
                 .orElse(null);
     }
 
-    private static void findEmbeddedFieldDataCache(List<FieldDataCache> fetchedEntityFieldsData, FieldDataCache fieldDataCache) throws ClassCacheNotFoundException {
+    private static void findEmbeddedFieldDataCache(List<FieldDataCache> fetchedEntityFieldsData, FieldDataCache fieldDataCache, ClassDataCacheService classDataCacheService) throws ClassCacheNotFoundException {
         Optional<Embedded> embeddedOptional = fieldDataCache.getEmbeddedAnnotation();
         if (embeddedOptional.isPresent()) {
-            CSBootstrap bootstrap = CSBootstrap.getInstance();
-            EmbeddableClassData embeddableClassData = bootstrap.getEmbeddableClassDataCache(fieldDataCache.getType());
+            EmbeddableClassData embeddableClassData = classDataCacheService.getEmbeddableClassDataCache(fieldDataCache.getType());
             for (FieldDataCache fieldDataEmb : embeddableClassData.getFields()) {
-                findEmbeddedFieldDataCache(fetchedEntityFieldsData, fieldDataEmb);
+                findEmbeddedFieldDataCache(fetchedEntityFieldsData, fieldDataEmb, classDataCacheService);
             }
         } else {
             fetchedEntityFieldsData.add(fieldDataCache);
@@ -514,7 +513,7 @@ public class CSUtils {
      * @throws SQLException             the SQL exception
      * @throws IllegalArgumentException the illegal argument exception
      */
-    public static <T> T createEntityFromResultSet(Class<T> entityClass, ResultSet resultSet, ClassData classDataCache) throws ClassCacheNotFoundException, SQLException, IllegalArgumentException {
+    public static <T> T createEntityFromResultSet(Class<T> entityClass, ResultSet resultSet, ClassData classDataCache, ClassDataCacheService classDataCacheService) throws ClassCacheNotFoundException, SQLException, IllegalArgumentException {
         T entity = null;
         try {
             entity = entityClass.getDeclaredConstructor().newInstance();
@@ -522,9 +521,8 @@ public class CSUtils {
             for (FieldDataCache fieldDataCache : fields) {
                 Optional<Embedded> embeddedOptional = fieldDataCache.getEmbeddedAnnotation();
                 if (embeddedOptional.isPresent()) {
-                    CSBootstrap bootstrap = CSBootstrap.getInstance();
-                    EmbeddableClassData embeddableClassData = bootstrap.getEmbeddableClassDataCache(fieldDataCache.getType());
-                    Object value = createEntityFromResultSet(fieldDataCache.getType(), resultSet, embeddableClassData);
+                    EmbeddableClassData embeddableClassData = classDataCacheService.getEmbeddableClassDataCache(fieldDataCache.getType());
+                    Object value = createEntityFromResultSet(fieldDataCache.getType(), resultSet, embeddableClassData, classDataCacheService);
                     Field field = fieldDataCache.getField();
                     setField(entity, field, value);
                 } else {

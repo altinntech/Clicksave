@@ -28,34 +28,20 @@ import static com.altinntech.clicksave.log.CSLogger.error;
  * @author Fyodor Plotnikov
  */
 public class CHRepository {
-
-    private static CHRepository instance;
-
-    /**
-     * The CSBootstrap instance for database connectivity.
-     */
-    private final CSBootstrap CSBootstrap;
-
-    /**
-     * The BatchCollector instance for managing batches of queries.
-     */
+    
+    private final ConnectionManager connectionManager;
+    private final ClassDataCacheService classDataCacheService;
     private final BatchCollector batchCollector;
-
-    private final IdsManager idsManager = IdsManager.getInstance();
+    private final IdsManager idsManager;
 
     /**
      * Instantiates a new ClickHouse repository.
      */
-    private CHRepository() {
-        this.CSBootstrap = com.altinntech.clicksave.core.CSBootstrap.getInstance();
-        this.batchCollector = CSBootstrap.getBatchCollector();
-    }
-
-    public static CHRepository getInstance() {
-        if (instance == null) {
-            instance = new CHRepository();
-        }
-        return instance;
+    CHRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager) {
+        this.connectionManager = connectionManager;
+        this.classDataCacheService = classDataCacheService;
+        this.idsManager = idsManager;
+        this.batchCollector = batchCollector;
     }
 
     /**
@@ -71,7 +57,7 @@ public class CHRepository {
      */
     public <T, ID> T save(T entity, ID idType) throws FieldInitializationException, ClassCacheNotFoundException, IllegalAccessException, SQLException, InvocationTargetException {
         Class<?> entityClass = entity.getClass();
-        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         FieldDataCache idFieldData = classDataCache.getIdField();
         Field idField = idFieldData.getField();
 
@@ -101,7 +87,7 @@ public class CHRepository {
             return entity;
         }
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             PreparedStatement statement = connection.prepareStatement(query)) {
 
             for (int i = 0; i < fieldValues.size(); i++) {
@@ -109,7 +95,7 @@ public class CHRepository {
             }
             statement.addBatch();
             statement.executeBatch();
-            CSBootstrap.releaseConnection(connection);
+            connectionManager.releaseConnection(connection);
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -169,7 +155,7 @@ public class CHRepository {
             }
 
             if (fieldData.isEmbedded()) {
-                EmbeddableClassData embeddableClassData = CSBootstrap.getEmbeddableClassDataCache(fieldData.getType());
+                EmbeddableClassData embeddableClassData = classDataCacheService.getEmbeddableClassDataCache(fieldData.getType());
                 field.setAccessible(true);
                 Object value = field.get(entity);
                 extractFieldValuesForCreate(value, null, classDataCache, insertQuery, valuesPlaceholder, embeddableClassData.getFields(), fieldValues);
@@ -254,10 +240,10 @@ public class CHRepository {
         updateQuery.delete(updateQuery.length() - 2, updateQuery.length()).append(" WHERE ")
                 .append(idFieldData.getFieldInTableName()).append(" = ").append("'" + id + "'");
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             Statement statement = connection.createStatement()) {
             int rowAffected = statement.executeUpdate(updateQuery.toString());
-            CSBootstrap.releaseConnection(connection);
+            connectionManager.releaseConnection(connection);
         } catch (SQLException e) {
             error(e.getMessage(), this.getClass());
         }
@@ -275,7 +261,7 @@ public class CHRepository {
             Optional<EnumColumn> enumeratedOptional = fieldData.getEnumColumnAnnotation();
 
             if (fieldData.isEmbedded()) {
-                EmbeddableClassData embeddableClassData = CSBootstrap.getEmbeddableClassDataCache(fieldData.getType());
+                EmbeddableClassData embeddableClassData = classDataCacheService.getEmbeddableClassDataCache(fieldData.getType());
                 field.setAccessible(true);
                 Object value = field.get(entity);
                 extractFieldValuesForUpdate(value, updateQuery, embeddableClassData.getFields());
@@ -321,7 +307,7 @@ public class CHRepository {
      * @throws ClassCacheNotFoundException if the class cache is not found
      */
     public <T, ID> T findById(Class<T> entityClass, ID id) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
-        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         StringBuilder selectQuery = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE ");
         batchCollector.saveAndFlush(classDataCache);
@@ -330,14 +316,14 @@ public class CHRepository {
         String idFieldName = idFieldCache.getFieldInTableName();
         selectQuery.append(idFieldName).append(" = ?");
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             PreparedStatement statement = connection.prepareStatement(selectQuery.toString())) {
             statement.setMaxRows(1);
             statement.setObject(1, id);
             try(ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache);
-                    CSBootstrap.releaseConnection(connection);
+                    T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
+                    connectionManager.releaseConnection(connection);
                     executePostLoadedMethods(entity, classDataCache);
                     return entity;
                 }
@@ -359,47 +345,47 @@ public class CHRepository {
      * @throws SQLException                if a SQL exception occurs
      */
     public <T> List<T> findAll(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
-        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         String selectQuery = "SELECT * FROM " + tableName;
         batchCollector.saveAndFlush(classDataCache);
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(selectQuery)) {
             List<T> entities = new ArrayList<>();
             while (resultSet.next()) {
-                T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache);
+                T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
                 executePostLoadedMethods(entity, classDataCache);
                 entities.add(entity);
             }
-            CSBootstrap.releaseConnection(connection);
+            connectionManager.releaseConnection(connection);
             return entities;
         }
     }
 
     public <T> long count(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException, InvocationTargetException, IllegalAccessException {
-        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         String idField = classDataCache.getIdField().getFieldInTableName();
         String selectQuery = "SELECT count(" + idField + ") AS cnt FROM " + tableName;
         batchCollector.saveAndFlush(classDataCache);
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(selectQuery)) {
             if (resultSet.next()) {
                 long count = resultSet.getLong("cnt");
-                CSBootstrap.releaseConnection(connection);
+                connectionManager.releaseConnection(connection);
                 return count;
             }
-            CSBootstrap.releaseConnection(connection);
+            connectionManager.releaseConnection(connection);
             return 0L;
         }
     }
 
     <T> Optional<T> findLast(Class<T> entityClass, Properties properties) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
-        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         FieldDataCache idFieldData = classDataCache.getIdField();
         String condition = convertPropertiesToQuery(properties);
@@ -408,13 +394,13 @@ public class CHRepository {
                 .append(idFieldData.getFieldInTableName()).append(" DESC LIMIT 1");
         batchCollector.saveAndFlush(classDataCache);
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             PreparedStatement statement = connection.prepareStatement(selectIdQuery.toString())) {
             statement.setMaxRows(1);
             try(ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache);
-                    CSBootstrap.releaseConnection(connection);
+                    T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
+                    connectionManager.releaseConnection(connection);
                     executePostLoadedMethods(entity, classDataCache);
                     return Optional.ofNullable(entity);
                 }
@@ -431,15 +417,15 @@ public class CHRepository {
      * @throws ClassCacheNotFoundException if the class cache is not found
      */
     public void deleteAll(Class<?> entityClass) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
-        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         StringBuilder deleteQuery = new StringBuilder("TRUNCATE TABLE IF EXISTS ").append(tableName);
         batchCollector.saveAndFlush(classDataCache);
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             Statement statement = connection.createStatement()) {
             int rowAffected = statement.executeUpdate(deleteQuery.toString());
-            CSBootstrap.releaseConnection(connection);
+            connectionManager.releaseConnection(connection);
         } catch (SQLException e) {
             error(e.getMessage(), this.getClass());
         }
@@ -455,7 +441,7 @@ public class CHRepository {
      */
     public <T> void delete(T entity) throws ClassCacheNotFoundException, IllegalAccessException, SQLException, InvocationTargetException {
         Class<?> entityClass = entity.getClass();
-        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         FieldDataCache idFieldData = classDataCache.getIdField();
         Field idField = idFieldData.getField();
         idField.setAccessible(true);
@@ -466,11 +452,11 @@ public class CHRepository {
         Object id = idField.get(entity);
         deleteQuery.append(columnName).append(" = ").append("'").append(id).append("'");
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             Statement statement = connection.createStatement()) {
             int rowAffected = statement.executeUpdate(deleteQuery.toString());
             idField.set(entity, null);
-            CSBootstrap.releaseConnection(connection);
+            connectionManager.releaseConnection(connection);
         } catch (SQLException e) {
             error(e.getMessage(), this.getClass());
         }
@@ -486,7 +472,7 @@ public class CHRepository {
      * @throws ClassCacheNotFoundException if the class cache is not found
      */
     public <T, ID> boolean entityExists(Class<T> entityClass, ID id) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
-        ClassDataCache classDataCache = CSBootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         batchCollector.saveAndFlush(classDataCache);
         String tableName = classDataCache.getTableName();
         FieldDataCache idFieldCache = classDataCache.getIdField();
@@ -494,13 +480,13 @@ public class CHRepository {
         String idFieldName = idFieldCache.getFieldInTableName();
         selectQuery.append(idFieldName).append(" = ?");
 
-        try(Connection connection = CSBootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             PreparedStatement statement = connection.prepareStatement(selectQuery.toString())) {
             statement.setMaxRows(1);
             statement.setObject(1, id);
             try(ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    CSBootstrap.releaseConnection(connection);
+                    connectionManager.releaseConnection(connection);
                     return true;
                 }
             }

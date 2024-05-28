@@ -3,9 +3,7 @@ package com.altinntech.clicksave.core.query.executor;
 import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.annotations.Query;
 import com.altinntech.clicksave.annotations.SettableQuery;
-import com.altinntech.clicksave.core.BatchCollector;
-import com.altinntech.clicksave.core.CSBootstrap;
-import com.altinntech.clicksave.core.CSUtils;
+import com.altinntech.clicksave.core.*;
 import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.caches.QueryMetadataCache;
 import com.altinntech.clicksave.core.dto.*;
@@ -34,18 +32,18 @@ import static com.altinntech.clicksave.core.CHRepository.executePostLoadedMethod
  */
 public class QueryExecutor {
 
-    private final CSBootstrap bootstrap;
+    private final ConnectionManager connectionManager;
+    private final ClassDataCacheService classDataCacheService;
     private final BatchCollector batchCollector;
     private final QueryMetadataCache queryMetadataCache = QueryMetadataCache.getInstance();
     private final ProjectionClassDataCache projectionClassDataCache = ProjectionClassDataCache.getInstance();
 
     /**
      * Constructs a new QueryExecutor instance.
-     *
-     * @param bootstrap the bootstrap
      */
-    public QueryExecutor(CSBootstrap bootstrap, BatchCollector batchCollector) {
-        this.bootstrap = bootstrap;
+    public QueryExecutor(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector) {
+        this.connectionManager = connectionManager;
+        this.classDataCacheService = classDataCacheService;
         this.batchCollector = batchCollector;
     }
 
@@ -61,7 +59,7 @@ public class QueryExecutor {
      * @throws SQLException                if an SQL exception occurs
      */
     public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
-        ClassDataCache classDataCache = bootstrap.getClassDataCache(entityClass);
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         batchCollector.saveAndFlush(classDataCache);
 
         List<Object> argumentsList = new ArrayList<>(Arrays.asList(arguments));
@@ -69,7 +67,7 @@ public class QueryExecutor {
         String methodName = preprocessQueryObject(returnClass, entityClass, argumentsList, methodMetadata, classDataCache);
 
         CustomQueryMetadata query = (CustomQueryMetadata) queryMetadataCache.getFromCache(methodName);
-        try(Connection connection = bootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             PreparedStatement statement = connection.prepareStatement(query.getQueryBody())) {
             int paramCount = countParameters(query.getQueryBody());
             if (query.getIsQueryFromAnnotation()) {
@@ -95,8 +93,8 @@ public class QueryExecutor {
                             if (!returnClass.equals(entityClass))
                                 entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet);
                             else
-                                entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache);
-                            bootstrap.releaseConnection(connection);
+                                entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
+                            connectionManager.releaseConnection(connection);
                             executePostLoadedMethods(entity, classDataCache);
                             return Optional.ofNullable(entity);
                         } else {
@@ -115,12 +113,12 @@ public class QueryExecutor {
                                 entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet);
                             }
                             else {
-                                entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache);
+                                entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
                                 executePostLoadedMethods(entity, classDataCache);
                             }
                             entities.add(entity);
                         }
-                        bootstrap.releaseConnection(connection);
+                        connectionManager.releaseConnection(connection);
                         return entities;
                     }
 
@@ -231,7 +229,7 @@ public class QueryExecutor {
         List<FieldData> result = new ArrayList<>();
         for (FieldDataCache fieldData : fieldDataCacheList) {
             if (fieldData.getEmbeddedAnnotation().isPresent()) {
-                EmbeddableClassData embeddableClassData = bootstrap.getEmbeddableClassDataCache(fieldData.getType());
+                EmbeddableClassData embeddableClassData = classDataCacheService.getEmbeddableClassDataCache(fieldData.getType());
                 result.addAll(getFieldsToFetch(embeddableClassData.getFields()));
             } else {
                 result.add(fieldData);

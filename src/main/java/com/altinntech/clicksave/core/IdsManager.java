@@ -6,6 +6,7 @@ import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.enums.IDTypes;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import lombok.Setter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -21,18 +22,17 @@ public class IdsManager {
 
     private final Map<ClassDataCache, Object> idCache = new HashMap<>();
 
-    private static IdsManager instance;
+    private CHRepository repository;
+    private final ConnectionManager connectionManager;
+    private boolean isInitialized = false;
 
-    private final CSBootstrap bootstrap = CSBootstrap.getInstance();
-
-    private IdsManager() {
+    IdsManager(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
     }
 
-    public static IdsManager getInstance() {
-        if (instance == null) {
-            instance = new IdsManager();
-        }
-        return instance;
+    public void setRepository(CHRepository repository) {
+        this.repository = repository;
+        this.isInitialized = true;
     }
 
     public Map<ClassDataCache, Object> getIdCache() {
@@ -58,8 +58,10 @@ public class IdsManager {
     }
 
     synchronized void sync(ClassDataCache classDataCache) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+        while (!isInitialized) {
+            Thread.yield();
+        }
         Object refreshedId = null;
-        CHRepository repository = CHRepository.getInstance();
         Properties properties = new Properties();
         properties.setProperty("table_name", classDataCache.getTableName());
         Optional<ClicksaveSequence> lastLockRecord = repository.findLast(ClicksaveSequence.class, properties);
@@ -72,13 +74,13 @@ public class IdsManager {
         }
         FieldDataCache idFieldData = classDataCache.getIdField();
         StringBuilder selectIdQuery = new StringBuilder("SELECT ").append(idFieldData.getFieldInTableName()).append(" FROM ").append(classDataCache.getTableName()).append(" ORDER BY ").append(idFieldData.getFieldInTableName()).append(" DESC LIMIT 1");
-        try(Connection connection = bootstrap.getConnection();
+        try(Connection connection = connectionManager.getConnection();
             PreparedStatement statement = connection.prepareStatement(selectIdQuery.toString())) {
             statement.setMaxRows(1);
             try(ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     refreshedId = resultSet.getObject(idFieldData.getFieldInTableName());
-                    bootstrap.releaseConnection(connection);
+                    connectionManager.releaseConnection(connection);
                 }
             }
         }
@@ -121,6 +123,9 @@ public class IdsManager {
     }
 
     public synchronized  <ID> void lockIds(ClassDataCache classDataCache, int range, ID idType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+        while (!isInitialized) {
+            Thread.yield();
+        }
         ID startId = (ID) getLastId(classDataCache);
         ID endId = null;
 
@@ -137,7 +142,6 @@ public class IdsManager {
             endId = (ID) getRangedLongId((Long) startId, range);
         }
 
-        CHRepository repository = CHRepository.getInstance();
         ClicksaveSequence lockRecord = createLockRecord(classDataCache, (Long) startId, (Long) endId, true);
         repository.save(lockRecord, lockRecord.getTimestamp().getClass());
     }
