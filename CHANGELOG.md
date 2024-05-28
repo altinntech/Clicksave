@@ -1,5 +1,9 @@
 # Changelog
 
+### [1.1.18-SNAPSHOT] - 2024-05-28
+- Added health check for connection to db
+- Refactor code to DI style
+
 ### [1.1.17-SNAPSHOT] - 2024-05-07
 - Added batch automatic saving
 - Added max processors property
