@@ -2,10 +2,10 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import com.altinntech.clicksave.metrics.dto.ThreadPoolManagerMetrics;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
-import java.util.Queue;
 import java.util.concurrent.*;
 
 import static com.altinntech.clicksave.log.CSLogger.*;
@@ -64,5 +64,11 @@ public class ThreadPoolManager {
             warn("ThreadPoolManager stopped emergency!");
             Thread.currentThread().interrupt();
         }
+    }
+
+    public ThreadPoolManagerMetrics getMetrics() {
+        ThreadPoolManagerMetrics metrics = new ThreadPoolManagerMetrics();
+        metrics.setIsShutdown(executor.isShutdown());
+        return metrics;
     }
 }

@@ -7,7 +7,9 @@ import org.springframework.core.env.Environment;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The {@code DefaultProperties} class provides default properties for configuring the application.
@@ -33,6 +35,21 @@ public class DefaultProperties {
     private String batchSaveRate;
     private String threadManagerMaxProcessors;
     private String threadManagerMaxQueueSize;
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("url", this.url);
+        map.put("initialConnectionsPoolSize", this.initialConnectionsPoolSize);
+        map.put("connectionsPoolSizeRefillThreshold", this.connectionsPoolSizeRefillThreshold);
+        map.put("maxConnectionPoolSize", this.maxConnectionPoolSize);
+        map.put("allowConnectionsPoolExpansion", this.allowConnectionsPoolExpansion);
+        map.put("rootPackageToScan", this.rootPackageToScan);
+        map.put("testEnv", this.testEnv);
+        map.put("batchSaveRate", this.batchSaveRate);
+        map.put("threadManagerMaxProcessors", this.threadManagerMaxProcessors);
+        map.put("threadManagerMaxQueueSize", this.threadManagerMaxQueueSize);
+        return map;
+    }
 
     public static DefaultProperties fromPropertyFile() {
         PropertyReader propertyReader = PropertyReader.getInstance();

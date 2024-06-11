@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Monitoring Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+      overflow-x: hidden;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      animation: fadeIn 2s ease-in-out;
+    }
+    h2 {
+      color: #555;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 5px;
+      animation: slideInLeft 1s ease-in-out;
+    }
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 1.5s ease-in-out;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    th {
+      background-color: #f8f8f8;
+      color: #333;
+      width: 30%; /* Ensure consistent width */
+    }
+    td {
+      color: #666;
+      width: 70%; /* Ensure consistent width */
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+      cursor: pointer;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    @keyframes slideInLeft {
+      from {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    tr {
+      animation: fadeInRow 0.5s ease-in-out forwards;
+      opacity: 0;
+    }
+    tr:nth-child(even) {
+      animation-delay: 0.3s;
+    }
+    tr:nth-child(odd) {
+      animation-delay: 0.6s;
+    }
+    @keyframes fadeInRow {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+<h1>Monitoring Dashboard</h1>
+
+<h2>Connection Manager Metrics</h2>
+<table>
+  <tr>
+    <th>Metric</th>
+    <th>Value</th>
+  </tr>
+  <tr>
+    <td>Current Pool Size</td>
+    <td th:text="${metricsLog.connectionManagerMetrics.currentPoolSize}">N/A</td>
+  </tr>
+</table>
+
+<h2>Thread Pool Manager Metrics</h2>
+<table>
+  <tr>
+    <th>Metric</th>
+    <th>Value</th>
+  </tr>
+  <tr>
+    <td>Is Shutdown</td>
+    <td th:text="${metricsLog.threadPoolManagerMetrics.isShutdown}">N/A</td>
+  </tr>
+</table>
+
+<h2>Properties</h2>
+<table>
+  <tr>
+    <th>Property</th>
+    <th>Value</th>
+  </tr>
+  <tr th:each="entry : ${metricsLog.properties}">
+    <td th:text="${entry.key}">Property Name</td>
+    <td th:text="${entry.value}">Property Value</td>
+  </tr>
+</table>
+
+</body>
+</html>

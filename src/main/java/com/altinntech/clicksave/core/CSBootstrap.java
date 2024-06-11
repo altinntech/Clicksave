@@ -9,8 +9,11 @@ import com.altinntech.clicksave.core.utils.tb.TableBuilder;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
+import com.altinntech.clicksave.metrics.MonitoringService;
 import lombok.Getter;
 import org.reflections.Reflections;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -29,6 +32,7 @@ import static com.altinntech.clicksave.log.CSLogger.*;
  *
  * @author Fyodor Plotnikov
  */
+@Configuration
 public class CSBootstrap {
 
     private Set<Class<?>> entityClasses;
@@ -41,6 +45,7 @@ public class CSBootstrap {
     private final QueryExecutor queryExecutor;
     @Getter
     private final ClassDataCacheService classDataCacheService;
+    private final MonitoringService monitoringService;
 
     private final DefaultProperties defaultProperties;
 
@@ -67,6 +72,7 @@ public class CSBootstrap {
         this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager);
         this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector);
         this.threadPoolManager = new ThreadPoolManager(defaultProperties);
+        this.monitoringService = new MonitoringService(connectionManager, threadPoolManager, defaultProperties);
         idsManager.setRepository(repository);
 
         if (defaultProperties.validate()) {
@@ -75,6 +81,11 @@ public class CSBootstrap {
         } else {
             warn("Initialization skipped due to unrecognized properties. Check the configuration to ensure that all properties are correctly spelled and recognized");
         }
+    }
+
+    @Bean
+    public MonitoringService monitoringService() {
+        return monitoringService;
     }
 
     private synchronized void dispose() {
