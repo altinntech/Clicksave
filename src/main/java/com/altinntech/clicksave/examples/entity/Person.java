@@ -31,7 +31,7 @@ public class Person {
 
     @Column(value = FieldType.LONG, id = true, primaryKey = true) // it is recommended to make the id field a UUID type
     Long id;
-    @Column(FieldType.STRING)
+    @Column(value = FieldType.STRING, nullable = true)
     String name;
     @Column(FieldType.STRING)
     String lastName;

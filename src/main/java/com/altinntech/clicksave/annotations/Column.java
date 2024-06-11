@@ -37,4 +37,6 @@ public @interface Column {
      * @return {@code true} if the field is a primary key, {@code false} otherwise.
      */
     boolean primaryKey() default false;
+
+    boolean nullable() default false;
 }

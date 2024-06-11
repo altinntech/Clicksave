@@ -2,10 +2,7 @@ package com.altinntech.clicksave.core.utils.tb;
 
 import com.altinntech.clicksave.annotations.Embedded;
 import com.altinntech.clicksave.core.CSBootstrap;
-import com.altinntech.clicksave.core.dto.ClassDataCache;
-import com.altinntech.clicksave.core.dto.ColumnData;
-import com.altinntech.clicksave.core.dto.EmbeddableClassData;
-import com.altinntech.clicksave.core.dto.FieldDataCache;
+import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.enums.EngineType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
@@ -66,8 +63,7 @@ public class TableBuilder {
                     throw new FieldInitializationException("Embeddable class of field '" + fieldData.getFieldName() + "' not found");
                 }
             } else {
-                query.append(fieldName).append(" ");
-                query.append(fieldData.getFieldType().getType());
+                writeFieldToQuery(query, fieldData);
 
                 if (fieldData.isPk()) {
                     if (primaryKey.length() == 0) {
@@ -79,6 +75,15 @@ public class TableBuilder {
             }
 
             query.append(", ");
+        }
+    }
+
+    private static void writeFieldToQuery(StringBuilder query, FieldDataCache fieldData) {
+        query.append(fieldData.getFieldInTableName()).append(" ");
+        if (fieldData.isNullable()) {
+            query.append("Nullable(").append(fieldData.getFieldType().getType()).append(")");
+        } else {
+            query.append(fieldData.getFieldType().getType());
         }
     }
 

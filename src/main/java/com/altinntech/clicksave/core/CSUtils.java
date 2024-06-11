@@ -117,6 +117,9 @@ public class CSUtils {
                     if (column.primaryKey()) {
                         fieldData.setPk(true);
                     }
+                    if (column.nullable() && !column.id() && !column.primaryKey()) {
+                        fieldData.setNullable(true);
+                    }
                     fieldData.setFieldType(column.value());
                 } else if (annotation instanceof EnumColumn enumerated) {
                     if (enumerated.value() == EnumType.BY_ID && !EnumId.class.isAssignableFrom(fieldType)) {
