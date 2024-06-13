@@ -74,6 +74,9 @@ public class CSRequestHandler implements MethodHandler {
                 case "findAllCustomQuery" -> {
                     return handleCustomQuery(methodReturnType, entityType, arguments, methodMetadata);
                 }
+                case "saveBatch" -> {
+                    handleSaveBatch(entityType);
+                }
                 default -> {
                     return handleQuery(methodReturnType, entityType, arguments, methodMetadata);
                 }
@@ -171,5 +174,9 @@ public class CSRequestHandler implements MethodHandler {
 
     private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
+    }
+
+    private void handleSaveBatch(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, InvocationTargetException, IllegalAccessException {
+        repository.saveBatch(entityType);
     }
 }

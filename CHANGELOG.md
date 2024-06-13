@@ -1,5 +1,9 @@
 # Changelog
 
+### [1.1.19-SNAPSHOT] - 2024-06-13
+- Added basic monitoring functionality
+- Added batchSave() method for repository
+
 ### [1.1.18-SNAPSHOT] - 2024-05-28
 - Added health check for connection to db
 - Refactor code to DI style

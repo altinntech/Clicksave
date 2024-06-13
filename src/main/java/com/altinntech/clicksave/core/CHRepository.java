@@ -496,4 +496,8 @@ public class CHRepository {
         return false;
     }
 
+    public <T> void saveBatch(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException, InvocationTargetException, IllegalAccessException {
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
+        batchCollector.saveAndFlush(classDataCache);
+    }
 }

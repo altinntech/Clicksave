@@ -616,6 +616,16 @@ public class ClicksaveTests {
     }
 
     @Test
+    void saveBatch() {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        jpaPersonRepository.save(TEST_PERSON_2);
+        jpaPersonRepository.saveBatch();
+        Optional<Person> person = jpaPersonRepository.findById(TEST_PERSON_1.getId());
+        assertTrue(person.isPresent());
+        assertEquals(person.get(), TEST_PERSON_1);
+    }
+
+    @Test
     void performanceTest() {
         double maxTimeForSaveOperation = 0.2; // ms
         double maxTimeForUpdateOperation = 10.0; // ms

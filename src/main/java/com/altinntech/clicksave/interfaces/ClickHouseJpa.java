@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
  *
  * @param <T> the type parameter representing the entity type
  */
-public interface ClickHouseJpa<T, ID> {
+public interface ClickHouseJpa<T, ID> extends ClicksaveUtils {
 
     /**
      * Saves the given entity.
