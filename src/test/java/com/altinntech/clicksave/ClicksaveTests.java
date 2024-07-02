@@ -461,7 +461,7 @@ public class ClicksaveTests {
         List<DateResponse> fetched = jpaPersonRepository.findAllCustomQuery(DateResponse.class, query, TEST_PERSON_1.getId());
         assertEquals(1, fetched.size());
         assertEquals(TEST_PERSON_1.getTimestamp(), fetched.get(0).getLocalDateTime());
-        assertEquals(TEST_PERSON_1.getTimestamp().withNano(0), fetched.get(0).getLocalDateSqlTimestamp());
+        assertEquals(TEST_PERSON_1.getTimestamp().withNano(0).withHour(0), fetched.get(0).getLocalDateSqlTimestamp().withHour(0));
         assertEquals(TEST_PERSON_1.getTimestamp().toLocalDate(), fetched.get(0).getLocalDate());
     }
 

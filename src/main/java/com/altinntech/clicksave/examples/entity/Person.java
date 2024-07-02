@@ -20,8 +20,8 @@ import java.util.*;
 @Data
 @AllArgsConstructor
 @ClickHouseEntity(forTest = true, engine = EngineType.MergeTree) // you should use this annotation for persistence entity
-//@PartitionBy("toYYYYMM(timestamp)")
-//@OrderBy("(id, gender)")
+@PartitionBy("toYYYYMM(timestamp)")
+@OrderBy("(id, gender)")
 @Batching(batchSize = 1000) // add batch for saving
 public class Person {
 

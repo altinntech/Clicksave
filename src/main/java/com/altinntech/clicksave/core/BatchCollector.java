@@ -144,7 +144,7 @@ public class BatchCollector {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        idsManager.sync(queryMeta.getClassDataCache());
+        idsManager.adaptiveSync(queryMeta.getClassDataCache());
         debug("Batch", query + " saved " + size);
     }
 
