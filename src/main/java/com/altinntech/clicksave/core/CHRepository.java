@@ -33,15 +33,17 @@ public class CHRepository {
     private final ClassDataCacheService classDataCacheService;
     private final BatchCollector batchCollector;
     private final IdsManager idsManager;
+    private final ThreadPoolManager threadPoolManager;
 
     /**
      * Instantiates a new ClickHouse repository.
      */
-    CHRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager) {
+    CHRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager, ThreadPoolManager threadPoolManager) {
         this.connectionManager = connectionManager;
         this.classDataCacheService = classDataCacheService;
         this.idsManager = idsManager;
         this.batchCollector = batchCollector;
+        this.threadPoolManager = threadPoolManager;
     }
 
     /**
@@ -226,10 +228,10 @@ public class CHRepository {
      * @throws IllegalAccessException      if illegal access occurs
      * @throws SQLException                 if a SQL exception occurs
      */
-    // todo: refactor
     private <T, ID> T update(T entity, ClassDataCache classDataCache, FieldDataCache idFieldData, ID id) throws IllegalAccessException, SQLException, ClassCacheNotFoundException, InvocationTargetException {
         String tableName = classDataCache.getTableName();
         StringBuilder updateQuery = new StringBuilder("ALTER TABLE ").append(tableName).append(" UPDATE ");
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
 
         executePreUpdatedMethods(entity, classDataCache);
@@ -310,6 +312,7 @@ public class CHRepository {
         ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         StringBuilder selectQuery = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE ");
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
 
         FieldDataCache idFieldCache = classDataCache.getIdField();
@@ -348,6 +351,7 @@ public class CHRepository {
         ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         String selectQuery = "SELECT * FROM " + tableName;
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = connectionManager.getConnection();
@@ -369,6 +373,7 @@ public class CHRepository {
         String tableName = classDataCache.getTableName();
         String idField = classDataCache.getIdField().getFieldInTableName();
         String selectQuery = "SELECT count(" + idField + ") AS cnt FROM " + tableName;
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = connectionManager.getConnection();
@@ -392,6 +397,7 @@ public class CHRepository {
         StringBuilder selectIdQuery = new StringBuilder("SELECT *")
                 .append(" FROM ").append(tableName).append(" WHERE ").append(condition).append(" ORDER BY ")
                 .append(idFieldData.getFieldInTableName()).append(" DESC LIMIT 1");
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = connectionManager.getConnection();
@@ -420,6 +426,7 @@ public class CHRepository {
         ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         String tableName = classDataCache.getTableName();
         StringBuilder deleteQuery = new StringBuilder("TRUNCATE TABLE IF EXISTS ").append(tableName);
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = connectionManager.getConnection();
@@ -445,6 +452,7 @@ public class CHRepository {
         FieldDataCache idFieldData = classDataCache.getIdField();
         Field idField = idFieldData.getField();
         idField.setAccessible(true);
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
 
         StringBuilder deleteQuery = new StringBuilder("DELETE FROM ").append(classDataCache.getTableName()).append(" WHERE ");
@@ -473,6 +481,7 @@ public class CHRepository {
      */
     public <T, ID> boolean entityExists(Class<T> entityClass, ID id) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
         String tableName = classDataCache.getTableName();
         FieldDataCache idFieldCache = classDataCache.getIdField();
@@ -498,6 +507,7 @@ public class CHRepository {
 
     public <T> void saveBatch(Class<T> entityClass) throws ClassCacheNotFoundException, SQLException, InvocationTargetException, IllegalAccessException {
         ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
+        threadPoolManager.waitForCompletion();
         batchCollector.saveAndFlush(classDataCache);
     }
 }

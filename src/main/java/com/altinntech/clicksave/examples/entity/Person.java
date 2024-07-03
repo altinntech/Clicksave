@@ -20,8 +20,8 @@ import java.util.*;
 @Data
 @AllArgsConstructor
 @ClickHouseEntity(forTest = true, engine = EngineType.MergeTree) // you should use this annotation for persistence entity
-@PartitionBy("toYYYYMM(timestamp)")
-@OrderBy("(id, gender)")
+//@PartitionBy("toYYYYMM(timestamp)")
+//@OrderBy("(id, gender)")
 @Batching(batchSize = 1000) // add batch for saving
 public class Person {
 
@@ -29,8 +29,8 @@ public class Person {
     public Person() {
     }
 
-    @Column(value = FieldType.LONG, id = true, primaryKey = true) // it is recommended to make the id field a UUID type
-    Long id;
+    @Column(value = FieldType.UUID, id = true, primaryKey = true) // it is recommended to make the id field a UUID type
+    UUID id;
     @Column(value = FieldType.STRING, nullable = true)
     String name;
     @Column(FieldType.STRING)
@@ -79,7 +79,7 @@ public class Person {
         this.testFieldForPostLoad = true;
     }
 
-    public Person(Long id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) throws IOException {
+    public Person(UUID id, String name, String lastName, Integer age, String address, Gender gender, Job job, String noSaveField) throws IOException {
         this.id = id;
         this.name = name;
         this.lastName = lastName;

@@ -66,6 +66,12 @@ public class ThreadPoolManager {
         }
     }
 
+    public void waitForCompletion() {
+        while (executor.getActiveCount() > 0) {
+            Thread.yield();
+        }
+    }
+
     public ThreadPoolManagerMetrics getMetrics() {
         ThreadPoolManagerMetrics metrics = new ThreadPoolManagerMetrics();
         metrics.setIsShutdown(executor.isShutdown());

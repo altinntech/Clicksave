@@ -16,9 +16,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -529,22 +527,23 @@ public class ClicksaveTests {
     }
 
     @Test
-    void multipleSaving() throws IOException, InterruptedException {
+    void multipleSaving() throws IOException, InterruptedException, ExecutionException {
         int iterations = 1000;
-        List<Person> persons = new ArrayList<>();
+        Set<Person> persons = new HashSet<>();
         for (int i = 0; i < iterations; i++) {
             Person person = Person.buildMockPerson();
             persons.add(person);
         }
         long startTime = System.nanoTime();
         for (Person person : persons) {
-            jpaPersonRepository.save(person);
+            jpaPersonRepository.saveAsync(person);
         }
         long endTime = System.nanoTime();
         double executionTime =  (endTime - startTime) / 1_000_000.0;
 
         List<Person> fetched = jpaPersonRepository.findAll();
         assertEquals(iterations, fetched.size());
+        assertTrue(executionTime < 30);
         System.out.println("Time to saving: " + executionTime);
         System.out.println("Entities per second: " + Math.floor((iterations / (executionTime / 1000.0))) + " e/s");
     }

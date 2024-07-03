@@ -69,9 +69,9 @@ public class CSBootstrap {
         this.connectionManager = new ConnectionManager(defaultProperties);
         this.idsManager = new IdsManager(connectionManager);
         this.batchCollector = BatchCollector.create(idsManager, connectionManager, defaultProperties);
-        this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager);
-        this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector);
         this.threadPoolManager = new ThreadPoolManager(defaultProperties);
+        this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager, threadPoolManager);
+        this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector);
         this.monitoringService = new MonitoringService(connectionManager, threadPoolManager, defaultProperties);
         idsManager.setRepository(repository);
 
