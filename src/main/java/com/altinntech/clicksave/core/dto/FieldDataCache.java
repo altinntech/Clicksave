@@ -6,6 +6,8 @@ import com.altinntech.clicksave.enums.FieldType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Optional;
 
@@ -30,7 +32,10 @@ import java.util.Optional;
  */
 @Data
 @NoArgsConstructor
-public class FieldDataCache implements FieldData {
+public class FieldDataCache implements FieldData, Serializable {
+
+    @Serial
+    private transient static final long serialVersionUID = 49438156L;
 
     private Field field;
     private String fieldName;

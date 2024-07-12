@@ -3,12 +3,13 @@ package com.altinntech.clicksave.core;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.EmbeddableClassData;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import com.altinntech.clicksave.interfaces.Disposable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class ClassDataCacheService {
+public class ClassDataCacheService implements Disposable {
 
     private final Map<Class<?>, ClassDataCache> classDataCacheMap = new HashMap<>();
     private final Map<Class<?>, EmbeddableClassData> embeddableClassDataCacheMap = new HashMap<>();
@@ -51,7 +52,9 @@ public class ClassDataCacheService {
         throw new ClassCacheNotFoundException();
     }
 
+    @Override
     public void dispose() {
-
+        classDataCacheMap.clear();
+        embeddableClassDataCacheMap.clear();
     }
 }

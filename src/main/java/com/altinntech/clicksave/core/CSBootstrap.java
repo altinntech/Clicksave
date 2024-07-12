@@ -46,6 +46,7 @@ public class CSBootstrap {
     @Getter
     private final ClassDataCacheService classDataCacheService;
     private final MonitoringService monitoringService;
+    private final SyncManager syncManager;
 
     private final DefaultProperties defaultProperties;
 
@@ -70,9 +71,10 @@ public class CSBootstrap {
         this.idsManager = new IdsManager(connectionManager);
         this.batchCollector = BatchCollector.create(idsManager, connectionManager, defaultProperties);
         this.threadPoolManager = new ThreadPoolManager(defaultProperties);
-        this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager, threadPoolManager);
-        this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector);
-        this.monitoringService = new MonitoringService(connectionManager, threadPoolManager, defaultProperties);
+        this.syncManager = SyncManager.create(defaultProperties, batchCollector);
+        this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager, threadPoolManager, syncManager);
+        this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector, syncManager, threadPoolManager);
+        this.monitoringService = new MonitoringService(connectionManager, threadPoolManager, syncManager, defaultProperties);
         idsManager.setRepository(repository);
 
         if (defaultProperties.validate()) {
@@ -92,6 +94,7 @@ public class CSBootstrap {
         isDisposed = true;
         this.batchCollector.dispose();
         this.classDataCacheService.dispose();
+        this.syncManager.dispose();
         this.entityClasses.clear();
         info("CSBootstrap", "Used resources disposed");
     }
@@ -161,6 +164,7 @@ public class CSBootstrap {
             threadPoolManager.shutdown();
             batchCollector.saveAndFlushAll();
             connectionManager.closeAllConnections();
+            syncManager.shutdown();
             dispose();
             info("Shutdown completed");
         } catch (SQLException | ClassCacheNotFoundException | IllegalAccessException | InvocationTargetException e) {

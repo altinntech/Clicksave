@@ -37,6 +37,10 @@ public class CSLogger {
         logger.warn(message);
     }
 
+    public static void warn(String context, String message) {
+        logger.warn("<" + context + "> " + message);
+    }
+
     /**
      * Logs a debug message.
      *

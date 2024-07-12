@@ -35,7 +35,7 @@ public class PersonService {
         else throw new PersonNotFoundException();
     }
 
-    public boolean healthCheck() {
+    public boolean connectionNotification() {
         return true;
     }
 }

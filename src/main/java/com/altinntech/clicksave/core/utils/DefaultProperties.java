@@ -3,6 +3,10 @@ package com.altinntech.clicksave.core.utils;
 import com.altinntech.clicksave.interfaces.Observer;
 import com.altinntech.clicksave.interfaces.PropertyEnvironment;
 import lombok.Getter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 import java.sql.SQLException;
@@ -35,6 +39,14 @@ public class DefaultProperties {
     private String batchSaveRate;
     private String threadManagerMaxProcessors;
     private String threadManagerMaxQueueSize;
+    @Getter
+    private String useSyncFeatures;
+    @Getter
+    private String syncHostPort;
+    @Getter
+    private String syncRemoteHosts;
+    @Getter
+    private String syncConnectionRetryTimeout;
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
@@ -48,6 +60,10 @@ public class DefaultProperties {
         map.put("batchSaveRate", this.batchSaveRate);
         map.put("threadManagerMaxProcessors", this.threadManagerMaxProcessors);
         map.put("threadManagerMaxQueueSize", this.threadManagerMaxQueueSize);
+        map.put("syncHostPort", this.syncHostPort);
+        map.put("syncRemoteHosts", this.syncRemoteHosts);
+        map.put("useSyncFeatures", this.useSyncFeatures);
+        map.put("syncConnectionRetryTimeout", this.syncConnectionRetryTimeout);
         return map;
     }
 
@@ -75,6 +91,10 @@ public class DefaultProperties {
         defaultProperties.batchSaveRate = propertyEnvironment.getProperty("clicksave.core.batch-save-rate", "1200");
         defaultProperties.threadManagerMaxProcessors = propertyEnvironment.getProperty("clicksave.core.thread-manager.max-processors", "-1");
         defaultProperties.threadManagerMaxQueueSize = propertyEnvironment.getProperty("clicksave.core.core.thread-manager.max-queue-size", "1000");
+        defaultProperties.syncHostPort = propertyEnvironment.getProperty("clicksave.sync.host.port", "");
+        defaultProperties.syncRemoteHosts = propertyEnvironment.getProperty("clicksave.sync.remote.hosts", "");
+        defaultProperties.useSyncFeatures = propertyEnvironment.getProperty("clicksave.sync.use-sync-features", "false");
+        defaultProperties.syncConnectionRetryTimeout = propertyEnvironment.getProperty("clicksave.sync.connection-retry-timeout", "0");
         return defaultProperties;
     }
 

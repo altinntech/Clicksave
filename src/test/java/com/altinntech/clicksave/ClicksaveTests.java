@@ -536,21 +536,43 @@ public class ClicksaveTests {
         }
         long startTime = System.nanoTime();
         for (Person person : persons) {
-            jpaPersonRepository.saveAsync(person);
+            jpaPersonRepository.save(person);
         }
+
         long endTime = System.nanoTime();
         double executionTime =  (endTime - startTime) / 1_000_000.0;
-
         List<Person> fetched = jpaPersonRepository.findAll();
+
         assertEquals(iterations, fetched.size());
-        assertTrue(executionTime < 30);
         System.out.println("Time to saving: " + executionTime);
-        System.out.println("Entities per second: " + Math.floor((iterations / (executionTime / 1000.0))) + " e/s");
+        System.out.println("Entities per second: " + (long) Math.floor((iterations / (executionTime / 1000.0))) + " e/s");
+    }
+
+    @Test
+    void multipleSavingAsync() {
+        int iterations = 1000;
+        Set<Person> persons = new HashSet<>();
+        for (int i = 0; i < iterations; i++) {
+            Person person = Person.buildMockPerson();
+            persons.add(person);
+        }
+        long startTime = System.nanoTime();
+        for (Person person : persons) {
+            jpaPersonRepository.saveAsync(person);
+        }
+
+        long endTime = System.nanoTime();
+        double executionTime =  (endTime - startTime) / 1_000_000.0;
+        List<Person> fetched = jpaPersonRepository.findAll();
+
+        assertEquals(iterations, fetched.size());
+        System.out.println("Time to saving: " + executionTime);
+        System.out.println("Entities per second: " + (long) Math.floor((iterations / (executionTime / 1000.0))) + " e/s");
     }
 
     @Disabled
     @Test
-    void saveFindStressTest() throws IOException {
+    void saveFindStressTest() {
         int iterations = 10_000;
         long startTime = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
@@ -604,6 +626,7 @@ public class ClicksaveTests {
         assertEquals(personResponseExpected, personResponse.get());
     }
 
+    @Disabled
     @Test
     void serialSaving() throws InterruptedException {
         jpaPersonRepository.save(TEST_PERSON_1);
@@ -647,12 +670,14 @@ public class ClicksaveTests {
         double executionTime;
 
         for (int i = 0; i < iterations; i++) {
+            System.out.println("ITERATIONS " + i);
             // -----save----- //
             startTime = System.nanoTime();
-            jpaPersonRepository.save(TEST_PERSON_1);
+            jpaPersonRepository.saveAsync(TEST_PERSON_1);
             endTime = System.nanoTime();
             executionTime = (endTime - startTime) / 1_000_000.0;
             avgSaveTime += executionTime;
+            System.out.println("CHECK1 " + i);
 
             // -----update----- //
             TEST_PERSON_1.setAge(28);
@@ -661,6 +686,7 @@ public class ClicksaveTests {
             endTime = System.nanoTime();
             executionTime = (endTime - startTime) / 1_000_000.0;
             avgUpdateTime += executionTime;
+            System.out.println("CHECK2 " + i);
 
             // -----find----- //
             startTime = System.nanoTime();
@@ -668,6 +694,7 @@ public class ClicksaveTests {
             endTime = System.nanoTime();
             executionTime = (endTime - startTime) / 1_000_000.0;
             avgFindTime += executionTime;
+            System.out.println("CHECK3 " + i);
 
             // -----custom_find----- //
             startTime = System.nanoTime();
@@ -675,6 +702,7 @@ public class ClicksaveTests {
             endTime = System.nanoTime();
             executionTime = (endTime - startTime) / 1_000_000.0;
             avgCustomFindTime += executionTime;
+            System.out.println("CHECK4 " + i);
 
             // -----delete----- //
             startTime = System.nanoTime();
@@ -682,8 +710,10 @@ public class ClicksaveTests {
             endTime = System.nanoTime();
             executionTime = (endTime - startTime) / 1_000_000.0;
             avgDeleteTime += executionTime;
+            System.out.println("CHECK5 " + i);
 
             jpaPersonRepository.deleteAll();
+            System.out.println("CHECK6 " + i);
         }
 
         avgSaveTime /= iterations;

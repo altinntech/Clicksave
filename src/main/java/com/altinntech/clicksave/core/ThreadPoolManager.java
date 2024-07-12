@@ -54,7 +54,7 @@ public class ThreadPoolManager {
         info("ThreadPoolManager shutdown process initiated...");
         executor.shutdown();
         try {
-            if (!executor.awaitTermination(12, TimeUnit.SECONDS)) {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
                 warn("ThreadPoolManager shutdown process exceeded the waiting time. Attempt to force shutdown!");
                 executor.shutdownNow();
             }

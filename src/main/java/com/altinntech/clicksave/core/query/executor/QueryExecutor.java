@@ -35,16 +35,20 @@ public class QueryExecutor {
     private final ConnectionManager connectionManager;
     private final ClassDataCacheService classDataCacheService;
     private final BatchCollector batchCollector;
+    private final SyncManager syncManager;
+    private final ThreadPoolManager threadPoolManager;
     private final QueryMetadataCache queryMetadataCache = QueryMetadataCache.getInstance();
     private final ProjectionClassDataCache projectionClassDataCache = ProjectionClassDataCache.getInstance();
 
     /**
      * Constructs a new QueryExecutor instance.
      */
-    public QueryExecutor(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector) {
+    public QueryExecutor(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, SyncManager syncManager, ThreadPoolManager threadPoolManager) {
         this.connectionManager = connectionManager;
         this.classDataCacheService = classDataCacheService;
         this.batchCollector = batchCollector;
+        this.syncManager = syncManager;
+        this.threadPoolManager = threadPoolManager;
     }
 
     /**
@@ -60,6 +64,8 @@ public class QueryExecutor {
      */
     public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
+        threadPoolManager.waitForCompletion();
+        syncManager.saveBatchRequest();
         batchCollector.saveAndFlush(classDataCache);
 
         List<Object> argumentsList = new ArrayList<>(Arrays.asList(arguments));

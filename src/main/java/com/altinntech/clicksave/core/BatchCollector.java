@@ -5,6 +5,7 @@ import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.utils.BatchSaveCommand;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import com.altinntech.clicksave.interfaces.Disposable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -25,7 +26,7 @@ import static com.altinntech.clicksave.log.CSLogger.info;
  *
  * @author Fyodor Plotnikov
  */
-public class BatchCollector {
+public class BatchCollector implements Disposable {
 
     /**
      * The map to store batches of queries.
@@ -58,6 +59,7 @@ public class BatchCollector {
         return batchCollector;
     }
 
+    @Override
     public synchronized void dispose() {
         scheduler.shutdown();
     }

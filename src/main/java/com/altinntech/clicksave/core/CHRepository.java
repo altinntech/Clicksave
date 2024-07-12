@@ -34,16 +34,18 @@ public class CHRepository {
     private final BatchCollector batchCollector;
     private final IdsManager idsManager;
     private final ThreadPoolManager threadPoolManager;
+    private final SyncManager syncManager;
 
     /**
      * Instantiates a new ClickHouse repository.
      */
-    CHRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager, ThreadPoolManager threadPoolManager) {
+    CHRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager, ThreadPoolManager threadPoolManager, SyncManager syncManager) {
         this.connectionManager = connectionManager;
         this.classDataCacheService = classDataCacheService;
         this.idsManager = idsManager;
         this.batchCollector = batchCollector;
         this.threadPoolManager = threadPoolManager;
+        this.syncManager = syncManager;
     }
 
     /**
@@ -313,6 +315,7 @@ public class CHRepository {
         String tableName = classDataCache.getTableName();
         StringBuilder selectQuery = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE ");
         threadPoolManager.waitForCompletion();
+        syncManager.saveBatchRequest();
         batchCollector.saveAndFlush(classDataCache);
 
         FieldDataCache idFieldCache = classDataCache.getIdField();
@@ -352,6 +355,7 @@ public class CHRepository {
         String tableName = classDataCache.getTableName();
         String selectQuery = "SELECT * FROM " + tableName;
         threadPoolManager.waitForCompletion();
+        syncManager.saveBatchRequest();
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = connectionManager.getConnection();
@@ -374,6 +378,7 @@ public class CHRepository {
         String idField = classDataCache.getIdField().getFieldInTableName();
         String selectQuery = "SELECT count(" + idField + ") AS cnt FROM " + tableName;
         threadPoolManager.waitForCompletion();
+        syncManager.saveBatchRequest();
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = connectionManager.getConnection();
@@ -398,6 +403,7 @@ public class CHRepository {
                 .append(" FROM ").append(tableName).append(" WHERE ").append(condition).append(" ORDER BY ")
                 .append(idFieldData.getFieldInTableName()).append(" DESC LIMIT 1");
         threadPoolManager.waitForCompletion();
+        syncManager.saveBatchRequest();
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = connectionManager.getConnection();
@@ -427,6 +433,7 @@ public class CHRepository {
         String tableName = classDataCache.getTableName();
         StringBuilder deleteQuery = new StringBuilder("TRUNCATE TABLE IF EXISTS ").append(tableName);
         threadPoolManager.waitForCompletion();
+        syncManager.saveBatchRequest();
         batchCollector.saveAndFlush(classDataCache);
 
         try(Connection connection = connectionManager.getConnection();
@@ -482,6 +489,7 @@ public class CHRepository {
     public <T, ID> boolean entityExists(Class<T> entityClass, ID id) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         threadPoolManager.waitForCompletion();
+        syncManager.saveBatchRequest();
         batchCollector.saveAndFlush(classDataCache);
         String tableName = classDataCache.getTableName();
         FieldDataCache idFieldCache = classDataCache.getIdField();
