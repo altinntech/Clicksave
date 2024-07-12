@@ -1,5 +1,10 @@
 # Changelog
 
+### [1.1.20-SNAPSHOT] - 2024-07-12
+- Added sync manager allows syncing multiple clicksave instances
+- Added waiting for all asynchronous tasks to complete before executing fetch requests
+- Fix redundant calls to utility table
+
 ### [1.1.19-SNAPSHOT] - 2024-06-13
 - Added basic monitoring functionality
 - Added batchSave() method for repository
