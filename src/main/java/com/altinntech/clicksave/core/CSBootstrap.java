@@ -32,7 +32,6 @@ import static com.altinntech.clicksave.log.CSLogger.*;
  *
  * @author Fyodor Plotnikov
  */
-@Configuration
 public class CSBootstrap {
 
     private Set<Class<?>> entityClasses;
@@ -83,11 +82,6 @@ public class CSBootstrap {
         } else {
             warn("Initialization skipped due to unrecognized properties. Check the configuration to ensure that all properties are correctly spelled and recognized");
         }
-    }
-
-    @Bean
-    public MonitoringService monitoringService() {
-        return monitoringService;
     }
 
     private synchronized void dispose() {
