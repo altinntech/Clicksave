@@ -10,6 +10,8 @@ import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import java.util.List;
 import java.util.Optional;
 
+import static com.altinntech.clicksave.core.utils.migration.MigrationWriter.createMigration;
+import static com.altinntech.clicksave.core.utils.migration.MigrationWriter.writeToMigration;
 import static com.altinntech.clicksave.log.CSLogger.info;
 
 public class TableBuilder {
@@ -127,6 +129,8 @@ public class TableBuilder {
                 }
             }
         }
+
+        createMigration(tableName);
     }
 
     private void addColumn(String tableName, FieldDataCache fieldData) {
@@ -136,6 +140,7 @@ public class TableBuilder {
                 " " + fieldName + " " + dataType;
         bootstrap.executeQuery(queryBuilder);
         info("Add column '" + fieldName + "' into table '" + tableName + "'");
+        writeToMigration(queryBuilder);
     }
 
     private void modifyColumn(String tableName, FieldDataCache fieldData) {
@@ -145,5 +150,6 @@ public class TableBuilder {
                 " " + fieldName + " " + dataType;
         bootstrap.executeQuery(queryBuilder);
         info("Modify column '" + fieldName + "' into table '" + tableName + "'");
+        writeToMigration(queryBuilder);
     }
 }

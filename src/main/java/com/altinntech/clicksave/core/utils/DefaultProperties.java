@@ -47,6 +47,8 @@ public class DefaultProperties {
     private String syncRemoteHosts;
     @Getter
     private String syncConnectionRetryTimeout;
+    @Getter
+    private String migrationsDirectoryPath;
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
@@ -64,6 +66,7 @@ public class DefaultProperties {
         map.put("syncRemoteHosts", this.syncRemoteHosts);
         map.put("useSyncFeatures", this.useSyncFeatures);
         map.put("syncConnectionRetryTimeout", this.syncConnectionRetryTimeout);
+        map.put("migrationsDirectoryPath", this.migrationsDirectoryPath);
         return map;
     }
 
@@ -95,6 +98,7 @@ public class DefaultProperties {
         defaultProperties.syncRemoteHosts = propertyEnvironment.getProperty("clicksave.sync.remote.hosts", "");
         defaultProperties.useSyncFeatures = propertyEnvironment.getProperty("clicksave.sync.use-sync-features", "false");
         defaultProperties.syncConnectionRetryTimeout = propertyEnvironment.getProperty("clicksave.sync.connection-retry-timeout", "0");
+        defaultProperties.migrationsDirectoryPath = propertyEnvironment.getProperty("clicksave.utils.migrations-directory-path", "");
         return defaultProperties;
     }
 

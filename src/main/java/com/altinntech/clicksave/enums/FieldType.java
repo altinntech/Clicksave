@@ -73,7 +73,12 @@ public enum FieldType {
     /**
      * Represents a Bool field type.
      */
-    BOOL("Bool");
+    BOOL("Bool"),
+
+    /**
+     * Represents a Bool field type.
+     */
+    BOOL8("UInt8");
 
     private final String type;
 

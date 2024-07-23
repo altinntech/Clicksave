@@ -5,6 +5,7 @@ import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.core.query.executor.QueryExecutor;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
+import com.altinntech.clicksave.core.utils.migration.MigrationWriter;
 import com.altinntech.clicksave.core.utils.tb.TableBuilder;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
@@ -75,6 +76,8 @@ public class CSBootstrap {
         this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector, syncManager, threadPoolManager);
         this.monitoringService = new MonitoringService(connectionManager, threadPoolManager, syncManager, defaultProperties);
         idsManager.setRepository(repository);
+
+        MigrationWriter.setDirectoryPath(defaultProperties.getMigrationsDirectoryPath());
 
         if (defaultProperties.validate()) {
             initialize();

@@ -556,7 +556,7 @@ public class ClicksaveTests {
             Person person = Person.buildMockPerson();
             persons.add(person);
         }
-        long startTime = System.nanoTime();
+         long startTime = System.nanoTime();
         for (Person person : persons) {
             jpaPersonRepository.saveAsync(person);
         }
@@ -603,7 +603,7 @@ public class ClicksaveTests {
 
     @Disabled
     @Test
-    void saveOneMStressTest() throws IOException {
+    void saveOneMStressTest() throws IOException, InterruptedException {
         int iterations = 1_000_000;
         long startTime = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
@@ -673,7 +673,7 @@ public class ClicksaveTests {
             System.out.println("ITERATIONS " + i);
             // -----save----- //
             startTime = System.nanoTime();
-            jpaPersonRepository.saveAsync(TEST_PERSON_1);
+            jpaPersonRepository.save(TEST_PERSON_1);
             endTime = System.nanoTime();
             executionTime = (endTime - startTime) / 1_000_000.0;
             avgSaveTime += executionTime;

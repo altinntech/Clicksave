@@ -1,5 +1,9 @@
 # Changelog
 
+### [1.1.21-SNAPSHOT] - 2024-07-23
+- Added support for UInt8 bool type
+- Added auto generated sql migration scripts
+
 ### [1.1.20-SNAPSHOT] - 2024-07-12
 - Added sync manager allows syncing multiple clicksave instances
 - Added waiting for all asynchronous tasks to complete before executing fetch requests
