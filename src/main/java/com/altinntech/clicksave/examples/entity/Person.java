@@ -22,7 +22,7 @@ import java.util.*;
 @ClickHouseEntity(forTest = true, engine = EngineType.MergeTree) // you should use this annotation for persistence entity
 //@PartitionBy("toYYYYMM(timestamp)")
 //@OrderBy("(id, gender)")
-@Batching(batchSize = 1000) // add batch for saving
+//@Batching(batchSize = 1000) // add batch for saving
 public class Person {
 
     // entity class must have a no argument constructor
@@ -54,7 +54,7 @@ public class Person {
     @Column(FieldType.DATE_TIME)
     LocalDateTime timestamp;
     @Column(FieldType.BOOL)
-    Boolean enabled;
+    Boolean enabled = true;
     String noSaveField; // this field will not be saved
 
     @Getter

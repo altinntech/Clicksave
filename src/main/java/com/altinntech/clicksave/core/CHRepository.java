@@ -287,7 +287,10 @@ public class CHRepository {
                 if (fieldData.getFieldType().equals(FieldType.DATE_TIME)) {
                     LocalDateTime timeField = (LocalDateTime) value;
                     value = timeField != null ? timeField.format(formatter) : "";
-                } else if (fieldData.isEnum()) {
+                } else if (fieldData.getFieldType().equals(FieldType.BOOL8)) {
+                    value = (Boolean) value ? 1 : 0;
+                }
+                else if (fieldData.isEnum()) {
                     if (enumeratedOptional.isPresent()) {
                         EnumColumn enumeratedAnnotation = enumeratedOptional.get();
                         value = getValueFromEnum(enumeratedAnnotation, value);

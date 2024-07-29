@@ -145,6 +145,8 @@ public class CSUtils {
                     fieldData.setLobAnnotation(lob);
                 } else if (annotation instanceof Reference reference) {
                     fieldData.setReferenceAnnotation(reference);
+                } else if (annotation instanceof RestrictedForUpdate restrictedForUpdate) {
+                    fieldData.setRestrictedForUpdateAnnotation(restrictedForUpdate);
                 }
             }
 
@@ -268,7 +270,11 @@ public class CSUtils {
         Boolean booleanValue;
         if (value instanceof String) {
             booleanValue = Boolean.parseBoolean((String) value);
-        } else {
+        }
+        else if (value instanceof Number) {
+            booleanValue = (Integer) value == 1;
+        }
+        else {
             booleanValue = (Boolean) value;
         }
         setField(entity, field, booleanValue);
@@ -280,7 +286,7 @@ public class CSUtils {
     }
 
     private static boolean isBoolean(FieldDataCache fieldData, Object value) {
-        return fieldData.getFieldType() == FieldType.BOOL;
+        return fieldData.getFieldType() == FieldType.BOOL || fieldData.getFieldType() == FieldType.BOOL8;
     }
 
     private static boolean isDateTime(FieldDataCache fieldData, Object value) {

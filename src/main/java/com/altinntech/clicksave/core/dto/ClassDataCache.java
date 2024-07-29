@@ -37,6 +37,7 @@ public class ClassDataCache implements ClassData, Serializable {
     private PartitionBy partitionByAnnotation;
     private OrderBy orderByAnnotation;
     private SystemTable systemTableAnnotation;
+    private RestrictedForUpdate restrictedForUpdateAnnotation;
 
     /**
      * Retrieves the optional batching annotation associated with the class.
@@ -81,6 +82,10 @@ public class ClassDataCache implements ClassData, Serializable {
      */
     public Optional<ClickHouseEntity> getCHEAnnotationOptional() {
         return Optional.ofNullable(CHEAnnotation);
+    }
+
+    public Optional<RestrictedForUpdate> getRestrictedForUpdateOptional() {
+        return Optional.ofNullable(restrictedForUpdateAnnotation);
     }
 
     public void setCHEAnnotation(ClickHouseEntity annotation) {

@@ -53,6 +53,7 @@ public class FieldDataCache implements FieldData, Serializable {
     private Embedded embeddedAnnotation;
     private Lob lobAnnotation;
     private Reference referenceAnnotation;
+    private RestrictedForUpdate restrictedForUpdateAnnotation;
 
     /**
      * Retrieves the optional Column annotation associated with the field.
@@ -97,6 +98,10 @@ public class FieldDataCache implements FieldData, Serializable {
      */
     public Optional<Reference> getReferenceAnnotationOptional() {
         return Optional.ofNullable(referenceAnnotation);
+    }
+
+    public Optional<RestrictedForUpdate> getRestrictedForUpdateAnnotationOptional() {
+        return Optional.ofNullable(restrictedForUpdateAnnotation);
     }
 
     public String getFieldInTableName() {

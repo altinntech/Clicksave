@@ -118,6 +118,7 @@ public class CSBootstrap {
             classDataCache.setPartitionByAnnotation(clazz.getAnnotation(PartitionBy.class));
             classDataCache.setOrderByAnnotation(clazz.getAnnotation(OrderBy.class));
             classDataCache.setSystemTableAnnotation(clazz.getAnnotation(SystemTable.class));
+            classDataCache.setRestrictedForUpdateAnnotation(clazz.getAnnotation(RestrictedForUpdate.class));
             classDataCache.setCHEAnnotation(clazz.getAnnotation(ClickHouseEntity.class));
 
             PreparedFieldsData preparedFieldsData = getFieldsData(clazz);
@@ -179,8 +180,10 @@ public class CSBootstrap {
             if (!isTableExists(tableName)) {
                 tb.generateTable(clazz);
                 info("Table created: " + tableName);
-            } else {
+            } else if (classDataCache.getRestrictedForUpdateOptional().isEmpty()) {
                 tb.updateTable(clazz);
+            } else {
+                info("Table " + tableName + " restricted for update");
             }
         }
     }

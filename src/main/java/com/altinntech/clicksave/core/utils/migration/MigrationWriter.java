@@ -7,7 +7,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class MigrationWriter {
 
@@ -43,9 +43,11 @@ public class MigrationWriter {
     }
 
     private static String getTimestamp() {
-        LocalDate date = LocalDate.now();
+        LocalDateTime date = LocalDateTime.now();
         return String.valueOf(date.getYear()) +
                 String.valueOf(date.getMonthValue()) +
-                String.valueOf(date.getDayOfMonth());
+                String.valueOf(date.getDayOfMonth()) +
+                "_" +
+                String.valueOf(date.getNano());
     }
 }

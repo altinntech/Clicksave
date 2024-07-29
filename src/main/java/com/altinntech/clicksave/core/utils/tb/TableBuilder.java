@@ -124,7 +124,7 @@ public class TableBuilder {
                 boolean concurrence = fieldsFromDB.stream()
                         .anyMatch(columnData -> columnData.getColumnName().equals(fieldName) &&
                                 columnData.getColumnType().equals(fieldType));
-                if (exists && !concurrence) {
+                if (exists && !concurrence && fieldData.getRestrictedForUpdateAnnotationOptional().isEmpty()) {
                     modifyColumn(tableName, fieldData);
                 }
             }
