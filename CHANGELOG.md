@@ -1,5 +1,8 @@
 # Changelog
 
+### [1.1.22-SNAPSHOT] - 2024-07-29
+- Added support for UInt32 and UInt64
+
 ### [1.1.21-SNAPSHOT] - 2024-07-23
 - Added support for UInt8 bool type
 - Added auto generated sql migration scripts
