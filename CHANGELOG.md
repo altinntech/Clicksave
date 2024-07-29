@@ -1,5 +1,9 @@
 # Changelog
 
+### [1.1.23-SNAPSHOT] - 2024-07-29
+- Added @RestrictedForUpdate annotation allows preventing update field in DB
+- Fix sql migration file naming
+
 ### [1.1.22-SNAPSHOT] - 2024-07-29
 - Added support for UInt32 and UInt64
 
