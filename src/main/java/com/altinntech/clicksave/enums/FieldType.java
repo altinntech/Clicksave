@@ -21,6 +21,11 @@ public enum FieldType {
     INT("Int32"),
 
     /**
+     * Represents an unsigned integer field type.
+     */
+    UINT("UInt32"),
+
+    /**
      * Represents a big integer field type.
      */
     BIG_INT("Int128"),
@@ -29,6 +34,11 @@ public enum FieldType {
      * Represents a long field type.
      */
     LONG("Int64"),
+
+    /**
+     * Represents an unsigned long field type.
+     */
+    ULONG("UInt64"),
 
     /**
      * Represents a float field type.
@@ -76,7 +86,7 @@ public enum FieldType {
     BOOL("Bool"),
 
     /**
-     * Represents a Bool field type.
+     * Represents a Bool field type for old clickhouse versions.
      */
     BOOL8("UInt8");
 
