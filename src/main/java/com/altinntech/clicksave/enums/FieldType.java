@@ -76,6 +76,11 @@ public enum FieldType {
     DATE_TIME("DateTime64(9)"),
 
     /**
+     * Represents a Date time field type.
+     */
+    DATE_TIME6("DateTime64(6)"),
+
+    /**
      * Represents a Date field type.
      */
     DATE("DateTime()"),

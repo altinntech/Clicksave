@@ -48,6 +48,7 @@ public class CSUtils {
     }
 
     static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSSSSS");
+    static DateTimeFormatter formatter6 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
     /**
      * Builds a snake-case table name from the given class name.
@@ -245,7 +246,11 @@ public class CSUtils {
         } else if (value instanceof Timestamp) {
             localDateTime = ((Timestamp) value).toLocalDateTime();
         } else if (value instanceof String) {
-            localDateTime = LocalDateTime.parse((String) value, formatter);
+            try {
+                localDateTime = LocalDateTime.parse((String) value, formatter);
+            } catch (Exception ignored) {
+                localDateTime = LocalDateTime.parse((String) value, formatter6);
+            }
         } else {
             localDateTime = (LocalDateTime) value;
         }
@@ -259,7 +264,11 @@ public class CSUtils {
         } else if (value instanceof Timestamp) {
             localDate = ((Timestamp) value).toLocalDateTime().toLocalDate();
         } else if (value instanceof String) {
-            localDate = LocalDate.parse((String) value, formatter);
+            try {
+                localDate = LocalDate.parse((String) value, formatter);
+            } catch (Exception ignored) {
+                localDate = LocalDate.parse((String) value, formatter6);
+            }
         } else {
             localDate = (LocalDate) value;
         }
@@ -290,7 +299,7 @@ public class CSUtils {
     }
 
     private static boolean isDateTime(FieldDataCache fieldData, Object value) {
-        return fieldData.getFieldType() == FieldType.DATE_TIME;
+        return fieldData.getFieldType() == FieldType.DATE_TIME || fieldData.getFieldType() == FieldType.DATE_TIME6;
     }
 
     private static boolean isDate(FieldDataCache fieldData, Object value) {

@@ -187,6 +187,9 @@ public class CHRepository {
                     } else if (fieldData.getFieldType().equals(FieldType.DATE_TIME)) {
                         LocalDateTime timeField = (LocalDateTime) value;
                         value = timeField != null ? timeField.format(formatter) : "";
+                    } else if (fieldData.getFieldType().equals(FieldType.DATE_TIME6)) {
+                        LocalDateTime timeField = (LocalDateTime) value;
+                        value = timeField != null ? timeField.format(formatter6) : "";
                     } else if (fieldData.isEnum()) {
                         if (enumeratedOptional.isPresent()) {
                             EnumColumn enumeratedAnnotation = enumeratedOptional.get();
@@ -287,6 +290,9 @@ public class CHRepository {
                 if (fieldData.getFieldType().equals(FieldType.DATE_TIME)) {
                     LocalDateTime timeField = (LocalDateTime) value;
                     value = timeField != null ? timeField.format(formatter) : "";
+                } else if (fieldData.getFieldType().equals(FieldType.DATE_TIME6)) {
+                    LocalDateTime timeField = (LocalDateTime) value;
+                    value = timeField != null ? timeField.format(formatter6) : "";
                 } else if (fieldData.getFieldType().equals(FieldType.BOOL8)) {
                     value = (Boolean) value ? 1 : 0;
                 }
