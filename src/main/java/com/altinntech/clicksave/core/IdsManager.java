@@ -9,6 +9,7 @@ import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import lombok.Setter;
 
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -80,6 +81,9 @@ public class IdsManager {
             try(ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     refreshedId = resultSet.getObject(idFieldData.getFieldInTableName());
+                    if (refreshedId instanceof BigInteger bigInteger) {
+                        refreshedId = bigInteger.longValue();
+                    }
                     connectionManager.releaseConnection(connection);
                 }
             }

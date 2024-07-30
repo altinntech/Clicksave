@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ClickHouseRepository // repository interface must be marked with this annotation
-public interface JpaPersonRepository extends ClickHouseJpa<Person, UUID> {
+public interface JpaPersonRepository extends ClickHouseJpa<Person, Long> {
 
     Optional<Person> findByName(String name); // findBy always returns the Optional<T>
 

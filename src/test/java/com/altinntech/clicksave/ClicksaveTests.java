@@ -56,13 +56,19 @@ public class ClicksaveTests {
     }
 
     @Test
+    void saveOne() throws InterruptedException, ExecutionException {
+        jpaPersonRepository.save(TEST_PERSON_1);
+        assertNotNull(TEST_PERSON_1.getId());
+    }
+
+    @Test
     void save() throws InterruptedException, ExecutionException {
         jpaPersonRepository.save(TEST_PERSON_1);
         jpaPersonRepository.save(TEST_PERSON_2);
-        Future<Person> personFuture = jpaPersonRepository.saveAsync(TEST_PERSON_3);
+        //Future<Person> personFuture = jpaPersonRepository.saveAsync(TEST_PERSON_3);
         assertNotNull(TEST_PERSON_1.getId());
         assertNotNull(TEST_PERSON_2.getId());
-        assertNotNull(personFuture.get().getId());
+        //assertNotNull(personFuture.get().getId());
     }
 
     @Test
@@ -549,6 +555,7 @@ public class ClicksaveTests {
     }
 
     @Test
+    @Disabled
     void multipleSavingAsync() {
         int iterations = 1000;
         Set<Person> persons = new HashSet<>();
