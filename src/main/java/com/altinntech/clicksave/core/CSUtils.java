@@ -311,8 +311,12 @@ public class CSUtils {
     }
 
     private static void setEnumFieldValue(Object entity, Field field, String enumValueName, FieldDataCache fieldData) {
-        Enum<?> enumValue = Enum.valueOf((Class<Enum>) fieldData.getType(), enumValueName);
-        setField(entity, field, enumValue);
+        try {
+            Enum<?> enumValue = Enum.valueOf((Class<Enum>) fieldData.getType(), enumValueName);
+            setField(entity, field, enumValue);
+        } catch (Exception ignored) {
+            setEnumIdFieldValue(entity, field, Long.parseLong(enumValueName), fieldData);
+        }
     }
 
     private static boolean isEnumIdAndLong(Class<?> fieldType, Object value, FieldDataCache fieldData) {
