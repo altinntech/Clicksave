@@ -21,8 +21,8 @@ import java.util.*;
 @AllArgsConstructor
 @ClickHouseEntity(forTest = true, engine = EngineType.MergeTree) // you should use this annotation for persistence entity
 //@PartitionBy("toYYYYMM(timestamp)")
-//@OrderBy("(id, gender)")
-//@Batching(batchSize = 1000) // add batch for saving
+@OrderBy("id")
+@Batching(batchSize = 1000) // add batch for saving
 @RestrictedForUpdate
 public class Person {
 
@@ -30,7 +30,7 @@ public class Person {
     public Person() {
     }
 
-    @Column(value = FieldType.ULONG, id = true, primaryKey = true) // it is recommended to make the id field a UUID type
+    @Column(value = FieldType.LONG, id = true, primaryKey = true) // it is recommended to make the id field a UUID type
     Long id;
     @Column(value = FieldType.STRING, nullable = true)
     String name;

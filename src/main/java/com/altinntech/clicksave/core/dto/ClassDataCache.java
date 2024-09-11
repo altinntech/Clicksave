@@ -91,10 +91,15 @@ public class ClassDataCache implements ClassData, Serializable {
     public void setCHEAnnotation(ClickHouseEntity annotation) {
         if (Objects.nonNull(annotation)) {
             this.engineType = annotation.engine();
-        } else {
-            this.engineType = EngineType.MergeTree;
         }
         this.CHEAnnotation = annotation;
+    }
+
+    public void setSystemTableAnnotation(SystemTable annotation) {
+        if (Objects.nonNull(annotation)) {
+            this.engineType = annotation.engine();
+        }
+        this.systemTableAnnotation = annotation;
     }
 }
 

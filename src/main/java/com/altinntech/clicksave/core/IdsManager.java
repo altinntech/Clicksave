@@ -48,11 +48,6 @@ public class IdsManager {
         Object lastId = idCache.get(classDataCache);
         if (lastId == null) {
             adaptiveSync(classDataCache);
-        } else {
-            Optional<Batching> batchAnnotation = classDataCache.getBatchingAnnotationOptional();
-            if (batchAnnotation.isEmpty()) {
-                adaptiveSync(classDataCache);
-            }
         }
         lastId = idCache.get(classDataCache);
         return lastId;
@@ -69,7 +64,7 @@ public class IdsManager {
         if (lastLockRecord.isPresent() && lastLockRecord.get().getIsLocked() == 1) {
             refreshedId = lastLockRecord.get().getEndLockId();
             idCache.put(classDataCache, refreshedId);
-            ClicksaveSequence unlockMarker =  createLockRecord(classDataCache, -1L, -1L, false);
+            ClicksaveSequence unlockMarker = createLockRecord(classDataCache, -1L, -1L, false);
             repository.save(unlockMarker, unlockMarker.getTimestamp().getClass());
             return;
         }
