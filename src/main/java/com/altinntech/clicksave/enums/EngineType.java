@@ -5,7 +5,6 @@ public enum EngineType {
     MergeTree,
     VersionedCollapsingMergeTree,
     ReplacingMergeTree,
-    Memory,
     Buffer
     ;
 }

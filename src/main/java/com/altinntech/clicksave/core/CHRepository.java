@@ -2,6 +2,8 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.*;
 import com.altinntech.clicksave.core.dto.*;
+import com.altinntech.clicksave.core.pipelines.insert.InsertQueryBuilder;
+import com.altinntech.clicksave.core.pipelines.insert.InsertQueryBuilderFactory;
 import com.altinntech.clicksave.enums.EngineType;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
@@ -133,16 +135,8 @@ public class CHRepository {
     }
 
     private String buildInsertQuery(StringBuilder insertQuery, StringBuilder valuesPlaceholder, ClassDataCache classDataCache, List<Object> fieldValues) {
-        if (classDataCache.getEngineType() == EngineType.VersionedCollapsingMergeTree) {
-            insertQuery.append(SystemField.Sign.getName()).append(", ").append(SystemField.Version.getName()).append(", ");
-            valuesPlaceholder.append("?, ?, ");
-            fieldValues.add(1);
-            fieldValues.add(1);
-        }
-        insertQuery.delete(insertQuery.length() - 2, insertQuery.length()).append(")");
-        valuesPlaceholder.delete(valuesPlaceholder.length() - 2, valuesPlaceholder.length()).append(")");
-
-        return insertQuery + valuesPlaceholder.toString();
+        InsertQueryBuilder queryBuilder = InsertQueryBuilderFactory.getQueryBuilder(classDataCache.getEngineType());
+        return queryBuilder.buildInsertQuery(insertQuery, valuesPlaceholder, classDataCache, fieldValues);
     }
 
     private <T, ID> void extractFieldValuesForCreate(T entity, ID idType, ClassDataCache classDataCache, StringBuilder insertQuery, StringBuilder valuesPlaceholder, List<FieldDataCache> fields, List<Object> fieldValues) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {

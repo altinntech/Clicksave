@@ -39,11 +39,6 @@ public class TableAdditionsResolver {
         query.append(TableAdditionsResolver.getAdditions(classDataCache));
     }
 
-    public static void buildForMemoryEngine(StringBuilder query, ClassDataCache classDataCache, StringBuilder pk) {
-        query.delete(query.length() - 2, query.length()).append(") ");
-        query.append("ENGINE = ").append(EngineType.Memory);
-    }
-
     public static void buildForBuffer(StringBuilder query) {
         query.delete(query.length() - 2, query.length()).append(") ");
         query.append("ENGINE = ").append(EngineType.Buffer);
