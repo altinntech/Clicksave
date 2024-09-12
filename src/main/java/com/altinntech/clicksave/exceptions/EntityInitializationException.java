@@ -2,11 +2,11 @@ package com.altinntech.clicksave.exceptions;
 
 /**
  * The {@code EntityInitializationException} class represents an exception thrown when entity initialization fails.
- * It is a subclass of {@code RuntimeException}.
+ * It is a subclass of {@code ClicksaveRuntimeException}.
  *
  * @author Fyodor Plotnikov
  */
-public class EntityInitializationException extends RuntimeException {
+public class EntityInitializationException extends ClicksaveRuntimeException {
 
     /**
      * Constructs a new EntityInitializationException with no detail message.

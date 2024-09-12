@@ -1,7 +1,7 @@
 package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.core.query.executor.QueryExecutor;
-import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import com.altinntech.clicksave.exceptions.*;
 import com.altinntech.clicksave.interfaces.ClickHouseJpa;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -83,14 +83,20 @@ public class CSRequestHandler implements MethodHandler {
             }
         } catch (SQLException e) {
             error("Error while processing SQL query: " + e.getMessage(), this.getClass());
+            throw new ClicksaveSQLException(e);
         } catch (ClassCacheNotFoundException e) {
             error("ClassDataCache not found for " + entityType + ". Make sure that entity has an @ClickHouseEntity annotation", this.getClass());
+            throw new ClassCacheNotFoundRuntimeException(e);
         } catch (IllegalAccessException e) {
             error("Illegal access to entity " + entityType + ": " + e.getMessage(), this.getClass());
+            throw new ReflectiveException(e);
         } catch (InvocationTargetException e) {
             error("Illegal invocation method; Entity: " + entityType + ": " + e.getMessage(), this.getClass());
+            throw new ReflectiveException(e);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new ConcurrencyException(e);
+        } catch (Exception e) {
+            throw new UnknownException(e);
         }
         return null;
     }

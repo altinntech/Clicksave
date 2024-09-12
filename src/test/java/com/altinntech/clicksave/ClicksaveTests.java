@@ -48,7 +48,7 @@ public class ClicksaveTests {
 
     @AfterEach
     void after() {
-        //jpaPersonRepository.deleteAll();
+        jpaPersonRepository.deleteAll();
     }
 
     @Test
