@@ -42,6 +42,8 @@ public class TableBuilder {
                     TableAdditionsResolver.buildForMergeTree(query, classDataCache, primaryKey);
             case VersionedCollapsingMergeTree ->
                     TableAdditionsResolver.buildForVersionedCollapsingMergeTree(query, classDataCache, primaryKey);
+            case ReplacingMergeTree ->
+                    TableAdditionsResolver.buildForReplacingMergeTree(query, classDataCache, primaryKey);
             case Buffer ->
                     TableAdditionsResolver.buildForBuffer(query);
         }

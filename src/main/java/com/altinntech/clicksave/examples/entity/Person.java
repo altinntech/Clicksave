@@ -19,10 +19,10 @@ import java.util.*;
 
 @Data
 @AllArgsConstructor
-@ClickHouseEntity(forTest = true, engine = EngineType.MergeTree) // you should use this annotation for persistence entity
+@ClickHouseEntity(forTest = true, engine = EngineType.ReplacingMergeTree) // you should use this annotation for persistence entity
 //@PartitionBy("toYYYYMM(timestamp)")
 @OrderBy("id")
-@Batching(batchSize = 1000) // add batch for saving
+@Batching(batchSize = 100) // add batch for saving
 @RestrictedForUpdate
 public class Person {
 

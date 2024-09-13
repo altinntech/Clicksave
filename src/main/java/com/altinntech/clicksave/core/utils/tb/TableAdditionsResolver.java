@@ -39,6 +39,17 @@ public class TableAdditionsResolver {
         query.append(TableAdditionsResolver.getAdditions(classDataCache));
     }
 
+    public static void buildForReplacingMergeTree(StringBuilder query, ClassDataCache classDataCache, StringBuilder pk) {
+        query.append(SystemField.Timestamp).append(", ");
+        query.delete(query.length() - 2, query.length()).append(") ");
+        query.append("ENGINE = ").append(EngineType.ReplacingMergeTree)
+                .append("(").append(SystemField.Timestamp.getName()).append(")");
+        if (pk.length() > 0) {
+            query.append(" PRIMARY KEY (").append(pk).append(")");
+        }
+        query.append(TableAdditionsResolver.getAdditions(classDataCache));
+    }
+
     public static void buildForBuffer(StringBuilder query) {
         query.delete(query.length() - 2, query.length()).append(") ");
         query.append("ENGINE = ").append(EngineType.Buffer);
