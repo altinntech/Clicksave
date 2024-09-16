@@ -22,7 +22,7 @@ import java.util.*;
 @ClickHouseEntity(forTest = true, engine = EngineType.ReplacingMergeTree) // you should use this annotation for persistence entity
 //@PartitionBy("toYYYYMM(timestamp)")
 @OrderBy("id")
-@Batching(batchSize = 100) // add batch for saving
+@Batching(batchSize = 1000) // add batch for saving
 @RestrictedForUpdate
 public class Person {
 

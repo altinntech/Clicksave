@@ -123,29 +123,44 @@ public class BatchCollector implements Disposable {
     public synchronized void saveAndFlush(BatchedQueryData queryMeta, List<List<Object>> batch) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         String query = queryMeta.getQuery();
         int size = batch.size();
-        try(Connection connection = connectionManager.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(query);
+        int maxRetries = 3;
+        int attempt = 0;
+        boolean success = false;
 
-            try {
-                for (List<Object> queryData : batch) {
-                    for (int i = 0; i < queryData.size(); i++) {
-                        statement.setObject(i + 1, queryData.get(i));
+        while (attempt < maxRetries && !success) {
+            attempt++;
+            try (Connection connection = connectionManager.getConnection()) {
+
+                try (PreparedStatement statement = connection.prepareStatement(query)) {
+                    for (List<Object> queryData : batch) {
+                        for (int i = 0; i < queryData.size(); i++) {
+                            statement.setObject(i + 1, queryData.get(i));
+                        }
+                        statement.addBatch();
                     }
-                    statement.addBatch();
-                }
 
-                statement.executeBatch();
-            } finally {
-                if (statement != null) {
-                    statement.close();
+                    statement.executeBatch();
+                    success = true;
+
+                } catch (SQLException e) {
+                    if (attempt == maxRetries) {
+                        throw new RuntimeException("Failed to execute batch after " + maxRetries + " attempts", e);
+                    } else {
+                        debug("<BatchCollector>", "Save attempt " + attempt + " failed, retrying...");
+                        Thread.sleep(1000);
+                    }
+                } finally {
+                    connectionManager.releaseConnection(connection);
                 }
-                connectionManager.releaseConnection(connection);
-                batch.clear();
+            } catch (SQLException | InterruptedException e) {
+                if (attempt == maxRetries) {
+                    throw new RuntimeException("Failed to get connection after " + maxRetries + " attempts", e);
+                }
             }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
+
+        batch.clear();
+
         idsManager.adaptiveSync(queryMeta.getClassDataCache());
         debug("Batch", query + " saved " + size);
     }
