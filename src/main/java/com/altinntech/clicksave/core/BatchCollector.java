@@ -2,23 +2,28 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
+import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.utils.BatchSaveCommand;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.interfaces.Disposable;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-import static com.altinntech.clicksave.log.CSLogger.debug;
-import static com.altinntech.clicksave.log.CSLogger.info;
+import static com.altinntech.clicksave.log.CSLogger.*;
 
 /**
  * The {@code BatchCollector} class is responsible for collecting batches of queries.
@@ -144,7 +149,8 @@ public class BatchCollector implements Disposable {
 
                 } catch (SQLException e) {
                     if (attempt == maxRetries) {
-                        throw new RuntimeException("Failed to execute batch after " + maxRetries + " attempts", e);
+                        saveFailedBatchToCsv(queryMeta.getClassDataCache(), batch, "C:\\Users\\Admin\\IdeaProjects\\Clicksave");
+                        error("Failed to execute batch after " + maxRetries + " attempts", this.getClass());
                     } else {
                         debug("<BatchCollector>", "Save attempt " + attempt + " failed, retrying...");
                         Thread.sleep(1000);
@@ -154,7 +160,7 @@ public class BatchCollector implements Disposable {
                 }
             } catch (SQLException | InterruptedException e) {
                 if (attempt == maxRetries) {
-                    throw new RuntimeException("Failed to get connection after " + maxRetries + " attempts", e);
+                    error("Failed to get connection after " + maxRetries + " attempts", this.getClass());
                 }
             }
         }
@@ -177,5 +183,45 @@ public class BatchCollector implements Disposable {
             saveAndFlush(batchedQueryData, batch);
         }
         debug("All batches saved");
+    }
+
+    public void saveFailedBatchToCsv(ClassDataCache classDataCache, List<List<Object>> failedBatch, String filePath) {
+        String tableName = classDataCache.getTableName();
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String fileName = tableName + "_" + timestamp + ".csv";
+
+        String fullPath = Paths.get(filePath, fileName).toString();
+
+        try (FileWriter csvWriter = new FileWriter(fullPath)) {
+            for (List<Object> rowData : failedBatch) {
+                List<String> row = rowData.stream()
+                        .map(this::convertToCsvSafeString)
+                        .collect(Collectors.toList());
+                csvWriter.append(String.join(",", row));
+                csvWriter.append("\n");
+            }
+
+            csvWriter.flush();
+        } catch (IOException e) {
+            error(e.getMessage());
+        }
+    }
+
+    private String convertToCsvSafeString(Object value) {
+        if (value == null) {
+            return "";  // Если значение null, записываем пустую строку
+        }
+
+        String stringValue = value.toString();
+
+        // Если строка содержит запятые, кавычки или новые строки, экранируем ее
+        if (stringValue.contains(",") || stringValue.contains("\"") || stringValue.contains("\n")) {
+            // Двойные кавычки внутри строки экранируем двойными кавычками
+            stringValue = stringValue.replace("\"", "\"\"");
+            // Оборачиваем строку в двойные кавычки
+            return "\"" + stringValue + "\"";
+        }
+
+        return stringValue;
     }
 }
