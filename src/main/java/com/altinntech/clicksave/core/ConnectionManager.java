@@ -3,12 +3,10 @@ package com.altinntech.clicksave.core;
 import cc.blynk.clickhouse.ClickHouseDataSource;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.interfaces.Observer;
-import com.altinntech.clicksave.metrics.dto.ConnectionManagerMetrics;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -48,12 +46,6 @@ public class ConnectionManager implements Observer {
     private int extendedPoolSize = 0;
 
     private boolean debounce = false;
-
-    public ConnectionManagerMetrics getMetrics() {
-        ConnectionManagerMetrics metrics = new ConnectionManagerMetrics();
-        metrics.setCurrentPoolSize((long) (INITIAL_POOL_SIZE + extendedPoolSize));
-        return metrics;
-    }
 
     public ConnectionManager(DefaultProperties defaultProperties) throws SQLException {
         this.defaultProperties = defaultProperties;

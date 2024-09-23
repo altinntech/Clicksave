@@ -10,11 +10,9 @@ import com.altinntech.clicksave.core.utils.tb.TableBuilder;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
-import com.altinntech.clicksave.metrics.MonitoringService;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
 import org.reflections.Reflections;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -45,10 +43,10 @@ public class CSBootstrap {
     private final QueryExecutor queryExecutor;
     @Getter
     private final ClassDataCacheService classDataCacheService;
-    private final MonitoringService monitoringService;
     private final SyncManager syncManager;
 
     private final DefaultProperties defaultProperties;
+    private final MeterRegistry meterRegistry;
 
     private boolean isDisposed = false;
 
@@ -58,13 +56,14 @@ public class CSBootstrap {
      * @throws FieldInitializationException if field initialization fails
      * @throws ClassCacheNotFoundException if class cache is not found
      */
-    public CSBootstrap() throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
-        this(DefaultProperties.fromPropertyFile());
+    public CSBootstrap(MeterRegistry meterRegistry) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
+        this(DefaultProperties.fromPropertyFile(), meterRegistry);
     }
 
-    public CSBootstrap(DefaultProperties defaultProperties) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
+    public CSBootstrap(DefaultProperties defaultProperties, MeterRegistry meterRegistry) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
         info("Start initialization...");
 
+        this.meterRegistry = meterRegistry;
         this.classDataCacheService = new ClassDataCacheService();
         this.defaultProperties = defaultProperties;
         this.connectionManager = new ConnectionManager(defaultProperties);
@@ -72,9 +71,8 @@ public class CSBootstrap {
         this.batchCollector = BatchCollector.create(idsManager, connectionManager, defaultProperties);
         this.threadPoolManager = new ThreadPoolManager(defaultProperties);
         this.syncManager = SyncManager.create(defaultProperties, batchCollector);
-        this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager, threadPoolManager, syncManager);
+        this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager, threadPoolManager, syncManager, meterRegistry);
         this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector, syncManager, threadPoolManager);
-        this.monitoringService = new MonitoringService(connectionManager, threadPoolManager, syncManager, defaultProperties);
         idsManager.setRepository(repository);
 
         MigrationWriter.setDirectoryPath(defaultProperties.getMigrationsDirectoryPath());
@@ -109,7 +107,6 @@ public class CSBootstrap {
         entityClasses = reflections.getTypesAnnotatedWith(ClickHouseEntity.class);
         entityClasses.add(ClicksaveSequence.class);
         Set<Class<?>> embeddableClasses = reflections.getTypesAnnotatedWith(Embeddable.class);
-
         for (Class<?> clazz : entityClasses) {
             ClassDataCache classDataCache = new ClassDataCache();
             classDataCache.setEntityClass(clazz);

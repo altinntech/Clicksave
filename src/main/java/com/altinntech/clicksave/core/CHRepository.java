@@ -12,6 +12,8 @@ import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
 import com.google.gson.Gson;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -37,17 +39,23 @@ public class CHRepository {
     private final IdsManager idsManager;
     private final ThreadPoolManager threadPoolManager;
     private final SyncManager syncManager;
+    private final MeterRegistry meterRegistry;
+
+    private final Counter saveCounter;
 
     /**
      * Instantiates a new ClickHouse repository.
      */
-    CHRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager, ThreadPoolManager threadPoolManager, SyncManager syncManager) {
+    CHRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager, ThreadPoolManager threadPoolManager, SyncManager syncManager, MeterRegistry meterRegistry) {
         this.connectionManager = connectionManager;
         this.classDataCacheService = classDataCacheService;
         this.idsManager = idsManager;
         this.batchCollector = batchCollector;
         this.threadPoolManager = threadPoolManager;
         this.syncManager = syncManager;
+        this.meterRegistry = meterRegistry;
+
+        this.saveCounter = meterRegistry.counter("ch_repository_save_req_count", "operation", "save");
     }
 
     /**
@@ -102,7 +110,7 @@ public class CHRepository {
             statement.addBatch();
             statement.executeBatch();
             connectionManager.releaseConnection(connection);
-
+            saveCounter.increment();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
