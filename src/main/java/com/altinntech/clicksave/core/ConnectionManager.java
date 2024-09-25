@@ -3,6 +3,9 @@ package com.altinntech.clicksave.core;
 import cc.blynk.clickhouse.ClickHouseDataSource;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.interfaces.Observer;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.Getter;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
@@ -34,9 +37,11 @@ public class ConnectionManager implements Observer {
     private String PASSWORD;
     private final int INITIAL_POOL_SIZE;
     private final int REFILL_POOL_SIZE_THRESHOLD;
+    @Getter
     private final int MAX_POOL_SIZE;
     private final boolean ALLOW_EXPANSION;
     private final int CONNECTION_RETRY_TIME = 2000;
+    private final MeterRegistry meterRegistry;
 
     private final Deque<Connection> connectionPool = new ConcurrentLinkedDeque<>();
     private ClickHouseDataSource dataSource;
@@ -47,8 +52,9 @@ public class ConnectionManager implements Observer {
 
     private boolean debounce = false;
 
-    public ConnectionManager(DefaultProperties defaultProperties) throws SQLException {
+    public ConnectionManager(DefaultProperties defaultProperties, MeterRegistry meterRegistry) throws SQLException {
         this.defaultProperties = defaultProperties;
+        this.meterRegistry = meterRegistry;
         defaultProperties.registerObserver(this);
 
         //--Initialize Variables --//
@@ -65,13 +71,25 @@ public class ConnectionManager implements Observer {
 
             createDataSource(true);
         }
+
+        Gauge.builder("clicksave.connectionPool.connectionsCount", connectionPool, Deque::size)
+                .description("Pool of connections to Clickhouse DB")
+                .register(meterRegistry);
+
+        Gauge.builder("clicksave.connectionPool.maxSize", this, ConnectionManager::getMAX_POOL_SIZE)
+                .description("Pool of connections to Clickhouse DB")
+                .register(meterRegistry);
+
+        Gauge.builder("clicksave.connectionPool.currentSize", this, obj -> INITIAL_POOL_SIZE + extendedPoolSize)
+                .description("Pool of connections to Clickhouse DB")
+                .register(meterRegistry);
     }
 
     /**
      * Constructs a new ConnectionManager instance.
      */
-    public ConnectionManager() throws SQLException {
-        this(DefaultProperties.fromPropertyFile());
+    public ConnectionManager(MeterRegistry meterRegistry) throws SQLException {
+        this(DefaultProperties.fromPropertyFile(), meterRegistry);
     }
 
     /**

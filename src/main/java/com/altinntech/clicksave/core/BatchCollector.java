@@ -7,6 +7,8 @@ import com.altinntech.clicksave.core.utils.BatchSaveCommand;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.interfaces.Disposable;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,19 +42,27 @@ public class BatchCollector implements Disposable {
 
     private final IdsManager idsManager;
     private final ConnectionManager connectionManager;
+    private final MeterRegistry meterRegistry;
+
+    private Counter successBatchCount;
+    private Counter failedBatchCount;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     /**
      * Instantiates a new Batch collector.
      */
-    private BatchCollector(IdsManager idsManager, ConnectionManager connectionManager) {
+    private BatchCollector(IdsManager idsManager, ConnectionManager connectionManager, MeterRegistry meterRegistry) {
         this.idsManager = idsManager;
         this.connectionManager = connectionManager;
+        this.meterRegistry = meterRegistry;
+
+        this.successBatchCount = meterRegistry.counter("clicksave.batch.success_save_count", "batch", "save");
+        this.failedBatchCount = meterRegistry.counter("clicksave.batch.failed_save_count", "batch", "save");
     }
 
-    public static BatchCollector create(IdsManager idsManager, ConnectionManager connectionManager, DefaultProperties properties) {
-        BatchCollector batchCollector = new BatchCollector(idsManager, connectionManager);
+    public static BatchCollector create(IdsManager idsManager, ConnectionManager connectionManager, DefaultProperties properties, MeterRegistry meterRegistry) {
+        BatchCollector batchCollector = new BatchCollector(idsManager, connectionManager, meterRegistry);
         long batchSaveRate = Long.parseLong(properties.getBatchSaveRate());
         if (batchSaveRate > 0) {
             batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 2000, batchSaveRate, TimeUnit.MILLISECONDS);
@@ -146,11 +156,12 @@ public class BatchCollector implements Disposable {
 
                     statement.executeBatch();
                     success = true;
-
+                    successBatchCount.increment();
                 } catch (SQLException e) {
                     if (attempt == maxRetries) {
                         saveFailedBatchToCsv(queryMeta.getClassDataCache(), batch, "C:\\Users\\Admin\\IdeaProjects\\Clicksave");
                         error("Failed to execute batch after " + maxRetries + " attempts", this.getClass());
+                        failedBatchCount.increment();
                     } else {
                         debug("<BatchCollector>", "Save attempt " + attempt + " failed, retrying...");
                         Thread.sleep(1000);
@@ -209,16 +220,13 @@ public class BatchCollector implements Disposable {
 
     private String convertToCsvSafeString(Object value) {
         if (value == null) {
-            return "";  // Если значение null, записываем пустую строку
+            return "";
         }
 
         String stringValue = value.toString();
 
-        // Если строка содержит запятые, кавычки или новые строки, экранируем ее
         if (stringValue.contains(",") || stringValue.contains("\"") || stringValue.contains("\n")) {
-            // Двойные кавычки внутри строки экранируем двойными кавычками
             stringValue = stringValue.replace("\"", "\"\"");
-            // Оборачиваем строку в двойные кавычки
             return "\"" + stringValue + "\"";
         }
 

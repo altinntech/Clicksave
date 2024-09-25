@@ -55,7 +55,7 @@ public class CHRepository {
         this.syncManager = syncManager;
         this.meterRegistry = meterRegistry;
 
-        this.saveCounter = meterRegistry.counter("ch_repository_save_req_count", "operation", "save");
+        this.saveCounter = meterRegistry.counter("clickhouse.repository.save_req_count", "operation", "save");
     }
 
     /**
