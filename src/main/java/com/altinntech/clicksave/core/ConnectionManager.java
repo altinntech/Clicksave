@@ -3,6 +3,7 @@ package com.altinntech.clicksave.core;
 import cc.blynk.clickhouse.ClickHouseDataSource;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.interfaces.Observer;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
@@ -52,6 +53,9 @@ public class ConnectionManager implements Observer {
 
     private boolean debounce = false;
 
+    //micrometer
+    private final Counter healthCheckFailedCounter;
+
     public ConnectionManager(DefaultProperties defaultProperties, MeterRegistry meterRegistry) throws SQLException {
         this.defaultProperties = defaultProperties;
         this.meterRegistry = meterRegistry;
@@ -76,13 +80,15 @@ public class ConnectionManager implements Observer {
                 .description("Pool of connections to Clickhouse DB")
                 .register(meterRegistry);
 
-        Gauge.builder("clicksave.connectionPool.maxSize", this, ConnectionManager::getMAX_POOL_SIZE)
+        Gauge.builder("clicksave.connectionPool.maxPoolSize", this, ConnectionManager::getMAX_POOL_SIZE)
                 .description("Pool of connections to Clickhouse DB")
                 .register(meterRegistry);
 
-        Gauge.builder("clicksave.connectionPool.currentSize", this, obj -> INITIAL_POOL_SIZE + extendedPoolSize)
+        Gauge.builder("clicksave.connectionPool.currentPoolSize", this, obj -> INITIAL_POOL_SIZE + extendedPoolSize)
                 .description("Pool of connections to Clickhouse DB")
                 .register(meterRegistry);
+
+        this.healthCheckFailedCounter = meterRegistry.counter("clickhouse.connectionManager.failed_health_check_count", "operation", "health");
     }
 
     /**
@@ -198,6 +204,7 @@ public class ConnectionManager implements Observer {
     private void healthCheck() {
         while (!healthCheck(HTTP_URL)) {
             debug("Health check", "Retry connect to " + HTTP_URL);
+            healthCheckFailedCounter.increment();
             Thread.sleep(CONNECTION_RETRY_TIME);
         }
     }

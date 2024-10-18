@@ -10,8 +10,10 @@ import com.altinntech.clicksave.examples.repository.JpaPersonRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
@@ -21,10 +23,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+@AutoConfigureObservability
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = ClickSaveConfiguration.class)
+@TestPropertySource(locations = "classpath:application-test.properties")
 public class ClicksaveTests {
 
     @Autowired
@@ -48,7 +51,7 @@ public class ClicksaveTests {
 
     @AfterEach
     void after() {
-        jpaPersonRepository.deleteAll();
+        //jpaPersonRepository.deleteAll();
     }
 
     @Test

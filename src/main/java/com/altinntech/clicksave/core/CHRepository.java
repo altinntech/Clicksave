@@ -42,6 +42,9 @@ public class CHRepository {
     private final MeterRegistry meterRegistry;
 
     private final Counter saveCounter;
+    private final Counter fetchCounter;
+    private final Counter updateCounter;
+    private final Counter deleteCounter;
 
     /**
      * Instantiates a new ClickHouse repository.
@@ -56,6 +59,9 @@ public class CHRepository {
         this.meterRegistry = meterRegistry;
 
         this.saveCounter = meterRegistry.counter("clickhouse.repository.save_req_count", "operation", "save");
+        this.fetchCounter = meterRegistry.counter("clickhouse.repository.fetch_req_count", "operation", "fetch");
+        this.updateCounter = meterRegistry.counter("clickhouse.repository.update_req_count", "operation", "update");
+        this.deleteCounter = meterRegistry.counter("clickhouse.repository.delete_req_count", "operation", "delete");
     }
 
     /**
@@ -257,6 +263,8 @@ public class CHRepository {
             error(e.getMessage(), this.getClass());
         }
 
+        updateCounter.increment();
+
         return entity;
     }
 
@@ -342,6 +350,7 @@ public class CHRepository {
                     T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
                     connectionManager.releaseConnection(connection);
                     executePostLoadedMethods(entity, classDataCache);
+                    fetchCounter.increment();
                     return entity;
                 }
             }
@@ -379,6 +388,7 @@ public class CHRepository {
                 entities.add(entity);
             }
             connectionManager.releaseConnection(connection);
+            fetchCounter.increment();
             return entities;
         }
     }
@@ -425,11 +435,11 @@ public class CHRepository {
                     T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
                     connectionManager.releaseConnection(connection);
                     executePostLoadedMethods(entity, classDataCache);
+                    fetchCounter.increment();
                     return Optional.ofNullable(entity);
                 }
             }
         }
-
         return Optional.empty();
     }
 
@@ -454,6 +464,7 @@ public class CHRepository {
         } catch (SQLException e) {
             error(e.getMessage(), this.getClass());
         }
+        deleteCounter.increment();
     }
 
     /**
@@ -486,6 +497,7 @@ public class CHRepository {
         } catch (SQLException e) {
             error(e.getMessage(), this.getClass());
         }
+        deleteCounter.increment();
     }
 
     /**
