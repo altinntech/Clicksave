@@ -15,9 +15,14 @@ public class BatchSaveCommand implements Runnable {
     @SneakyThrows
     @Override
     public void run() {
-        if (batchCollector.isNotEmpty()) {
-            CSLogger.debug("Batch", "Saving batch");
-            batchCollector.saveAndFlushAll();
+        try {
+            if (batchCollector.isNotEmpty()) {
+                CSLogger.debug("Batch", "Saving batch");
+                batchCollector.saveAndFlushAll();
+            }
+        } catch (Exception e) {
+            CSLogger.important("An exception has occurred when saving batch!");
+            CSLogger.error("Exception when saving batch", e);
         }
     }
 }
