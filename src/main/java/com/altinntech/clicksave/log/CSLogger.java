@@ -69,6 +69,15 @@ public class CSLogger {
      * Logs an error message.
      *
      * @param message the message to log
+     */
+    public static void error(String message, Throwable cause) {
+        logger.error(message, cause);
+    }
+
+    /**
+     * Logs an error message.
+     *
+     * @param message the message to log
      * @param source the source of log message
      */
     public static void error(String message, Class<?> source) {
