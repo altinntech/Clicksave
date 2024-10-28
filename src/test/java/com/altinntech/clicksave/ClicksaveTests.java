@@ -1,5 +1,6 @@
 package com.altinntech.clicksave;
 
+import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.examples.dto.DateResponse;
 import com.altinntech.clicksave.examples.dto.ExampleResponse;
 import com.altinntech.clicksave.examples.dto.PersonResponse;
@@ -7,23 +8,37 @@ import com.altinntech.clicksave.examples.entity.Gender;
 import com.altinntech.clicksave.examples.entity.Job;
 import com.altinntech.clicksave.examples.entity.Person;
 import com.altinntech.clicksave.examples.repository.JpaPersonRepository;
+import lombok.Getter;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureObservability
@@ -242,14 +257,38 @@ public class ClicksaveTests {
 
 
     @Test
-    void testBigDecimalOverflow() {
-        try {
-            TEST_PERSON_1.setBigDecimal(new BigDecimal("11230000000000000000000001231244143200000001"));
-            jpaPersonRepository.save(TEST_PERSON_1);
-            jpaPersonRepository.findAll();
-        } catch (Exception e) {
-            TEST_PERSON_1.setBigDecimal(BigDecimal.ZERO);
-            throw e;
+    @SneakyThrows
+    void testBigDecimalOverflow_FailedBatchSave() {
+        final String too_big_decimal = "1123000000000000000000000123124414320000" + Math.abs(new Random().nextInt());
+
+        TEST_PERSON_1.setBigDecimal(new BigDecimal(too_big_decimal));
+        jpaPersonRepository.save(TEST_PERSON_1);
+
+        assertEquals(0, jpaPersonRepository.findAll().size());
+
+        Thread.sleep(1000);
+
+        String failedBatchSavePath = DefaultProperties.fromPropertyFile().getFailedBatchSavePath();
+        Path directoryRoot = Paths.get(failedBatchSavePath);
+
+        Optional<Path> lastBatch = Arrays.stream(directoryRoot.toFile().listFiles())
+                .map(file -> Paths.get(file.getPath()))
+                .max(Comparator.comparing(p -> {
+                    try {
+                        BasicFileAttributes attr = Files.readAttributes(p, BasicFileAttributes.class);
+                        FileTime fileTime = attr.creationTime();
+                        return fileTime.toInstant().getEpochSecond();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return -1L;
+                    }
+                }));
+
+        assertTrue(lastBatch.isPresent());
+        try (BufferedReader reader = new BufferedReader(new FileReader(lastBatch.get().toString()))) {
+            String csvLine = reader.readLine();
+            assertTrue(csvLine.contains("0,John,Doe,30,some_address,MALE,1"));
+            assertTrue(csvLine.contains("true," + too_big_decimal));
         }
     }
 
