@@ -14,6 +14,7 @@ import lombok.Data;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -57,6 +58,12 @@ public class Person {
     @Column(FieldType.BOOL)
     Boolean enabled = true;
     String noSaveField; // this field will not be saved
+
+    @Column(FieldType.BIG_DECIMAL)
+    BigDecimal bigDecimal;
+
+    @Column(FieldType.LONG_BIG_DECIMAL)
+    BigDecimal longBigDecimal;
 
     @Getter
     boolean testFieldForPrePersist;
