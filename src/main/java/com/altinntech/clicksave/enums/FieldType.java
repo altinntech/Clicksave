@@ -61,9 +61,14 @@ public enum FieldType {
     UINT16("UInt16"),
 
     /**
-     * Represents a big decimal field type.
+     * Represents a 128-bit big decimal field type.
      */
     BIG_DECIMAL("Decimal(20, 9)"),
+
+    /**
+     * Represents a 256-bit big decimal field type.
+     */
+    LONG_BIG_DECIMAL("Decimal(44, 21)"),
 
     /**
      * Represents a UUID field type.
