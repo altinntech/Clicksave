@@ -10,9 +10,11 @@ import com.altinntech.clicksave.interfaces.Disposable;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,20 +51,23 @@ public class BatchCollector implements Disposable {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+    private final String failedBatchSavePath;
+
     /**
      * Instantiates a new Batch collector.
      */
-    private BatchCollector(IdsManager idsManager, ConnectionManager connectionManager, MeterRegistry meterRegistry) {
+    private BatchCollector(IdsManager idsManager, ConnectionManager connectionManager, MeterRegistry meterRegistry, DefaultProperties properties) {
         this.idsManager = idsManager;
         this.connectionManager = connectionManager;
         this.meterRegistry = meterRegistry;
 
         this.successBatchCount = meterRegistry.counter("clicksave.batch.success_save_count", "batch", "save");
         this.failedBatchCount = meterRegistry.counter("clicksave.batch.failed_save_count", "batch", "save");
+        this.failedBatchSavePath = properties.getFailedBatchSavePath();
     }
 
     public static BatchCollector create(IdsManager idsManager, ConnectionManager connectionManager, DefaultProperties properties, MeterRegistry meterRegistry) {
-        BatchCollector batchCollector = new BatchCollector(idsManager, connectionManager, meterRegistry);
+        BatchCollector batchCollector = new BatchCollector(idsManager, connectionManager, meterRegistry, properties);
         long batchSaveRate = Long.parseLong(properties.getBatchSaveRate());
         if (batchSaveRate > 0) {
             batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 2000, batchSaveRate, TimeUnit.MILLISECONDS);
@@ -159,7 +164,7 @@ public class BatchCollector implements Disposable {
                     successBatchCount.increment();
                 } catch (SQLException e) {
                     if (attempt == maxRetries) {
-                        saveFailedBatchToCsv(queryMeta.getClassDataCache(), batch, "C:\\Users\\Admin\\IdeaProjects\\Clicksave");
+                        saveFailedBatchToCsv(queryMeta.getClassDataCache(), batch, failedBatchSavePath);
                         error("Failed to execute batch after " + maxRetries + " attempts", this.getClass());
                         failedBatchCount.increment();
                     } else {
@@ -201,9 +206,10 @@ public class BatchCollector implements Disposable {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String fileName = tableName + "_" + timestamp + ".csv";
 
-        String fullPath = Paths.get(filePath, fileName).toString();
+        File file = Paths.get(filePath, fileName).toFile();
+        file.getParentFile().mkdirs();
 
-        try (FileWriter csvWriter = new FileWriter(fullPath)) {
+        try (FileWriter csvWriter = new FileWriter(file)) {
             for (List<Object> rowData : failedBatch) {
                 List<String> row = rowData.stream()
                         .map(this::convertToCsvSafeString)

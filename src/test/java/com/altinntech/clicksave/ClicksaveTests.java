@@ -12,11 +12,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -235,6 +238,19 @@ public class ClicksaveTests {
         Optional<PersonResponse> fetched = jpaPersonRepository.annotationBasedQueryProjection(TEST_PERSON_3.getName(), TEST_PERSON_3.getAge());
         assertTrue(fetched.isPresent());
         assertEquals(personResponse, fetched.get());
+    }
+
+
+    @Test
+    void testBigDecimalOverflow() {
+        try {
+            TEST_PERSON_1.setBigDecimal(new BigDecimal("11230000000000000000000001231244143200000001"));
+            jpaPersonRepository.save(TEST_PERSON_1);
+            jpaPersonRepository.findAll();
+        } catch (Exception e) {
+            TEST_PERSON_1.setBigDecimal(BigDecimal.ZERO);
+            throw e;
+        }
     }
 
     @Test

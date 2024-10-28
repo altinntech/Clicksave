@@ -49,6 +49,8 @@ public class DefaultProperties {
     private String syncConnectionRetryTimeout;
     @Getter
     private String migrationsDirectoryPath;
+    @Getter
+    private String failedBatchSavePath;
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
@@ -67,6 +69,7 @@ public class DefaultProperties {
         map.put("useSyncFeatures", this.useSyncFeatures);
         map.put("syncConnectionRetryTimeout", this.syncConnectionRetryTimeout);
         map.put("migrationsDirectoryPath", this.migrationsDirectoryPath);
+        map.put("failedBatchSavePath", this.failedBatchSavePath);
         return map;
     }
 
@@ -99,6 +102,7 @@ public class DefaultProperties {
         defaultProperties.useSyncFeatures = propertyEnvironment.getProperty("clicksave.sync.use-sync-features", "false");
         defaultProperties.syncConnectionRetryTimeout = propertyEnvironment.getProperty("clicksave.sync.connection-retry-timeout", "0");
         defaultProperties.migrationsDirectoryPath = propertyEnvironment.getProperty("clicksave.utils.migrations-directory-path", "");
+        defaultProperties.failedBatchSavePath = propertyEnvironment.getProperty("clicksave.utils.failed-batch-directory-path", "");
         return defaultProperties;
     }
 
