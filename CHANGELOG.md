@@ -1,5 +1,11 @@
 # Changelog
 
+### [1.1.24-SNAPSHOT] - 2024-11-20
+- Retry for failed batch & saving to csv
+- Micrometer integration for monitoring
+- ReplacingMergeTree engine support
+- Misc data type fixes
+
 ### [1.1.23-SNAPSHOT] - 2024-07-29
 - Added @RestrictedForUpdate annotation allows preventing update field in DB
 - Fix sql migration file naming
