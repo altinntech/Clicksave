@@ -8,26 +8,23 @@ import com.altinntech.clicksave.examples.entity.Gender;
 import com.altinntech.clicksave.examples.entity.Job;
 import com.altinntech.clicksave.examples.entity.Person;
 import com.altinntech.clicksave.examples.repository.JpaPersonRepository;
-import lombok.Getter;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,12 +32,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+
 @AutoConfigureObservability
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @ExtendWith(SpringExtension.class)
@@ -69,7 +63,7 @@ public class ClicksaveTests {
 
     @AfterEach
     void after() {
-        //jpaPersonRepository.deleteAll();
+        jpaPersonRepository.deleteAll();
     }
 
     @Test
@@ -266,7 +260,7 @@ public class ClicksaveTests {
 
         assertEquals(0, jpaPersonRepository.findAll().size());
 
-        Thread.sleep(1000);
+        Thread.sleep(3000);
 
         String failedBatchSavePath = DefaultProperties.fromPropertyFile().getFailedBatchSavePath();
         Path directoryRoot = Paths.get(failedBatchSavePath);
@@ -283,6 +277,8 @@ public class ClicksaveTests {
                         return -1L;
                     }
                 }));
+
+        Thread.sleep(3000);
 
         assertTrue(lastBatch.isPresent());
         try (BufferedReader reader = new BufferedReader(new FileReader(lastBatch.get().toString()))) {
