@@ -1,11 +1,13 @@
 package com.altinntech.clicksave.core;
 
 import cc.blynk.clickhouse.ClickHouseDataSource;
+import cc.blynk.clickhouse.settings.ClickHouseQueryParam;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.interfaces.Observer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
@@ -42,7 +44,6 @@ public class ConnectionManager implements Observer {
     private final int MAX_POOL_SIZE;
     private final boolean ALLOW_EXPANSION;
     private final int CONNECTION_RETRY_TIME = 2000;
-    private final MeterRegistry meterRegistry;
 
     private final Deque<Connection> connectionPool = new ConcurrentLinkedDeque<>();
     private ClickHouseDataSource dataSource;
@@ -56,9 +57,13 @@ public class ConnectionManager implements Observer {
     //micrometer
     private final Counter healthCheckFailedCounter;
 
+    public ConnectionManager(DefaultProperties defaultProperties) throws SQLException {
+        this(defaultProperties, null);
+    }
+
     public ConnectionManager(DefaultProperties defaultProperties, MeterRegistry meterRegistry) throws SQLException {
         this.defaultProperties = defaultProperties;
-        this.meterRegistry = meterRegistry;
+        //this.meterRegistry = meterRegistry;
         defaultProperties.registerObserver(this);
 
         //--Initialize Variables --//
@@ -66,6 +71,24 @@ public class ConnectionManager implements Observer {
         this.REFILL_POOL_SIZE_THRESHOLD = Integer.parseInt(defaultProperties.getConnectionsPoolSizeRefillThreshold());
         this.MAX_POOL_SIZE = Integer.parseInt(defaultProperties.getMaxConnectionPoolSize());
         this.ALLOW_EXPANSION = Boolean.parseBoolean(defaultProperties.getAllowConnectionsPoolExpansion());
+
+        if (meterRegistry != null) {
+            Gauge.builder("clicksave.connectionPool.connectionsCount", connectionPool, Deque::size)
+                    .description("Pool of connections to Clickhouse DB")
+                    .register(meterRegistry);
+
+            Gauge.builder("clicksave.connectionPool.maxPoolSize", this, ConnectionManager::getMAX_POOL_SIZE)
+                    .description("Pool of connections to Clickhouse DB")
+                    .register(meterRegistry);
+
+            Gauge.builder("clicksave.connectionPool.currentPoolSize", this, obj -> INITIAL_POOL_SIZE + extendedPoolSize)
+                    .description("Pool of connections to Clickhouse DB")
+                    .register(meterRegistry);
+
+            this.healthCheckFailedCounter = meterRegistry.counter("clickhouse.connectionManager.failed_health_check_count", "operation", "health");
+        } else {
+            this.healthCheckFailedCounter = Counter.builder("noop").register(new SimpleMeterRegistry());
+        }
 
         if (defaultProperties.validate()) {
             this.URL = defaultProperties.getUrl();
@@ -75,20 +98,6 @@ public class ConnectionManager implements Observer {
 
             createDataSource(true);
         }
-
-        Gauge.builder("clicksave.connectionPool.connectionsCount", connectionPool, Deque::size)
-                .description("Pool of connections to Clickhouse DB")
-                .register(meterRegistry);
-
-        Gauge.builder("clicksave.connectionPool.maxPoolSize", this, ConnectionManager::getMAX_POOL_SIZE)
-                .description("Pool of connections to Clickhouse DB")
-                .register(meterRegistry);
-
-        Gauge.builder("clicksave.connectionPool.currentPoolSize", this, obj -> INITIAL_POOL_SIZE + extendedPoolSize)
-                .description("Pool of connections to Clickhouse DB")
-                .register(meterRegistry);
-
-        this.healthCheckFailedCounter = meterRegistry.counter("clickhouse.connectionManager.failed_health_check_count", "operation", "health");
     }
 
     /**
@@ -188,6 +197,7 @@ public class ConnectionManager implements Observer {
         Properties properties = new Properties();
         properties.setProperty("user", USER);
         properties.setProperty("password", PASSWORD);
+        properties.setProperty(ClickHouseQueryParam.COMPRESS.getKey(), defaultProperties.getConnectionCompressionEnabled());
         healthCheck();
         this.dataSource = new ClickHouseDataSource(URL, properties);
         try {

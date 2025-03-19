@@ -51,6 +51,8 @@ public class DefaultProperties {
     private String migrationsDirectoryPath;
     @Getter
     private String failedBatchSavePath;
+    @Getter
+    private String connectionCompressionEnabled;
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
@@ -103,6 +105,7 @@ public class DefaultProperties {
         defaultProperties.syncConnectionRetryTimeout = propertyEnvironment.getProperty("clicksave.sync.connection-retry-timeout", "0");
         defaultProperties.migrationsDirectoryPath = propertyEnvironment.getProperty("clicksave.utils.migrations-directory-path", "");
         defaultProperties.failedBatchSavePath = propertyEnvironment.getProperty("clicksave.utils.failed-batch-directory-path", "");
+        defaultProperties.connectionCompressionEnabled = propertyEnvironment.getProperty("clicksave.connection.compress", "true");
         return defaultProperties;
     }
 

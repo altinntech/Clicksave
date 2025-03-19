@@ -9,6 +9,7 @@ import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.interfaces.Disposable;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -45,7 +46,6 @@ public class BatchCollector implements Disposable {
 
     private final IdsManager idsManager;
     private final ConnectionManager connectionManager;
-    private final MeterRegistry meterRegistry;
 
     private Counter successBatchCount;
     private Counter failedBatchCount;
@@ -60,10 +60,14 @@ public class BatchCollector implements Disposable {
     private BatchCollector(IdsManager idsManager, ConnectionManager connectionManager, MeterRegistry meterRegistry, DefaultProperties properties) {
         this.idsManager = idsManager;
         this.connectionManager = connectionManager;
-        this.meterRegistry = meterRegistry;
 
-        this.successBatchCount = meterRegistry.counter("clicksave.batch.success_save_count", "batch", "save");
-        this.failedBatchCount = meterRegistry.counter("clicksave.batch.failed_save_count", "batch", "save");
+        if (meterRegistry != null) {
+            this.successBatchCount = meterRegistry.counter("clicksave.batch.success_save_count", "batch", "save");
+            this.failedBatchCount = meterRegistry.counter("clicksave.batch.failed_save_count", "batch", "save");
+        } else  {
+            this.successBatchCount = new SimpleMeterRegistry().counter("noop");
+            this.failedBatchCount = new SimpleMeterRegistry().counter("noop");
+        }
         this.failedBatchSavePath = properties.getFailedBatchSavePath();
     }
 
