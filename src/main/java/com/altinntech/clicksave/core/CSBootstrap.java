@@ -46,7 +46,6 @@ public class CSBootstrap {
     private final SyncManager syncManager;
 
     private final DefaultProperties defaultProperties;
-    private final MeterRegistry meterRegistry;
 
     private boolean isDisposed = false;
 
@@ -63,7 +62,6 @@ public class CSBootstrap {
     public CSBootstrap(DefaultProperties defaultProperties, MeterRegistry meterRegistry) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
         info("Start initialization...");
 
-        this.meterRegistry = meterRegistry;
         this.classDataCacheService = new ClassDataCacheService();
         this.defaultProperties = defaultProperties;
         this.connectionManager = new ConnectionManager(defaultProperties, meterRegistry);
