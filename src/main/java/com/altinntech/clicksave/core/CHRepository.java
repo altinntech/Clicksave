@@ -11,6 +11,7 @@ import com.altinntech.clicksave.enums.SystemField;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
 import com.altinntech.clicksave.interfaces.EnumId;
+import com.altinntech.clicksave.log.CSLogger;
 import com.google.gson.Gson;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -99,6 +100,7 @@ public class CHRepository {
 
         extractFieldValuesForCreate(entity, idType, classDataCache, insertQuery, valuesPlaceholder, fields, fieldValues);
         String query = buildInsertQuery(insertQuery, valuesPlaceholder, classDataCache, fieldValues);
+        CSLogger.debug("Built query ```\r\n" + query + "\r\n```");
 
         Optional<Batching> batchSizeAnnotation = classDataCache.getBatchingAnnotationOptional();
         if (batchSizeAnnotation.isPresent()) {
@@ -255,9 +257,12 @@ public class CHRepository {
         updateQuery.delete(updateQuery.length() - 2, updateQuery.length()).append(" WHERE ")
                 .append(idFieldData.getFieldInTableName()).append(" = ").append("'" + id + "'");
 
+        String query = updateQuery.toString();
+        CSLogger.debug("Built query ```\r\n" + query + "\r\n```");
+
         try(Connection connection = connectionManager.getConnection();
             Statement statement = connection.createStatement()) {
-            int rowAffected = statement.executeUpdate(updateQuery.toString());
+            int rowAffected = statement.executeUpdate(query);
             connectionManager.releaseConnection(connection);
         } catch (SQLException e) {
             error(e.getMessage(), this.getClass());
@@ -341,8 +346,11 @@ public class CHRepository {
         String idFieldName = idFieldCache.getFieldInTableName();
         selectQuery.append(idFieldName).append(" = ?");
 
+        String query = selectQuery.toString();
+        CSLogger.debug("Built query ```\r\n" + query + "\r\n```");
+
         try(Connection connection = connectionManager.getConnection();
-            PreparedStatement statement = connection.prepareStatement(selectQuery.toString())) {
+            PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setMaxRows(1);
             statement.setObject(1, id);
             try(ResultSet resultSet = statement.executeQuery()) {
