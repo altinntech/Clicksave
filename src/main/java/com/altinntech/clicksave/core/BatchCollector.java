@@ -170,6 +170,7 @@ public class BatchCollector implements Disposable {
                 } catch (SQLException e) {
                     if (attempt == maxRetries) {
                         saveFailedBatchToCsv(queryMeta.getClassDataCache(), batch, failedBatchSavePath);
+                        error("Failed to execute batch with error '" + e.getMessage() + "'", e);
                         error("Failed to execute batch after " + maxRetries + " attempts", this.getClass());
                         failedBatchCount.increment();
                     } else {
