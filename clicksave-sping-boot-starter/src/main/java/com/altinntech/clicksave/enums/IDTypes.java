@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public enum IDTypes {
 
-    UUID(java.util.UUID.class),
+    UUID(UUID.class),
     INTEGER(Integer.class),
     LONG(Long.class),
     ;
@@ -20,5 +20,5 @@ public enum IDTypes {
         return type;
     }
 
-    public static final List<Class<?>> allowedIdTypes = List.of(java.util.UUID.class, Long.class, Integer.class);
+    public static final List<Class<?>> allowedIdTypes = List.of(UUID.class, Long.class, Integer.class);
 }

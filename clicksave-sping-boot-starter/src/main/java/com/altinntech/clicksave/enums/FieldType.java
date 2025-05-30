@@ -98,7 +98,13 @@ public enum FieldType {
     /**
      * Represents a Bool field type for old clickhouse versions.
      */
-    BOOL8("UInt8");
+    BOOL8("UInt8"),
+
+    /**
+     * Represents a JSON field type
+     */
+    JSON("JSON"),
+    ;
 
     private final String type;
 
