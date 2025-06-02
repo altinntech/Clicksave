@@ -619,7 +619,7 @@ public class CSUtils {
         return random.nextInt(max - min + 1) + min;
     }
 
-    static Integer generateIntegerId(Integer currentId) {
+    public static Integer generateIntegerId(Integer currentId) {
         if (currentId == null) {
             return 0;
         } else {
@@ -627,7 +627,7 @@ public class CSUtils {
         }
     }
 
-    static Long generateLongId(Long currentId) {
+    public static Long generateLongId(Long currentId) {
         if (currentId == null) {
             return 0L;
         } else {

@@ -6,6 +6,7 @@ import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.enums.IDTypes;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import com.altinntech.clicksave.interfaces.IdGenerator;
 import lombok.Setter;
 
 import java.lang.reflect.InvocationTargetException;
@@ -103,18 +104,15 @@ public class IdsManager {
             throw new IllegalArgumentException("Invalid id type: " + idType);
         }
 
-        if (idType.equals(IDTypes.UUID.getType())) {
-            nextId = (ID) UUID.randomUUID();
-            idCache.put(classDataCache, nextId);
-            return nextId;
-        }
+        IdGenerator<ID> actualGenerator = (IdGenerator<ID>)
+                idFieldData
+                        .getColumnAnnotation().orElseThrow()
+                        .idGenerator().getActualGenerator(idFieldData.getType());
 
-        if (idType.equals(IDTypes.INTEGER.getType())) {
-            nextId = (ID) generateIntegerId((Integer) currentId);
-        } else if (idType.equals(IDTypes.LONG.getType())) {
-            nextId = (ID) generateLongId((Long) currentId);
+        if (actualGenerator.isPrevIdAware()) {
+            nextId = actualGenerator.generateNextId(currentId);
         } else {
-            throw new IllegalArgumentException("Invalid id type: " + idType);
+            nextId = actualGenerator.generateNextId();
         }
 
         idCache.put(classDataCache, nextId);
