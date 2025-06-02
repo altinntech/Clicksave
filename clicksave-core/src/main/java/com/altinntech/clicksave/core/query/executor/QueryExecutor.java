@@ -13,16 +13,18 @@ import com.altinntech.clicksave.core.query.parser.Part;
 import com.altinntech.clicksave.core.query.parser.PartParser;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.interfaces.EnumId;
-import org.thepavel.icomponent.metadata.MethodMetadata;
+import com.altinntech.clicksave.interfaces.QueryInfo;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
-import static com.altinntech.clicksave.core.CHRepository.executePostLoadedMethods;
+import static com.altinntech.clicksave.core.ClicksaveInternalRepository.executePostLoadedMethods;
 
 /**
  * The {@code QueryExecutor} class is responsible for executing assembled queries.
@@ -57,12 +59,12 @@ public class QueryExecutor {
      * @param returnClass    the return class
      * @param entityClass    the entity class
      * @param arguments      the arguments
-     * @param methodMetadata the method metadata
+     * @param queryInfo the method metadata
      * @return the result object
      * @throws ClassCacheNotFoundException if class cache is not found
      * @throws SQLException                if an SQL exception occurs
      */
-    public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, MethodMetadata methodMetadata) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
+    public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, QueryInfo queryInfo) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
         ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
         threadPoolManager.waitForCompletion();
         syncManager.saveBatchRequest();
@@ -70,9 +72,18 @@ public class QueryExecutor {
 
         List<Object> argumentsList = new ArrayList<>(Arrays.asList(arguments));
 
-        String methodName = preprocessQueryObject(returnClass, entityClass, argumentsList, methodMetadata, classDataCache);
+        String queryId;
+        if (queryInfo.annotation() instanceof Query query) {
+            queryId = preprocessQueryObject(
+                    returnClass, entityClass, argumentsList, queryInfo.queryId(), query, queryInfo.returnType(), classDataCache
+            );
+        } else if (queryInfo.annotation() instanceof SettableQuery settableQuery) {
+            queryId = preprocessQueryObject(
+                    returnClass, entityClass, argumentsList, queryInfo.queryId(), settableQuery, queryInfo.returnType(), classDataCache
+            );
+        }
 
-        CustomQueryMetadata query = (CustomQueryMetadata) queryMetadataCache.getFromCache(methodName);
+        CustomQueryMetadata query = (CustomQueryMetadata) queryMetadataCache.getFromCache(queryInfo.queryId());
         try(Connection connection = connectionManager.getConnection();
             PreparedStatement statement = connection.prepareStatement(query.getQueryBody())) {
             int paramCount = countParameters(query.getQueryBody());
@@ -138,22 +149,8 @@ public class QueryExecutor {
     }
 
     //todo: refactor
-    private String preprocessQueryObject(Class<?> returnClass, Class<?> entityClass, List<Object> arguments, MethodMetadata methodMetadata, ClassDataCache classDataCache) throws ClassCacheNotFoundException {
-        String methodName = methodMetadata.getSourceMethod().getName();
-        Annotation[] annotations = methodMetadata.getSourceMethod().getAnnotations();
+    private String preprocessQueryObject(Class<?> returnClass, Class<?> entityClass, List<Object> arguments, String methodName, SettableQuery settableQuery, Type returnType, ClassDataCache classDataCache) throws ClassCacheNotFoundException {
         String queryBody = "";
-        Query queryAnnotation = null;
-        SettableQuery settableQuery = null;
-        for (Annotation annotation : annotations) {
-            if (annotation.annotationType() == Query.class) {
-                queryAnnotation = (Query) annotation;
-                break;
-            } else if (annotation.annotationType() == SettableQuery.class) {
-                settableQuery = (SettableQuery) annotation;
-                break;
-            }
-        }
-
         if (settableQuery != null) {
             arguments.remove(0);
             methodName = String.valueOf((methodName + (String) arguments.get(0)).hashCode());
@@ -167,20 +164,29 @@ public class QueryExecutor {
             arguments.removeIf(Objects::isNull);
         }
         if (!queryMetadataCache.containsKey(methodName)) {
-            if (queryAnnotation != null) {
-                CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
-                customQueryMetadata.setQueryBody(queryAnnotation.value());
-                customQueryMetadata.setPullType(getPullType(methodMetadata));
-                customQueryMetadata.setIsQueryFromAnnotation(true);
-                queryMetadataCache.addToCache(methodName, customQueryMetadata);
-            } else if (settableQuery != null) {
+            if (settableQuery != null) {
                 CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
                 customQueryMetadata.setQueryBody(queryBody);
-                customQueryMetadata.setPullType(getPullType(methodMetadata));
+                customQueryMetadata.setPullType(getPullType(returnType));
                 customQueryMetadata.setIsQueryFromAnnotation(true);
                 queryMetadataCache.addToCache(methodName, customQueryMetadata);
             } else {
-                parseQueryMethod(returnClass, entityClass, methodName, classDataCache, methodMetadata);
+                parseQueryMethod(returnClass, entityClass, methodName, classDataCache, returnType);
+            }
+        }
+        return methodName;
+    }
+
+    private String preprocessQueryObject(Class<?> returnClass, Class<?> entityClass, List<Object> arguments, String methodName, Query queryAnnotation, Type returnType, ClassDataCache classDataCache) throws ClassCacheNotFoundException {
+        if (!queryMetadataCache.containsKey(methodName)) {
+            if (queryAnnotation != null) {
+                CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
+                customQueryMetadata.setQueryBody(queryAnnotation.value());
+                customQueryMetadata.setPullType(getPullType(returnType));
+                customQueryMetadata.setIsQueryFromAnnotation(true);
+                queryMetadataCache.addToCache(methodName, customQueryMetadata);
+            } else {
+                parseQueryMethod(returnClass, entityClass, methodName, classDataCache, returnType);
             }
         }
         return methodName;
@@ -210,7 +216,7 @@ public class QueryExecutor {
         }
     }
 
-    private void parseQueryMethod(Class<?> returnClass, Class<?> entityClass, String methodName, ClassDataCache classDataCache, MethodMetadata methodMetadata) throws ClassCacheNotFoundException {
+    private void parseQueryMethod(Class<?> returnClass, Class<?> entityClass, String methodName, ClassDataCache classDataCache, Type returnType) throws ClassCacheNotFoundException {
         PartParser partParser = new PartParser();
         partParser.parse(methodName);
         List<Part> parts = partParser.getParts();
@@ -227,7 +233,7 @@ public class QueryExecutor {
 
         QueryBuilder queryBuilder = new QueryBuilder(parts, classDataCache.getTableName(), fieldDataCacheList, fieldsToFetch);
         CustomQueryMetadata query = queryBuilder.createQuery();
-        query.setPullType(getPullType(methodMetadata));
+        query.setPullType(getPullType(returnType));
         queryMetadataCache.addToCache(methodName, query);
     }
 
@@ -244,9 +250,7 @@ public class QueryExecutor {
         return result;
     }
 
-    private static QueryPullType getPullType(MethodMetadata methodMetadata) {
-        Type returnType = methodMetadata.getReturnTypeMetadata().getResolvedType();
-
+    private static QueryPullType getPullType(Type returnType) {
         if (returnType instanceof ParameterizedType parameterizedType) {
             Type rawType = parameterizedType.getRawType();
             if (rawType instanceof Class<?> rawClass) {

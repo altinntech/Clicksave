@@ -38,4 +38,18 @@
 		</developer>
 	</developers>
 
+	<distributionManagement>
+		<!--<snapshotRepository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>libs-snapshot</name>
+            <url>http://217.25.90.14:8081/artifactory/libs-snapshot</url>
+        </snapshotRepository>-->
+		<repository>
+			<snapshots />
+			<id>nexus-server</id>
+			<name>maven-snapshots</name>
+			<url>https://maven.altinntech.com/repository/maven-snapshots/</url>
+		</repository>
+	</distributionManagement>
 </project>

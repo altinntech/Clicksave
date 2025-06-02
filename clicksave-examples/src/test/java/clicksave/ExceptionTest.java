@@ -1,5 +1,6 @@
-package com.altinntech.clicksave;
+package clicksave;
 
+import com.altinntech.clicksave.ClickSaveConfiguration;
 import com.altinntech.clicksave.core.CSRequestHandler;
 import com.altinntech.clicksave.examples.entity.Gender;
 import com.altinntech.clicksave.examples.entity.Job;

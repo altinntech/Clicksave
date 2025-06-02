@@ -39,7 +39,7 @@ public class ThreadPoolManager {
         return executor;
     }
 
-    public <T> Future<T> saveAsync(Object[] arguments, Class<T> entityIdType, CHRepository repository) throws InterruptedException {
+    public <T, ID> Future<T> saveAsync(Object[] arguments, Class<ID> entityIdType, ClicksaveInternalRepository repository) throws InterruptedException {
         return (Future<T>) executor.submit(() -> {
             try {
                 return repository.save(arguments[0], entityIdType);

@@ -1,8 +1,10 @@
 package com.altinntech.clicksave.core;
 
+import com.altinntech.clicksave.core.dto.MethodMetadataQueryInfo;
 import com.altinntech.clicksave.core.query.executor.QueryExecutor;
 import com.altinntech.clicksave.exceptions.*;
 import com.altinntech.clicksave.interfaces.ClickHouseJpa;
+import com.altinntech.clicksave.log.CSLogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thepavel.icomponent.handler.MethodHandler;
@@ -28,7 +30,7 @@ import static com.altinntech.clicksave.log.CSLogger.error;
 @Component
 public class CSRequestHandler implements MethodHandler {
 
-    private final CHRepository repository;
+    private final ClicksaveInternalRepository repository;
     private final QueryExecutor queryExecutor;
     private final CSBootstrap bootstrap;
     private final ThreadPoolManager threadPoolManager;
@@ -82,16 +84,16 @@ public class CSRequestHandler implements MethodHandler {
                 }
             }
         } catch (SQLException e) {
-            error("Error while processing SQL query: " + e.getMessage(), this.getClass());
+            CSLogger.error("Error while processing SQL query: " + e.getMessage(), this.getClass());
             throw new ClicksaveSQLException(e);
         } catch (ClassCacheNotFoundException e) {
-            error("ClassDataCache not found for " + entityType + ". Make sure that entity has an @ClickHouseEntity annotation", this.getClass());
+            CSLogger.error("ClassDataCache not found for " + entityType + ". Make sure that entity has an @ClickHouseEntity annotation", this.getClass());
             throw new ClassCacheNotFoundRuntimeException(e);
         } catch (IllegalAccessException e) {
-            error("Illegal access to entity " + entityType + ": " + e.getMessage(), this.getClass());
+            CSLogger.error("Illegal access to entity " + entityType + ": " + e.getMessage(), this.getClass());
             throw new ReflectiveException(e);
         } catch (InvocationTargetException e) {
-            error("Illegal invocation method; Entity: " + entityType + ": " + e.getMessage(), this.getClass());
+            CSLogger.error("Illegal invocation method; Entity: " + entityType + ": " + e.getMessage(), this.getClass());
             throw new ReflectiveException(e);
         } catch (InterruptedException e) {
             throw new ConcurrencyException(e);
@@ -175,11 +177,11 @@ public class CSRequestHandler implements MethodHandler {
 
     private Object handleCustomQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         methodReturnType = (Class<?>) arguments[0];
-        return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
+        return queryExecutor.processQuery(methodReturnType, entityType, arguments, new MethodMetadataQueryInfo(methodMetadata));
     }
 
     private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
-        return queryExecutor.processQuery(methodReturnType, entityType, arguments, methodMetadata);
+        return queryExecutor.processQuery(methodReturnType, entityType, arguments, new MethodMetadataQueryInfo(methodMetadata));
     }
 
     private void handleSaveBatch(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, InvocationTargetException, IllegalAccessException {

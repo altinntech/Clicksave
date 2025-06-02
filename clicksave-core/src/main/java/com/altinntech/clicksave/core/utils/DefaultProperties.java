@@ -3,11 +3,6 @@ package com.altinntech.clicksave.core.utils;
 import com.altinntech.clicksave.interfaces.Observer;
 import com.altinntech.clicksave.interfaces.PropertyEnvironment;
 import lombok.Getter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -80,12 +75,7 @@ public class DefaultProperties {
         return getProperties(propertyReader);
     }
 
-    public static DefaultProperties fromEnvironment(Environment environment) {
-        SpringEnvironment springEnvironment = new SpringEnvironment(environment);
-        return getProperties(springEnvironment);
-    }
-
-    private static DefaultProperties getProperties(PropertyEnvironment propertyEnvironment) {
+    public static DefaultProperties getProperties(PropertyEnvironment propertyEnvironment) {
         DefaultProperties defaultProperties = new DefaultProperties();
         defaultProperties.url = propertyEnvironment.getProperty("clicksave.connection.datasource.url", "");
         defaultProperties.username = propertyEnvironment.getProperty("clicksave.connection.datasource.username");

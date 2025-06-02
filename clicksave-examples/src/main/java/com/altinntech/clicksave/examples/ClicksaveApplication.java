@@ -1,4 +1,4 @@
-package com.altinntech.clicksave;
+package com.altinntech.clicksave.examples;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

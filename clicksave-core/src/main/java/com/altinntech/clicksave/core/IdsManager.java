@@ -1,13 +1,11 @@
 package com.altinntech.clicksave.core;
 
-import com.altinntech.clicksave.annotations.Batching;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
 import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.enums.IDTypes;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.interfaces.IdGenerator;
-import lombok.Setter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
@@ -24,7 +22,7 @@ public class IdsManager {
 
     private final Map<ClassDataCache, Object> idCache = new HashMap<>();
 
-    private CHRepository repository;
+    private ClicksaveInternalRepository repository;
     private final ConnectionManager connectionManager;
     private boolean isInitialized = false;
 
@@ -32,7 +30,7 @@ public class IdsManager {
         this.connectionManager = connectionManager;
     }
 
-    public void setRepository(CHRepository repository) {
+    public void setRepository(ClicksaveInternalRepository repository) {
         this.repository = repository;
         this.isInitialized = true;
     }
