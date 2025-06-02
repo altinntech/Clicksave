@@ -11,6 +11,7 @@
 	<modules>
 		<module>clicksave-sping-boot-starter</module>
 		<module>clicksave-core</module>
+		<module>clicksave-examples</module>
 	</modules>
 
 	<name>ClickSave</name>

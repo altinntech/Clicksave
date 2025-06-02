@@ -5,7 +5,6 @@ import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.annotations.Reference;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
-import com.altinntech.clicksave.examples.entity.CompanyMetadata;
 import com.altinntech.clicksave.examples.entity.Job;
 import com.altinntech.clicksave.examples.entity.Person;
 import lombok.Data;
