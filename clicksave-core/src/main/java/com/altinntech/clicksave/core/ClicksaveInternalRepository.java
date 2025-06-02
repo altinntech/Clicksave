@@ -1,20 +1,19 @@
 package com.altinntech.clicksave.core;
 
-import com.altinntech.clicksave.annotations.*;
+import com.altinntech.clicksave.annotations.Batching;
+import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.core.pipelines.insert.InsertQueryBuilder;
 import com.altinntech.clicksave.core.pipelines.insert.InsertQueryBuilderFactory;
-import com.altinntech.clicksave.enums.EngineType;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
-import com.altinntech.clicksave.enums.SystemField;
+import com.altinntech.clicksave.enums.Metrics;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
+import com.altinntech.clicksave.interfaces.ClicksaveMetrics;
 import com.altinntech.clicksave.interfaces.EnumId;
 import com.altinntech.clicksave.log.CSLogger;
 import com.google.gson.Gson;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -32,7 +31,7 @@ import static com.altinntech.clicksave.log.CSLogger.error;
  *
  * @author Fyodor Plotnikov
  */
-public class CHRepository {
+public class ClicksaveInternalRepository {
     
     private final ConnectionManager connectionManager;
     private final ClassDataCacheService classDataCacheService;
@@ -40,29 +39,19 @@ public class CHRepository {
     private final IdsManager idsManager;
     private final ThreadPoolManager threadPoolManager;
     private final SyncManager syncManager;
-    private final MeterRegistry meterRegistry;
-
-    private final Counter saveCounter;
-    private final Counter fetchCounter;
-    private final Counter updateCounter;
-    private final Counter deleteCounter;
+    private final ClicksaveMetrics metrics;
 
     /**
      * Instantiates a new ClickHouse repository.
      */
-    CHRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager, ThreadPoolManager threadPoolManager, SyncManager syncManager, MeterRegistry meterRegistry) {
+    ClicksaveInternalRepository(ConnectionManager connectionManager, ClassDataCacheService classDataCacheService, BatchCollector batchCollector, IdsManager idsManager, ThreadPoolManager threadPoolManager, SyncManager syncManager, ClicksaveMetrics metrics) {
         this.connectionManager = connectionManager;
         this.classDataCacheService = classDataCacheService;
         this.idsManager = idsManager;
         this.batchCollector = batchCollector;
         this.threadPoolManager = threadPoolManager;
         this.syncManager = syncManager;
-        this.meterRegistry = meterRegistry;
-
-        this.saveCounter = meterRegistry.counter("clickhouse.repository.save_req_count", "operation", "save");
-        this.fetchCounter = meterRegistry.counter("clickhouse.repository.fetch_req_count", "operation", "fetch");
-        this.updateCounter = meterRegistry.counter("clickhouse.repository.update_req_count", "operation", "update");
-        this.deleteCounter = meterRegistry.counter("clickhouse.repository.delete_req_count", "operation", "delete");
+        this.metrics = metrics;
     }
 
     /**
@@ -118,7 +107,7 @@ public class CHRepository {
             statement.addBatch();
             statement.executeBatch();
             connectionManager.releaseConnection(connection);
-            saveCounter.increment();
+            metrics.incrementCounter(Metrics.REPO_SAVE_COUNTER.getMetricsName());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -268,7 +257,7 @@ public class CHRepository {
             error(e.getMessage(), this.getClass());
         }
 
-        updateCounter.increment();
+        metrics.incrementCounter(Metrics.REPO_UPDATE_COUNTER.getMetricsName());
 
         return entity;
     }
@@ -358,7 +347,7 @@ public class CHRepository {
                     T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
                     connectionManager.releaseConnection(connection);
                     executePostLoadedMethods(entity, classDataCache);
-                    fetchCounter.increment();
+                    metrics.incrementCounter(Metrics.REPO_FETCH_COUNTER.getMetricsName());
                     return entity;
                 }
             }
@@ -396,7 +385,7 @@ public class CHRepository {
                 entities.add(entity);
             }
             connectionManager.releaseConnection(connection);
-            fetchCounter.increment();
+            metrics.incrementCounter(Metrics.REPO_FETCH_COUNTER.getMetricsName(), entities.size());
             return entities;
         }
     }
@@ -443,7 +432,7 @@ public class CHRepository {
                     T entity = createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
                     connectionManager.releaseConnection(connection);
                     executePostLoadedMethods(entity, classDataCache);
-                    fetchCounter.increment();
+                    metrics.incrementCounter(Metrics.REPO_FETCH_COUNTER.getMetricsName());
                     return Optional.ofNullable(entity);
                 }
             }
@@ -469,10 +458,10 @@ public class CHRepository {
             Statement statement = connection.createStatement()) {
             int rowAffected = statement.executeUpdate(deleteQuery.toString());
             connectionManager.releaseConnection(connection);
+            metrics.incrementCounter(Metrics.REPO_DELETE_COUNTER.getMetricsName(), rowAffected);
         } catch (SQLException e) {
             error(e.getMessage(), this.getClass());
         }
-        deleteCounter.increment();
     }
 
     /**
@@ -502,10 +491,10 @@ public class CHRepository {
             int rowAffected = statement.executeUpdate(deleteQuery.toString());
             idField.set(entity, null);
             connectionManager.releaseConnection(connection);
+            metrics.incrementCounter(Metrics.REPO_DELETE_COUNTER.getMetricsName(), rowAffected);
         } catch (SQLException e) {
             error(e.getMessage(), this.getClass());
         }
-        deleteCounter.increment();
     }
 
     /**

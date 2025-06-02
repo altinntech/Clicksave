@@ -1,5 +1,6 @@
-package com.altinntech.clicksave;
+package clicksave;
 
+import com.altinntech.clicksave.ClickSaveConfiguration;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
 import com.altinntech.clicksave.examples.dto.DateResponse;
 import com.altinntech.clicksave.examples.dto.ExampleResponse;

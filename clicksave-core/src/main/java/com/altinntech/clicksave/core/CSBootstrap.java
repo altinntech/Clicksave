@@ -1,7 +1,10 @@
 package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.annotations.*;
-import com.altinntech.clicksave.core.dto.*;
+import com.altinntech.clicksave.core.dto.ClassDataCache;
+import com.altinntech.clicksave.core.dto.ColumnData;
+import com.altinntech.clicksave.core.dto.EmbeddableClassData;
+import com.altinntech.clicksave.core.dto.PreparedFieldsData;
 import com.altinntech.clicksave.core.query.executor.QueryExecutor;
 import com.altinntech.clicksave.core.utils.ClicksaveSequence;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
@@ -10,7 +13,7 @@ import com.altinntech.clicksave.core.utils.tb.TableBuilder;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.exceptions.EntityInitializationException;
 import com.altinntech.clicksave.exceptions.FieldInitializationException;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.altinntech.clicksave.interfaces.ClicksaveMetrics;
 import lombok.Getter;
 import org.reflections.Reflections;
 
@@ -19,7 +22,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import static com.altinntech.clicksave.core.CSUtils.*;
 import static com.altinntech.clicksave.log.CSLogger.*;
@@ -36,7 +41,7 @@ public class CSBootstrap {
     private Set<Class<?>> entityClasses;
     private final ConnectionManager connectionManager;
     @Getter
-    private final CHRepository repository;
+    private final ClicksaveInternalRepository repository;
     private final IdsManager idsManager;
     private final BatchCollector batchCollector;
     private final ThreadPoolManager threadPoolManager;
@@ -55,21 +60,21 @@ public class CSBootstrap {
      * @throws FieldInitializationException if field initialization fails
      * @throws ClassCacheNotFoundException if class cache is not found
      */
-    public CSBootstrap(MeterRegistry meterRegistry) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
-        this(DefaultProperties.fromPropertyFile(), meterRegistry);
+    public CSBootstrap(ClicksaveMetrics metrics) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
+        this(DefaultProperties.fromPropertyFile(), metrics);
     }
 
-    public CSBootstrap(DefaultProperties defaultProperties, MeterRegistry meterRegistry) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
+    public CSBootstrap(DefaultProperties defaultProperties, ClicksaveMetrics metrics) throws FieldInitializationException, ClassCacheNotFoundException, SQLException {
         info("Start initialization...");
 
         this.classDataCacheService = new ClassDataCacheService();
         this.defaultProperties = defaultProperties;
-        this.connectionManager = new ConnectionManager(defaultProperties, meterRegistry);
+        this.connectionManager = new ConnectionManager(defaultProperties, metrics);
         this.idsManager = new IdsManager(connectionManager);
-        this.batchCollector = BatchCollector.create(idsManager, connectionManager, defaultProperties, meterRegistry);
+        this.batchCollector = BatchCollector.create(idsManager, connectionManager, defaultProperties, metrics);
         this.threadPoolManager = new ThreadPoolManager(defaultProperties);
         this.syncManager = SyncManager.create(defaultProperties, batchCollector);
-        this.repository = new CHRepository(connectionManager, classDataCacheService, batchCollector, idsManager, threadPoolManager, syncManager, meterRegistry);
+        this.repository = new ClicksaveInternalRepository(connectionManager, classDataCacheService, batchCollector, idsManager, threadPoolManager, syncManager, metrics);
         this.queryExecutor = new QueryExecutor(connectionManager, classDataCacheService, batchCollector, syncManager, threadPoolManager);
         idsManager.setRepository(repository);
 

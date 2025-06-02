@@ -3,11 +3,9 @@ package com.altinntech.clicksave.core;
 import cc.blynk.clickhouse.ClickHouseDataSource;
 import cc.blynk.clickhouse.settings.ClickHouseQueryParam;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
+import com.altinntech.clicksave.enums.Metrics;
+import com.altinntech.clicksave.interfaces.ClicksaveMetrics;
 import com.altinntech.clicksave.interfaces.Observer;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
@@ -15,7 +13,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Deque;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
@@ -54,16 +53,16 @@ public class ConnectionManager implements Observer {
 
     private boolean debounce = false;
 
-    //micrometer
-    private final Counter healthCheckFailedCounter;
+    // Metrics
+    private final ClicksaveMetrics metrics;
 
     public ConnectionManager(DefaultProperties defaultProperties) throws SQLException {
-        this(defaultProperties, null);
+        this(defaultProperties, ClicksaveMetrics.noop());
     }
 
-    public ConnectionManager(DefaultProperties defaultProperties, MeterRegistry meterRegistry) throws SQLException {
+    public ConnectionManager(DefaultProperties defaultProperties, ClicksaveMetrics metrics) throws SQLException {
         this.defaultProperties = defaultProperties;
-        //this.meterRegistry = meterRegistry;
+        this.metrics = metrics;
         defaultProperties.registerObserver(this);
 
         //--Initialize Variables --//
@@ -72,23 +71,9 @@ public class ConnectionManager implements Observer {
         this.MAX_POOL_SIZE = Integer.parseInt(defaultProperties.getMaxConnectionPoolSize());
         this.ALLOW_EXPANSION = Boolean.parseBoolean(defaultProperties.getAllowConnectionsPoolExpansion());
 
-        if (meterRegistry != null) {
-            Gauge.builder("clicksave.connectionPool.connectionsCount", connectionPool, Deque::size)
-                    .description("Pool of connections to Clickhouse DB")
-                    .register(meterRegistry);
-
-            Gauge.builder("clicksave.connectionPool.maxPoolSize", this, ConnectionManager::getMAX_POOL_SIZE)
-                    .description("Pool of connections to Clickhouse DB")
-                    .register(meterRegistry);
-
-            Gauge.builder("clicksave.connectionPool.currentPoolSize", this, obj -> INITIAL_POOL_SIZE + extendedPoolSize)
-                    .description("Pool of connections to Clickhouse DB")
-                    .register(meterRegistry);
-
-            this.healthCheckFailedCounter = meterRegistry.counter("clickhouse.connectionManager.failed_health_check_count", "operation", "health");
-        } else {
-            this.healthCheckFailedCounter = Counter.builder("noop").register(new SimpleMeterRegistry());
-        }
+        metrics.registerNumValueCheck(Metrics.CONNECTIONS_COUNT.getMetricsName(), connectionPool::size);
+        metrics.registerNumValueCheck(Metrics.CONNECTIONS_MAX_POOL_SIZE.getMetricsName(), this::getMAX_POOL_SIZE);
+        metrics.registerNumValueCheck(Metrics.CONNECTIONS_POOL_SIZE.getMetricsName(), () -> INITIAL_POOL_SIZE + extendedPoolSize);
 
         if (defaultProperties.validate()) {
             this.URL = defaultProperties.getUrl();
@@ -103,8 +88,8 @@ public class ConnectionManager implements Observer {
     /**
      * Constructs a new ConnectionManager instance.
      */
-    public ConnectionManager(MeterRegistry meterRegistry) throws SQLException {
-        this(DefaultProperties.fromPropertyFile(), meterRegistry);
+    public ConnectionManager(ClicksaveMetrics metrics) throws SQLException {
+        this(DefaultProperties.fromPropertyFile(), metrics);
     }
 
     /**
@@ -214,7 +199,7 @@ public class ConnectionManager implements Observer {
     private void healthCheck() {
         while (!healthCheck(HTTP_URL)) {
             debug("Health check", "Retry connect to " + HTTP_URL);
-            healthCheckFailedCounter.increment();
+            metrics.incrementCounter(Metrics.HEALTH_CHECK_FAILED.getMetricsName());
             Thread.sleep(CONNECTION_RETRY_TIME);
         }
     }

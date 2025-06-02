@@ -2,27 +2,26 @@ package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.core.dto.BatchedQueryData;
 import com.altinntech.clicksave.core.dto.ClassDataCache;
-import com.altinntech.clicksave.core.dto.FieldDataCache;
 import com.altinntech.clicksave.core.utils.BatchSaveCommand;
 import com.altinntech.clicksave.core.utils.DefaultProperties;
+import com.altinntech.clicksave.enums.Metrics;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
+import com.altinntech.clicksave.interfaces.ClicksaveMetrics;
 import com.altinntech.clicksave.interfaces.Disposable;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,35 +43,26 @@ public class BatchCollector implements Disposable {
      */
     private final ConcurrentHashMap<BatchedQueryData, List<List<Object>>> batches = new ConcurrentHashMap<>();
 
-    private final IdsManager idsManager;
-    private final ConnectionManager connectionManager;
-
-    private Counter successBatchCount;
-    private Counter failedBatchCount;
-
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private final String failedBatchSavePath;
 
+    private final IdsManager idsManager;
+    private final ConnectionManager connectionManager;
+    private final ClicksaveMetrics metrics;
+
     /**
      * Instantiates a new Batch collector.
      */
-    private BatchCollector(IdsManager idsManager, ConnectionManager connectionManager, MeterRegistry meterRegistry, DefaultProperties properties) {
+    private BatchCollector(IdsManager idsManager, ConnectionManager connectionManager, ClicksaveMetrics metrics, DefaultProperties properties) {
         this.idsManager = idsManager;
         this.connectionManager = connectionManager;
-
-        if (meterRegistry != null) {
-            this.successBatchCount = meterRegistry.counter("clicksave.batch.success_save_count", "batch", "save");
-            this.failedBatchCount = meterRegistry.counter("clicksave.batch.failed_save_count", "batch", "save");
-        } else  {
-            this.successBatchCount = new SimpleMeterRegistry().counter("noop");
-            this.failedBatchCount = new SimpleMeterRegistry().counter("noop");
-        }
         this.failedBatchSavePath = properties.getFailedBatchSavePath();
+        this.metrics = metrics;
     }
 
-    public static BatchCollector create(IdsManager idsManager, ConnectionManager connectionManager, DefaultProperties properties, MeterRegistry meterRegistry) {
-        BatchCollector batchCollector = new BatchCollector(idsManager, connectionManager, meterRegistry, properties);
+    public static BatchCollector create(IdsManager idsManager, ConnectionManager connectionManager, DefaultProperties properties, ClicksaveMetrics metrics) {
+        BatchCollector batchCollector = new BatchCollector(idsManager, connectionManager, metrics, properties);
         long batchSaveRate = Long.parseLong(properties.getBatchSaveRate());
         if (batchSaveRate > 0) {
             batchCollector.scheduler.scheduleAtFixedRate(new BatchSaveCommand(batchCollector), 2000, batchSaveRate, TimeUnit.MILLISECONDS);
@@ -166,13 +156,13 @@ public class BatchCollector implements Disposable {
 
                     statement.executeBatch();
                     success = true;
-                    successBatchCount.increment();
+                    metrics.incrementCounter(Metrics.BATCH_SUCCESS.getMetricsName());
                 } catch (SQLException e) {
                     if (attempt == maxRetries) {
                         saveFailedBatchToCsv(queryMeta.getClassDataCache(), batch, failedBatchSavePath);
                         error("Failed to execute batch with error '" + e.getMessage() + "'", e);
                         error("Failed to execute batch after " + maxRetries + " attempts", this.getClass());
-                        failedBatchCount.increment();
+                        metrics.incrementCounter(Metrics.BATCH_FAIL.getMetricsName());
                     } else {
                         debug("<BatchCollector>", "Save attempt " + attempt + " failed, retrying...");
                         Thread.sleep(1000);
