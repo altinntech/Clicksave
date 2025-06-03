@@ -10,6 +10,7 @@ public record SimpleQueryInfo(
         String methodName,
         Class<?> returnClass,
         Class<?> entityClass,
+        Class<?> containerClass,
         String queryString,
         List<Object> args,
         boolean isParsedByMethodName

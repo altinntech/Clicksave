@@ -38,6 +38,11 @@ public class MethodMetadataQueryInfo implements QueryInfo {
     }
 
     @Override
+    public Class<?> containerClass() {
+        return null;
+    }
+
+    @Override
     public String queryString() {
         Query query = query();
         if (query != null) {
