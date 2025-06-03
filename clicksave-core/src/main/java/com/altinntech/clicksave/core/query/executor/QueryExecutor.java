@@ -11,6 +11,8 @@ import com.altinntech.clicksave.core.query.builder.QueryBuilder;
 import com.altinntech.clicksave.core.query.builder.QueryPullType;
 import com.altinntech.clicksave.core.query.parser.Part;
 import com.altinntech.clicksave.core.query.parser.PartParser;
+import com.altinntech.clicksave.core.query.preprocessor.QueryAnnotationPreprocessor;
+import com.altinntech.clicksave.core.query.preprocessor.QueryMethodNamePreprocessor;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
 import com.altinntech.clicksave.interfaces.EnumId;
 import com.altinntech.clicksave.interfaces.QueryInfo;
@@ -30,7 +32,7 @@ import static com.altinntech.clicksave.core.ClicksaveInternalRepository.executeP
  * The {@code QueryExecutor} class is responsible for executing assembled queries.
  * It processes queries and returns objects or lists of objects from the database.
  *
- * @author Fyodor Plotnikov
+ * @author Fyodor Plotnikov, Anton Volkov
  */
 public class QueryExecutor {
 
@@ -41,6 +43,8 @@ public class QueryExecutor {
     private final ThreadPoolManager threadPoolManager;
     private final QueryMetadataCache queryMetadataCache = QueryMetadataCache.getInstance();
     private final ProjectionClassDataCache projectionClassDataCache = ProjectionClassDataCache.getInstance();
+    private final QueryAnnotationPreprocessor annotationPreprocessor;
+    private final QueryMethodNamePreprocessor methodNamePreprocessor;
 
     /**
      * Constructs a new QueryExecutor instance.
@@ -51,41 +55,45 @@ public class QueryExecutor {
         this.batchCollector = batchCollector;
         this.syncManager = syncManager;
         this.threadPoolManager = threadPoolManager;
+        this.annotationPreprocessor = new QueryAnnotationPreprocessor(queryMetadataCache);
+        this.methodNamePreprocessor = new QueryMethodNamePreprocessor(queryMetadataCache, classDataCacheService);
     }
 
     /**
      * Processes the query and returns the result object.
      *
-     * @param returnClass    the return class
-     * @param entityClass    the entity class
-     * @param arguments      the arguments
-     * @param queryInfo the method metadata
+     * @param queryInfo Compiled query info from annotation/method metadata/supplied by application manually
+     *
      * @return the result object
+     *
      * @throws ClassCacheNotFoundException if class cache is not found
      * @throws SQLException                if an SQL exception occurs
      */
-    public Object processQuery(Class<?> returnClass, Class<?> entityClass, Object[] arguments, QueryInfo queryInfo) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
-        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(entityClass);
+    public Object processQuery(QueryInfo queryInfo) throws ClassCacheNotFoundException, SQLException, IllegalAccessException, InvocationTargetException {
+        ClassDataCache classDataCache = classDataCacheService.getClassDataCache(queryInfo.entityClass());
         threadPoolManager.waitForCompletion();
         syncManager.saveBatchRequest();
         batchCollector.saveAndFlush(classDataCache);
 
-        List<Object> argumentsList = new ArrayList<>(Arrays.asList(arguments));
+        List<Object> argumentsList = queryInfo.args();
 
-        String queryId;
-        if (queryInfo.annotation() instanceof Query query) {
-            queryId = preprocessQueryObject(
-                    returnClass, entityClass, argumentsList, queryInfo.queryId(), query, queryInfo.returnType(), classDataCache
-            );
-        } else if (queryInfo.annotation() instanceof SettableQuery settableQuery) {
-            queryId = preprocessQueryObject(
-                    returnClass, entityClass, argumentsList, queryInfo.queryId(), settableQuery, queryInfo.returnType(), classDataCache
-            );
+        String queryId = queryInfo.queryId();
+
+        if (!queryMetadataCache.containsKey(queryId)) {
+            if (queryInfo.isParsedByMethodName()) {
+                queryId = methodNamePreprocessor.preprocessQuery(queryInfo);
+            } else {
+                queryId = annotationPreprocessor.preprocessQuery(queryInfo);
+            }
+            assert Objects.equals(queryId, queryInfo.queryId());
         }
 
-        CustomQueryMetadata query = (CustomQueryMetadata) queryMetadataCache.getFromCache(queryInfo.queryId());
-        try(Connection connection = connectionManager.getConnection();
-            PreparedStatement statement = connection.prepareStatement(query.getQueryBody())) {
+        CustomQueryMetadata query = (CustomQueryMetadata) queryMetadataCache.getFromCache(queryId);
+
+        try (
+                Connection connection = connectionManager.getConnection();
+                PreparedStatement statement = connection.prepareStatement(query.getQueryBody())
+        ) {
             int paramCount = countParameters(query.getQueryBody());
             if (query.getIsQueryFromAnnotation()) {
                 for (int i = 1; i < argumentsList.size() + 1; i++) {
@@ -103,14 +111,14 @@ public class QueryExecutor {
 
             switch (query.getPullType()) {
                 case SINGLE -> {
-
-                    try(ResultSet resultSet = statement.executeQuery()) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
                         if (resultSet.next()) {
                             Object entity;
-                            if (!returnClass.equals(entityClass))
-                                entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet);
-                            else
-                                entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
+                            if (!queryInfo.returnClass().equals(queryInfo.entityClass())) {
+                                entity = CSUtils.createDtoEntityFromResultSet(queryInfo.returnClass(), resultSet);
+                            } else {
+                                entity = CSUtils.createEntityFromResultSet(queryInfo.entityClass(), resultSet, classDataCache, classDataCacheService);
+                            }
                             connectionManager.releaseConnection(connection);
                             executePostLoadedMethods(entity, classDataCache);
                             return Optional.ofNullable(entity);
@@ -121,16 +129,15 @@ public class QueryExecutor {
 
                 }
                 case MULTIPLE -> {
-
-                    try(ResultSet resultSet = statement.executeQuery()) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
                         List<Object> entities = new ArrayList<>();
                         while (resultSet.next()) {
                             Object entity;
-                            if (!returnClass.equals(entityClass)) {
-                                entity = CSUtils.createDtoEntityFromResultSet(returnClass, resultSet);
+                            if (!queryInfo.returnClass().equals(queryInfo.entityClass())) {
+                                entity = CSUtils.createDtoEntityFromResultSet(queryInfo.returnClass(), resultSet);
                             }
                             else {
-                                entity = CSUtils.createEntityFromResultSet(entityClass, resultSet, classDataCache, classDataCacheService);
+                                entity = CSUtils.createEntityFromResultSet(queryInfo.entityClass(), resultSet, classDataCache, classDataCacheService);
                                 executePostLoadedMethods(entity, classDataCache);
                             }
                             entities.add(entity);
@@ -146,50 +153,6 @@ public class QueryExecutor {
         }
 
         return null;
-    }
-
-    //todo: refactor
-    private String preprocessQueryObject(Class<?> returnClass, Class<?> entityClass, List<Object> arguments, String methodName, SettableQuery settableQuery, Type returnType, ClassDataCache classDataCache) throws ClassCacheNotFoundException {
-        String queryBody = "";
-        if (settableQuery != null) {
-            arguments.remove(0);
-            methodName = String.valueOf((methodName + (String) arguments.get(0)).hashCode());
-            queryBody = (String) arguments.get(0);
-            arguments.remove(0);
-
-            Object[] array = (Object[]) arguments.get(0);
-            arguments.remove(0);
-            arguments.addAll(Arrays.asList(array));
-
-            arguments.removeIf(Objects::isNull);
-        }
-        if (!queryMetadataCache.containsKey(methodName)) {
-            if (settableQuery != null) {
-                CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
-                customQueryMetadata.setQueryBody(queryBody);
-                customQueryMetadata.setPullType(getPullType(returnType));
-                customQueryMetadata.setIsQueryFromAnnotation(true);
-                queryMetadataCache.addToCache(methodName, customQueryMetadata);
-            } else {
-                parseQueryMethod(returnClass, entityClass, methodName, classDataCache, returnType);
-            }
-        }
-        return methodName;
-    }
-
-    private String preprocessQueryObject(Class<?> returnClass, Class<?> entityClass, List<Object> arguments, String methodName, Query queryAnnotation, Type returnType, ClassDataCache classDataCache) throws ClassCacheNotFoundException {
-        if (!queryMetadataCache.containsKey(methodName)) {
-            if (queryAnnotation != null) {
-                CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
-                customQueryMetadata.setQueryBody(queryAnnotation.value());
-                customQueryMetadata.setPullType(getPullType(returnType));
-                customQueryMetadata.setIsQueryFromAnnotation(true);
-                queryMetadataCache.addToCache(methodName, customQueryMetadata);
-            } else {
-                parseQueryMethod(returnClass, entityClass, methodName, classDataCache, returnType);
-            }
-        }
-        return methodName;
     }
 
     private static void setStatementArgument(List<Object> arguments, CustomQueryMetadata query, PreparedStatement statement, int i) throws SQLException {
@@ -216,69 +179,13 @@ public class QueryExecutor {
         }
     }
 
-    private void parseQueryMethod(Class<?> returnClass, Class<?> entityClass, String methodName, ClassDataCache classDataCache, Type returnType) throws ClassCacheNotFoundException {
-        PartParser partParser = new PartParser();
-        partParser.parse(methodName);
-        List<Part> parts = partParser.getParts();
-
-        List<FieldDataCache> fieldDataCacheList = classDataCache.getFields();
-        List<FieldData> fieldsToFetch;
-
-        if (!returnClass.equals(entityClass)) {
-            ProjectionClassData projectionClassData = projectionClassDataCache.get(returnClass);
-            fieldsToFetch = new ArrayList<>(projectionClassData.getFields());
-        } else {
-            fieldsToFetch = getFieldsToFetch(fieldDataCacheList);
-        }
-
-        QueryBuilder queryBuilder = new QueryBuilder(parts, classDataCache.getTableName(), fieldDataCacheList, fieldsToFetch);
-        CustomQueryMetadata query = queryBuilder.createQuery();
-        query.setPullType(getPullType(returnType));
-        queryMetadataCache.addToCache(methodName, query);
-    }
-
-    private List<FieldData> getFieldsToFetch(List<FieldDataCache> fieldDataCacheList) throws ClassCacheNotFoundException {
-        List<FieldData> result = new ArrayList<>();
-        for (FieldDataCache fieldData : fieldDataCacheList) {
-            if (fieldData.getEmbeddedAnnotation().isPresent()) {
-                EmbeddableClassData embeddableClassData = classDataCacheService.getEmbeddableClassDataCache(fieldData.getType());
-                result.addAll(getFieldsToFetch(embeddableClassData.getFields()));
-            } else {
-                result.add(fieldData);
-            }
-        }
-        return result;
-    }
-
-    private static QueryPullType getPullType(Type returnType) {
-        if (returnType instanceof ParameterizedType parameterizedType) {
-            Type rawType = parameterizedType.getRawType();
-            if (rawType instanceof Class<?> rawClass) {
-                if (rawClass.equals(Optional.class)) {
-                    return QueryPullType.SINGLE;
-                } else if (rawClass.equals(List.class)) {
-                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-                    if (actualTypeArguments.length > 0 && actualTypeArguments[0] instanceof Class<?>) {
-                        return QueryPullType.MULTIPLE;
-                    }
-                }
-            }
-        } else if (returnType instanceof Class<?>) {
-            return QueryPullType.NONE;
-        }
-
-        return null;
-    }
-
     private static int countParameters(String query) {
         int count = 0;
         int index = 0;
-
         while ((index = query.indexOf("?", index)) != -1) {
             count++;
             index += 1;
         }
-
         return count;
     }
 }

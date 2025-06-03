@@ -52,7 +52,6 @@ public class CSRequestHandler implements MethodHandler {
     public Object handle(Object[] arguments, MethodMetadata methodMetadata) {
         Class<?> entityType = findEntityType(methodMetadata);
         Class<?> entityIdType = findEntityIdType(methodMetadata);
-        Class<?> methodReturnType = getParameterType(methodMetadata);
 
         try {
             switch (methodMetadata.getSourceMethod().getName()) {
@@ -73,14 +72,14 @@ public class CSRequestHandler implements MethodHandler {
                 }
                 case "delete" -> handleDelete(arguments[0]);
                 case "deleteAll" -> handleDeleteAll(entityType);
-                case "findAllCustomQuery" -> {
-                    return handleCustomQuery(methodReturnType, entityType, arguments, methodMetadata);
+                case "findAllCustomQuery", "findSingleCustomQuery" -> {
+                    return handleCustomQuery(methodMetadata, arguments);
                 }
                 case "saveBatch" -> {
                     handleSaveBatch(entityType);
                 }
                 default -> {
-                    return handleQuery(methodReturnType, entityType, arguments, methodMetadata);
+                    return handleQuery(methodMetadata, arguments);
                 }
             }
         } catch (SQLException e) {
@@ -135,17 +134,6 @@ public class CSRequestHandler implements MethodHandler {
         return null;
     }
 
-    private static Class<?> getParameterType(MethodMetadata methodMetadata) {
-        Type returnType = methodMetadata.getReturnTypeMetadata().getResolvedType();
-        if (returnType instanceof ParameterizedType parameterizedType) {
-            Type[] typeArguments = parameterizedType.getActualTypeArguments();
-            if (typeArguments.length > 0 && typeArguments[0] instanceof Class<?> parameterType) {
-                return parameterType;
-            }
-        }
-        return null;
-    }
-
     private Object handleFindAll(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         return repository.findAll(entityType);
     }
@@ -175,13 +163,13 @@ public class CSRequestHandler implements MethodHandler {
         repository.deleteAll(entityType);
     }
 
-    private Object handleCustomQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
-        methodReturnType = (Class<?>) arguments[0];
-        return queryExecutor.processQuery(methodReturnType, entityType, arguments, new MethodMetadataQueryInfo(methodMetadata));
+    private Object handleCustomQuery(MethodMetadata methodMetadata, Object ... args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+
+        return queryExecutor.processQuery(new MethodMetadataQueryInfo(methodMetadata, args));
     }
 
-    private Object handleQuery(Class<?> methodReturnType, Class<?> entityType, Object[] arguments, MethodMetadata methodMetadata) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
-        return queryExecutor.processQuery(methodReturnType, entityType, arguments, new MethodMetadataQueryInfo(methodMetadata));
+    private Object handleQuery(MethodMetadata methodMetadata, Object ... args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+        return queryExecutor.processQuery(new MethodMetadataQueryInfo(methodMetadata, args));
     }
 
     private void handleSaveBatch(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, InvocationTargetException, IllegalAccessException {
