@@ -74,5 +74,8 @@ public interface ClickHouseJpa<T, ID> extends ClicksaveUtils {
      * @return the result of the custom query
      */
     @SettableQuery
-    <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object... params);
+    <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object ... params);
+
+    @SettableQuery
+    <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, Object ... params);
 }
