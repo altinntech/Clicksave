@@ -7,6 +7,7 @@ import com.altinntech.clicksave.core.ThreadPoolManager;
 import com.altinntech.clicksave.core.dto.SimpleQueryInfo;
 import com.altinntech.clicksave.core.query.executor.QueryExecutor;
 import com.altinntech.clicksave.interfaces.ClickHouseJpa;
+import com.altinntech.clicksave.interfaces.QueryInfo;
 import lombok.SneakyThrows;
 
 import java.util.Arrays;
@@ -77,7 +78,7 @@ public abstract class AbstractClicksaveRepository<T, ID> implements ClickHouseJp
     @SneakyThrows
     public <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object... params) {
         return (List<R>) queryExecutor.processQuery(new SimpleQueryInfo(
-                "findAllCustomQuery", List.class, producer, query, Arrays.asList(params), false
+                "findAllCustomQuery", producer, entityType, List.class, query, Arrays.asList(params), false
         ));
     }
 
@@ -85,8 +86,13 @@ public abstract class AbstractClicksaveRepository<T, ID> implements ClickHouseJp
     @SneakyThrows
     public <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, Object... params) {
         return (Optional<R>) queryExecutor.processQuery(new SimpleQueryInfo(
-                "findSingleCustomQuery", Optional.class, producer, query, Arrays.asList(params), false
+                "findSingleCustomQuery", producer, entityType, Optional.class, query, Arrays.asList(params), false
         ));
+    }
+
+    @SneakyThrows
+    protected <E> E execute(QueryInfo queryInfo) {
+        return (E) queryExecutor.processQuery(queryInfo);
     }
 
     @Override

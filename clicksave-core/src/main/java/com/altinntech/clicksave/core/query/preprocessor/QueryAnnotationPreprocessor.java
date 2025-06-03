@@ -18,7 +18,7 @@ public class QueryAnnotationPreprocessor implements QueryPreprocessor {
     public String preprocessQuery(QueryInfo queryInfo) {
         CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
         customQueryMetadata.setQueryBody(queryInfo.queryString());
-        customQueryMetadata.setPullType(QueryPullType.getByJavaType(queryInfo.returnClass()));
+        customQueryMetadata.setPullType(QueryPullType.getByJavaType(queryInfo.containerClass()));
         customQueryMetadata.setIsQueryFromAnnotation(true);
         queryMetadataCache.addToCache(queryInfo.queryId(), customQueryMetadata);
         return queryInfo.queryId();
