@@ -8,7 +8,6 @@ import com.altinntech.clicksave.core.CSUtils;
 import com.altinntech.clicksave.enums.EngineType;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;

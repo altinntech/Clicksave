@@ -1,5 +1,6 @@
 package com.altinntech.clicksave.log;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -11,9 +12,8 @@ import org.slf4j.MarkerFactory;
  *
  * @author Fyodor Plotnikov
  */
+@Slf4j
 public class CSLogger {
-    private static final Logger logger = LoggerFactory.getLogger(CSLogger.class);
-    private static final Marker IMPORTANT = MarkerFactory.getMarker("IMPORTANT");
 
     /**
      * Logs an informational message.
@@ -21,11 +21,11 @@ public class CSLogger {
      * @param message the message to log
      */
     public static void info(String message) {
-        logger.info(message);
+        log.info(message);
     }
 
     public static void info(String context, String message) {
-        logger.info("<" + context + "> " + message);
+        log.info("<{}> {}", context, message);
     }
 
     /**
@@ -34,11 +34,11 @@ public class CSLogger {
      * @param message the message to log
      */
     public static void warn(String message) {
-        logger.warn(message);
+        log.warn(message);
     }
 
     public static void warn(String context, String message) {
-        logger.warn("<" + context + "> " + message);
+        log.warn("<" + context + "> " + message);
     }
 
     /**
@@ -47,8 +47,8 @@ public class CSLogger {
      * @param message the message to log
      */
     public static void debug(String message) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(message);
+        if (log.isDebugEnabled()) {
+            log.debug(message);
         }
     }
 
@@ -62,7 +62,7 @@ public class CSLogger {
      * @param message the message to log
      */
     public static void error(String message) {
-        logger.error(message);
+        log.error(message);
     }
 
     /**
@@ -71,7 +71,7 @@ public class CSLogger {
      * @param message the message to log
      */
     public static void error(String message, Throwable cause) {
-        logger.error(message, cause);
+        log.error(message, cause);
     }
 
     /**
@@ -81,7 +81,7 @@ public class CSLogger {
      * @param source the source of log message
      */
     public static void error(String message, Class<?> source) {
-        logger.error("[" + source.getSimpleName() + "] " + message);
+        log.error("[{}] {}", source.getSimpleName(), message);
     }
 
     /**
@@ -90,6 +90,6 @@ public class CSLogger {
      * @param message the message to log
      */
     public static void important(String message) {
-        logger.info(IMPORTANT, message);
+        log.info(MarkerFactory.getMarker("IMPORTANT"), message);
     }
 }

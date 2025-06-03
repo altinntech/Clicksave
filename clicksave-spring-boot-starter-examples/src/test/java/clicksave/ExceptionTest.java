@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @AutoConfigureObservability
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = ClickSaveConfiguration.class)
 @TestPropertySource(locations = "classpath:application-test.properties")

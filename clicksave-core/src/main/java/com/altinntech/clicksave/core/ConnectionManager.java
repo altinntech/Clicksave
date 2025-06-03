@@ -9,6 +9,7 @@ import com.altinntech.clicksave.interfaces.Observer;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.sql.Connection;
@@ -45,7 +46,8 @@ public class ConnectionManager implements Observer {
     private final int CONNECTION_RETRY_TIME = 2000;
 
     private final Deque<Connection> connectionPool = new ConcurrentLinkedDeque<>();
-    private ClickHouseDataSource dataSource;
+    // TODO Configurable driver class since Clickhouse4j is not longer supported and causes dependency problems
+    private DataSource dataSource;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
