@@ -1,4 +1,13 @@
 # Changelog
+### [1.2.0-SNAPSHOT] - 2025-06-03
+- Id generation strategies
+- UUIDv3, UUIDv7 generation support
+- Unified query interface
+- Removed demo dependencies
+- Separated modules:
+  - Core - ClickSave ORM itself without Spring Framework
+  - Spring Boot starter - Simple and easy way to integrate with popular framework
+  - Examples - Tests and usage examples
 
 ### [1.1.24-SNAPSHOT] - 2024-11-20
 - Retry for failed batch & saving to csv
