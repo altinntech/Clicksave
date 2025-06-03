@@ -2,6 +2,7 @@ package com.altinntech.clicksave.core.dto;
 
 import com.altinntech.clicksave.annotations.Query;
 import com.altinntech.clicksave.annotations.SettableQuery;
+import com.altinntech.clicksave.core.query.builder.QueryPullType;
 import com.altinntech.clicksave.interfaces.ClickHouseJpa;
 import com.altinntech.clicksave.interfaces.QueryInfo;
 import org.thepavel.icomponent.metadata.MethodMetadata;
@@ -11,6 +12,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class MethodMetadataQueryInfo implements QueryInfo {
 
@@ -39,6 +41,15 @@ public class MethodMetadataQueryInfo implements QueryInfo {
 
     @Override
     public Class<?> containerClass() {
+        Type returnType = methodMetadata.getReturnTypeMetadata().getResolvedType();
+        if (returnType instanceof ParameterizedType parameterizedType) {
+            Type rawType = parameterizedType.getRawType();
+            if (rawType instanceof Class<?> rawClass) {
+                return rawClass;
+            }
+        } else if (returnType instanceof Class<?>) {
+            return null;
+        }
         return null;
     }
 
@@ -46,7 +57,7 @@ public class MethodMetadataQueryInfo implements QueryInfo {
     public String queryString() {
         Query query = query();
         if (query != null) {
-            return query.value() != null ? query.value() : null;
+            return query.value();
         } else if (settableQuery() != null) {
             return args.get(1).toString();
         }
@@ -65,27 +76,15 @@ public class MethodMetadataQueryInfo implements QueryInfo {
 
     @Override
     public boolean isParsedByMethodName() {
-        return queryString() != null;
+        return queryString() == null;
     }
 
     private Query query() {
-        Annotation[] annotations = methodMetadata.getSourceMethod().getAnnotations();
-        for (Annotation annotation : annotations) {
-            if (annotation.annotationType() == Query.class) {
-                return (Query) annotation;
-            }
-        }
-        return null;
+        return methodMetadata.getSourceMethod().getAnnotation(Query.class);
     }
 
     private SettableQuery settableQuery() {
-        Annotation[] annotations = methodMetadata.getSourceMethod().getAnnotations();
-        for (Annotation annotation : annotations) {
-            if (annotation.annotationType() == SettableQuery.class) {
-                return (SettableQuery) annotation;
-            }
-        }
-        return null;
+        return methodMetadata.getSourceMethod().getAnnotation(SettableQuery.class);
     }
 
     private Class<?> returnType(MethodMetadata methodMetadata) {

@@ -2,6 +2,7 @@ package com.altinntech.clicksave.core.query.builder;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,22 +35,15 @@ public enum QueryPullType {
     NONE,
     ;
 
-    public static QueryPullType getByJavaType(Type type) {
-        if (type instanceof ParameterizedType parameterizedType) {
-            Type rawType = parameterizedType.getRawType();
-            if (rawType instanceof Class<?> rawClass) {
-                if (rawClass.equals(Optional.class)) {
-                    return QueryPullType.SINGLE;
-                } else if (rawClass.equals(List.class)) {
-                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-                    if (actualTypeArguments.length > 0 && actualTypeArguments[0] instanceof Class<?>) {
-                        return QueryPullType.MULTIPLE;
-                    }
-                }
-            }
-        } else if (type instanceof Class<?>) {
-            return QueryPullType.NONE;
+    public static QueryPullType getByReturnType(Class<?> type) {
+        if (type == null) {
+            return NONE;
         }
-        return null;
+        if (type.isAssignableFrom(List.class)) {
+            return MULTIPLE;
+        } else if (type.isAssignableFrom(Optional.class)) {
+            return SINGLE;
+        }
+        return NONE;
     }
 }

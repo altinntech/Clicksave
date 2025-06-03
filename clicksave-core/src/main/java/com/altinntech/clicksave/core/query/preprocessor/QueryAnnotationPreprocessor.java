@@ -6,9 +6,6 @@ import com.altinntech.clicksave.core.query.builder.QueryPullType;
 import com.altinntech.clicksave.interfaces.QueryInfo;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 @RequiredArgsConstructor
 public class QueryAnnotationPreprocessor implements QueryPreprocessor {
 
@@ -18,7 +15,7 @@ public class QueryAnnotationPreprocessor implements QueryPreprocessor {
     public String preprocessQuery(QueryInfo queryInfo) {
         CustomQueryMetadata customQueryMetadata = new CustomQueryMetadata();
         customQueryMetadata.setQueryBody(queryInfo.queryString());
-        customQueryMetadata.setPullType(QueryPullType.getByJavaType(queryInfo.containerClass()));
+        customQueryMetadata.setPullType(QueryPullType.getByReturnType(queryInfo.containerClass()));
         customQueryMetadata.setIsQueryFromAnnotation(true);
         queryMetadataCache.addToCache(queryInfo.queryId(), customQueryMetadata);
         return queryInfo.queryId();

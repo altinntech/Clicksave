@@ -40,7 +40,7 @@ public class QueryMethodNamePreprocessor implements QueryPreprocessor {
 
         QueryBuilder queryBuilder = new QueryBuilder(parts, classDataCache.getTableName(), fieldDataCacheList, fieldsToFetch);
         CustomQueryMetadata query = queryBuilder.createQuery();
-        query.setPullType(QueryPullType.getByJavaType(queryInfo.containerClass()));
+        query.setPullType(QueryPullType.getByReturnType(queryInfo.containerClass()));
         query.setIsQueryFromAnnotation(false);
         metadataCache.addToCache(queryInfo.queryId(), query);
         return queryInfo.queryId();
