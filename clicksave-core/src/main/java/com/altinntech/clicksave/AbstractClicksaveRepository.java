@@ -1,6 +1,5 @@
 package com.altinntech.clicksave;
 
-import com.altinntech.clicksave.annotations.SettableQuery;
 import com.altinntech.clicksave.core.CSBootstrap;
 import com.altinntech.clicksave.core.ClicksaveInternalRepository;
 import com.altinntech.clicksave.core.ThreadPoolManager;
@@ -74,19 +73,19 @@ public abstract class AbstractClicksaveRepository<T, ID> implements ClickHouseJp
         repository.deleteAll(entityType);
     }
 
-    @Override
     @SneakyThrows
-    public <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object... params) {
+    @Override
+    public <R> List<R> findAllCustomQuery(Class<R> producer, String query, List params) {
         return (List<R>) queryExecutor.processQuery(new SimpleQueryInfo(
-                "findAllCustomQuery", producer, entityType, List.class, query, Arrays.asList(params), false
+                "findAllCustomQuery", producer, entityType, List.class, query, params, false
         ));
     }
 
-    @Override
     @SneakyThrows
-    public <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, Object... params) {
+    @Override
+    public <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, List params) {
         return (Optional<R>) queryExecutor.processQuery(new SimpleQueryInfo(
-                "findSingleCustomQuery", producer, entityType, Optional.class, query, Arrays.asList(params), false
+                "findSingleCustomQuery", producer, entityType, Optional.class, query, params, false
         ));
     }
 

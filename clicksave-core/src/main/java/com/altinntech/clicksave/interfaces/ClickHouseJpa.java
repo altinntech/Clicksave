@@ -1,6 +1,7 @@
 package com.altinntech.clicksave.interfaces;
 
 import com.altinntech.clicksave.annotations.SettableQuery;
+import lombok.SneakyThrows;
 
 import java.util.List;
 import java.util.Optional;
@@ -73,9 +74,9 @@ public interface ClickHouseJpa<T, ID> extends ClicksaveUtils {
      * @param query the custom query to perform
      * @return the result of the custom query
      */
-    @SettableQuery
-    <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object ... params);
+    @SneakyThrows
+    <R> List<R> findAllCustomQuery(Class<R> producer, String query, List params);
 
-    @SettableQuery
-    <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, Object ... params);
+    @SneakyThrows
+    <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, List params);
 }

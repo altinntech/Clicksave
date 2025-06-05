@@ -402,15 +402,15 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_5);
 
         String query = "SELECT * FROM person WHERE name = ?";
-        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, TEST_PERSON_1.getName());
+        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, List.of(TEST_PERSON_1.getName()));
         assertEquals(TEST_PERSON_1, fetched.get(0));
 
         query = "SELECT * FROM person WHERE name = ?";
-        fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, TEST_PERSON_2.getName());
+        fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, List.of(TEST_PERSON_2.getName()));
         assertEquals(TEST_PERSON_2, fetched.get(0));
 
         query = "SELECT * FROM person WHERE name = ? AND age = ?";
-        fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, TEST_PERSON_3.getName(), TEST_PERSON_3.getAge());
+        fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, List.of(TEST_PERSON_3.getName(), TEST_PERSON_3.getAge()));
         assertEquals(TEST_PERSON_3, fetched.get(0));
     }
 
@@ -424,7 +424,7 @@ public class ClicksaveTests {
 
         PersonResponse expected = PersonResponse.create(TEST_PERSON_1);
         String query = "SELECT * FROM person WHERE name = ?";
-        List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query, TEST_PERSON_1.getName());
+        List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query, List.of(TEST_PERSON_1.getName()));
         assertEquals(expected, fetched.get(0));
     }
 
@@ -437,7 +437,7 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_5);
 
         String query = "SELECT * FROM person WHERE age > ?";
-        List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query, 30);
+        List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query, List.of(30));
         assertEquals(2, fetched.size());
     }
 
@@ -451,7 +451,7 @@ public class ClicksaveTests {
 
         String query = "SELECT * FROM person WHERE age > ? AND gender = ?";
         List<PersonResponse> fetched = jpaPersonRepository.findAllCustomQuery(PersonResponse.class, query,
-                20, Gender.MALE.toString());
+                List.of(20, Gender.MALE.toString()));
         assertEquals(3, fetched.size());
     }
 
@@ -470,7 +470,7 @@ public class ClicksaveTests {
                 + TEST_PERSON_5.getEmployeeInfo().getExperience()) / 2));
 
         String query = "SELECT gender, sum(age) AS age, avg(experience) AS experience FROM person GROUP BY gender";
-        List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query);
+        List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query, List.of());
         assertEquals(2, fetched.size());
         assertEquals(males, fetched.get(0));
         assertEquals(females, fetched.get(1));
@@ -488,7 +488,7 @@ public class ClicksaveTests {
         ExampleResponse females = new ExampleResponse(34L, Gender.FEMALE, TEST_PERSON_5.getEmployeeInfo().getExperience());
 
         String query = "SELECT gender, sum(age) AS age, avg(experience) AS experience FROM person WHERE job = ? GROUP BY gender";
-        List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query, Job.PROGRAMMER.getId());
+        List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query, List.of(Job.PROGRAMMER.getId()));
         assertEquals(2, fetched.size());
         assertEquals(males, fetched.get(0));
         assertEquals(females, fetched.get(1));
@@ -503,7 +503,7 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_5);
 
         String query = "SELECT count(DISTINCT id) AS count FROM person WHERE job = ?";
-        List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query, Job.PROGRAMMER.getId());
+        List<ExampleResponse> fetched = jpaPersonRepository.findAllCustomQuery(ExampleResponse.class, query, List.of(Job.PROGRAMMER.getId()));
         assertEquals(1, fetched.size());
         assertEquals(2L, fetched.get(0).getCount());
     }
@@ -517,7 +517,7 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_5);
 
         String query = "SELECT timestamp, toDateTime(timestamp) AS sqlTimestamp, toDate(timestamp) AS date FROM person WHERE id = ?";
-        List<DateResponse> fetched = jpaPersonRepository.findAllCustomQuery(DateResponse.class, query, TEST_PERSON_1.getId());
+        List<DateResponse> fetched = jpaPersonRepository.findAllCustomQuery(DateResponse.class, query, List.of(TEST_PERSON_1.getId()));
         assertEquals(1, fetched.size());
         assertEquals(TEST_PERSON_1.getTimestamp(), fetched.get(0).getLocalDateTime());
         assertEquals(TEST_PERSON_1.getTimestamp().withNano(0).withHour(0), fetched.get(0).getLocalDateSqlTimestamp().withHour(0));
@@ -533,7 +533,7 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_5);
 
         String query = "SELECT * FROM person WHERE position(name, ?) > 0";
-        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, null, "Jo", TEST_PERSON_1.getLastName(), TEST_PERSON_1.getGender(), null, null, null);
+        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, List.of(null, "Jo", TEST_PERSON_1.getLastName(), TEST_PERSON_1.getGender(), null, null, null));
         assertEquals(TEST_PERSON_1, fetched.get(0));
     }
 

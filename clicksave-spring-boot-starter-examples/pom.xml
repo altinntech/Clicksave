@@ -13,13 +13,28 @@
 
     <groupId>com.altinntech.clicksave</groupId>
     <artifactId>clicksave-spring-boot-starter-examples</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.1-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <distributionManagement>
+        <!--<snapshotRepository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>libs-snapshot</name>
+            <url>http://217.25.90.14:8081/artifactory/libs-snapshot</url>
+        </snapshotRepository>-->
+        <repository>
+            <snapshots />
+            <id>nexus-server</id>
+            <name>maven-snapshots</name>
+            <url>https://maven.altinntech.com/repository/maven-snapshots/</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
