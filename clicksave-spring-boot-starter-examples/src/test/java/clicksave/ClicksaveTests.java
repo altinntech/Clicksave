@@ -10,10 +10,7 @@ import com.altinntech.clicksave.examples.entity.Job;
 import com.altinntech.clicksave.examples.entity.Person;
 import com.altinntech.clicksave.examples.repository.JpaPersonRepository;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
@@ -51,6 +48,8 @@ public class ClicksaveTests {
     private Person TEST_PERSON_3;
     private Person TEST_PERSON_4;
     private Person TEST_PERSON_5;
+    private Person TEST_PERSON_6;
+    private Person TEST_PERSON_7;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -60,6 +59,9 @@ public class ClicksaveTests {
         TEST_PERSON_3 = new Person(null, "Zachary", "Daniels", 41, "some_address_3", Gender.MALE, Job.HR, null);
         TEST_PERSON_4 = new Person(null, "Brenda", "Cox", 28, "some_address_4", Gender.FEMALE, Job.QA, null);
         TEST_PERSON_5 = new Person(null, "Nancy", "Cruz", 34, "some_address_5", Gender.FEMALE, Job.PROGRAMMER, null);
+        TEST_PERSON_6 = new Person(null, "Karen", "Canary", 22, "some_address_6", null, null, null);
+        TEST_PERSON_7 = new Person(null, "Jannette", "Abrams", 30, "some_address_7", Gender.FEMALE, Job.HR, null);
+        TEST_PERSON_7.setTimestamp(null);
     }
 
     @AfterEach
@@ -790,6 +792,23 @@ public class ClicksaveTests {
         System.out.println("Find avg operation time: " + avgFindTime + " ms" + " " + calculatePerformanceStatus(avgFindTime, epsilon, maxTimeForFindOperation));
         System.out.println("Find custom avg operation time: " + avgCustomFindTime + " ms" + " " + calculatePerformanceStatus(avgCustomFindTime, epsilon, maxTimeForCustomFindOperation));
         System.out.println("Delete avg operation time: " + avgDeleteTime + " ms" + " " + calculatePerformanceStatus(avgDeleteTime, epsilon, maxTimeForDeleteOperation));
+    }
+
+    @Test
+    void testNullableTimestamp() {
+        Person saved = jpaPersonRepository.save(TEST_PERSON_7);
+        Optional<Person> found = jpaPersonRepository.findById(saved.getId());
+        Assertions.assertTrue(found.isPresent());
+        Assertions.assertNull(found.get().getTimestamp());
+    }
+
+    @Test
+    void testNullableEnumValue() {
+        Person saved = jpaPersonRepository.save(TEST_PERSON_6);
+        Optional<Person> found = jpaPersonRepository.findById(saved.getId());
+        Assertions.assertTrue(found.isPresent());
+        Assertions.assertNull(found.get().getJob());
+        Assertions.assertNull(found.get().getGender());
     }
 
     String calculatePerformanceStatus(double valueToTest, double epsilon, double maxTime) {

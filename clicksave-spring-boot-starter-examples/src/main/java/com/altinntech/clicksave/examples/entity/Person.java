@@ -52,7 +52,7 @@ public class Person {
     CompanyMetadata companyMetadataSingle;
     @Lob
     int[][][] matrix;
-    @Column(FieldType.DATE_TIME)
+    @Column(value = FieldType.DATE_TIME, nullable = true)
     LocalDateTime timestamp;
     @Column(FieldType.BOOL)
     Boolean enabled = true;

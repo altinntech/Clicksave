@@ -1,4 +1,11 @@
 # Changelog
+### [1.2.1-SNAPSHOT] - 2025-06-05
+- Custom query varargs method is deprecated in favor of java.util.List
+  - Passing an ordinary Object[] array was resulting in Object[][] argument with clicksave dependency
+- Nullable enum columns
+- Nullable LOB columns
+- Nullable datetime columns
+
 ### [1.2.0-SNAPSHOT] - 2025-06-03
 - Id generation strategies
 - UUIDv3, UUIDv7 generation support
@@ -8,6 +15,7 @@
   - Core - ClickSave ORM itself without Spring Framework
   - Spring Boot starter - Simple and easy way to integrate with popular framework
   - Examples - Tests and usage examples
+- Changed artifact naming
 
 ### [1.1.24-SNAPSHOT] - 2024-11-20
 - Retry for failed batch & saving to csv
