@@ -75,10 +75,8 @@ public interface ClickHouseJpa<T, ID> extends ClicksaveUtils {
      * @param query the custom query to perform
      * @return the result of the custom query
      */
-    @SneakyThrows
     <R> List<R> findAllCustomQuery(Class<R> producer, String query, List params);
 
-    @SneakyThrows
     <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, List params);
 
     /**
@@ -86,18 +84,12 @@ public interface ClickHouseJpa<T, ID> extends ClicksaveUtils {
      * Depracated because of UB when passing Object[] to varargs method (Object[N] can be treated as Object[1][N])
      */
     @Deprecated(since = "1.2.1")
-    @SneakyThrows
-    default <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object ... params) {
-        return findAllCustomQuery(producer, query, Arrays.asList(params));
-    }
+    <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object ... params);
 
     /**
      * Deprecated in favor of using java.util.List
      * Deprecated because of UB when passing Object[] to varargs method (Object[N] can be treated as Object[1][N])
      */
     @Deprecated(since = "1.2.1")
-    @SneakyThrows
-    default <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, Object ... params) {
-        return findSingleCustomQuery(producer, query, Arrays.asList(params));
-    }
+    <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, Object ... params);
 }

@@ -169,8 +169,15 @@ public class CSRequestHandler implements MethodHandler {
     private Object handleCustomQuery(MethodMetadata methodMetadata, Object ... args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         Class<?> returnClass = (Class<?>) args[0];
         String queryString = (String) args[1];
-        List args1 = (List) args[2];
-        return queryExecutor.processQuery(new MethodMetadataSettableQueryInfo(methodMetadata, returnClass, queryString, args1));
+        List<?> argsList;
+        if (args[2] instanceof List<?>) {
+            argsList = (List<?>) args[2];
+        } else if (args[2] instanceof Object[]) {
+            argsList = Arrays.asList((Object[]) args[2]);
+        } else {
+            throw new RuntimeException();
+        }
+        return queryExecutor.processQuery(new MethodMetadataSettableQueryInfo(methodMetadata, returnClass, queryString, argsList));
     }
 
     private Object handleQuery(MethodMetadata methodMetadata, Object ... args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {

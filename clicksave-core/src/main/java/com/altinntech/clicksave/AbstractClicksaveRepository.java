@@ -89,6 +89,16 @@ public abstract class AbstractClicksaveRepository<T, ID> implements ClickHouseJp
         ));
     }
 
+    @Override
+    public <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object... params) {
+        return findAllCustomQuery(producer, query, Arrays.asList(params));
+    }
+
+    @Override
+    public <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, Object... params) {
+        return findSingleCustomQuery(producer, query, Arrays.asList(params));
+    }
+
     @SneakyThrows
     protected <E> E execute(QueryInfo queryInfo) {
         return (E) queryExecutor.processQuery(queryInfo);
