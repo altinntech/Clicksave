@@ -2,27 +2,27 @@ package com.altinntech.clicksave.core.dto;
 
 import com.altinntech.clicksave.annotations.Query;
 import com.altinntech.clicksave.annotations.SettableQuery;
-import com.altinntech.clicksave.core.query.builder.QueryPullType;
 import com.altinntech.clicksave.interfaces.ClickHouseJpa;
 import com.altinntech.clicksave.interfaces.QueryInfo;
 import org.thepavel.icomponent.metadata.MethodMetadata;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
-public class MethodMetadataQueryInfo implements QueryInfo {
+public class MethodMetadataSettableQueryInfo implements QueryInfo {
 
     private final MethodMetadata methodMetadata;
+    private final Class<?> returnType;
+    private final String queryString;
     private final List<Object> args;
 
-    public MethodMetadataQueryInfo(MethodMetadata methodMetadata, Object ... args) {
+    public MethodMetadataSettableQueryInfo(MethodMetadata methodMetadata, Class<?> returnType, String queryString, List args) {
         this.methodMetadata = methodMetadata;
-        this.args = Arrays.asList(args);
+        this.returnType = returnType;
+        this.queryString = queryString;
+        this.args = args;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class MethodMetadataQueryInfo implements QueryInfo {
 
     @Override
     public Class<?> returnClass() {
-        return returnType(methodMetadata);
+        return returnType;
     }
 
     @Override
@@ -56,11 +56,7 @@ public class MethodMetadataQueryInfo implements QueryInfo {
 
     @Override
     public String queryString() {
-        Query query = query();
-        if (query != null) {
-            return query.value();
-        }
-        return "";
+        return queryString;
     }
 
     @Override
@@ -70,22 +66,7 @@ public class MethodMetadataQueryInfo implements QueryInfo {
 
     @Override
     public boolean isParsedByMethodName() {
-        return query() != null && queryString() == null;
-    }
-
-    private Query query() {
-        return methodMetadata.getSourceMethod().getAnnotation(Query.class);
-    }
-
-    private Class<?> returnType(MethodMetadata methodMetadata) {
-        Type returnType = methodMetadata.getReturnTypeMetadata().getResolvedType();
-        if (returnType instanceof ParameterizedType parameterizedType) {
-            Type[] typeArguments = parameterizedType.getActualTypeArguments();
-            if (typeArguments.length > 0 && typeArguments[0] instanceof Class<?> parameterType) {
-                return parameterType;
-            }
-        }
-        return null;
+        return false;
     }
 
     private Class<?> entityType(MethodMetadata methodMetadata) {

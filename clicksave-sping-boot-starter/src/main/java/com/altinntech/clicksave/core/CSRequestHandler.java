@@ -1,6 +1,7 @@
 package com.altinntech.clicksave.core;
 
 import com.altinntech.clicksave.core.dto.MethodMetadataQueryInfo;
+import com.altinntech.clicksave.core.dto.MethodMetadataSettableQueryInfo;
 import com.altinntech.clicksave.core.query.executor.QueryExecutor;
 import com.altinntech.clicksave.exceptions.*;
 import com.altinntech.clicksave.interfaces.ClickHouseJpa;
@@ -14,6 +15,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
@@ -164,12 +167,21 @@ public class CSRequestHandler implements MethodHandler {
     }
 
     private Object handleCustomQuery(MethodMetadata methodMetadata, Object ... args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
-
-        return queryExecutor.processQuery(new MethodMetadataQueryInfo(methodMetadata, args));
+        Class<?> returnClass = (Class<?>) args[0];
+        String queryString = (String) args[1];
+        List<?> argsList;
+        if (args[2] instanceof List<?>) {
+            argsList = (List<?>) args[2];
+        } else if (args[2] instanceof Object[]) {
+            argsList = Arrays.asList((Object[]) args[2]);
+        } else {
+            throw new RuntimeException();
+        }
+        return queryExecutor.processQuery(new MethodMetadataSettableQueryInfo(methodMetadata, returnClass, queryString, argsList));
     }
 
     private Object handleQuery(MethodMetadata methodMetadata, Object ... args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
-        return queryExecutor.processQuery(new MethodMetadataQueryInfo(methodMetadata, args));
+        return queryExecutor.processQuery(new MethodMetadataQueryInfo(methodMetadata, Arrays.asList(args)));
     }
 
     private void handleSaveBatch(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, InvocationTargetException, IllegalAccessException {

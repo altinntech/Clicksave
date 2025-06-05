@@ -40,9 +40,9 @@ public class Person {
     Integer age; // not supported primitive types
     @Column(FieldType.STRING)
     String address;
-    @EnumColumn(EnumType.STRING) // for enum use @EnumColumn annotation
+    @EnumColumn(value = EnumType.STRING, nullable = true) // for enum use @EnumColumn annotation
     Gender gender;
-    @EnumColumn(EnumType.BY_ID) // you can persist the enum by id value (enum must implements the EnumId interface!)
+    @EnumColumn(value = EnumType.BY_ID, nullable = true) // you can persist the enum by id value (enum must implements the EnumId interface!)
     Job job;
     @Embedded
     EmployeeInfo employeeInfo;
@@ -50,9 +50,9 @@ public class Person {
     List<CompanyMetadata> companyMetadata;
     @Lob
     CompanyMetadata companyMetadataSingle;
-    @Lob
+    @Lob(nullable = true)
     int[][][] matrix;
-    @Column(FieldType.DATE_TIME)
+    @Column(value = FieldType.DATE_TIME, nullable = true)
     LocalDateTime timestamp;
     @Column(FieldType.BOOL)
     Boolean enabled = true;

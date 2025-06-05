@@ -1,7 +1,9 @@
 package com.altinntech.clicksave.interfaces;
 
 import com.altinntech.clicksave.annotations.SettableQuery;
+import lombok.SneakyThrows;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
@@ -73,9 +75,21 @@ public interface ClickHouseJpa<T, ID> extends ClicksaveUtils {
      * @param query the custom query to perform
      * @return the result of the custom query
      */
-    @SettableQuery
+    <R> List<R> findAllCustomQuery(Class<R> producer, String query, List params);
+
+    <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, List params);
+
+    /**
+     * Deprecated in favor of using java.util.List
+     * Depracated because of UB when passing Object[] to varargs method (Object[N] can be treated as Object[1][N])
+     */
+    @Deprecated(since = "1.2.1")
     <R> List<R> findAllCustomQuery(Class<R> producer, String query, Object ... params);
 
-    @SettableQuery
+    /**
+     * Deprecated in favor of using java.util.List
+     * Deprecated because of UB when passing Object[] to varargs method (Object[N] can be treated as Object[1][N])
+     */
+    @Deprecated(since = "1.2.1")
     <R> Optional<R> findSingleCustomQuery(Class<R> producer, String query, Object ... params);
 }

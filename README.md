@@ -43,9 +43,9 @@ developers can significantly reduce the time spent interacting with the database
     </repositories>
    
    <dependency>
-        <groupId>com.altinntech</groupId>
-        <artifactId>clicksave</artifactId>
-        <version>1.1.16-SNAPSHOT</version>
+        <groupId>com.altinntech.clicksave</groupId>
+        <artifactId>clicksave-core</artifactId>
+        <version>1.2.1-SNAPSHOT</version>
    </dependency>
    ```
 

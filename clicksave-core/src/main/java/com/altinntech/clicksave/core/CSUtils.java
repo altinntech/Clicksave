@@ -135,6 +135,7 @@ public class CSUtils {
                     isPersistent = true;
                     fieldData.setEnum(true);
                     fieldData.setEnumColumnAnnotation(enumerated);
+                    fieldData.setNullable(enumerated.nullable());
                 } else if (annotation instanceof Embedded embedded) {
                     isPersistent = true;
                     fieldData.setEmbedded(true);
@@ -142,6 +143,7 @@ public class CSUtils {
                 } else if (annotation instanceof Lob lob) {
                     isPersistent = true;
                     fieldData.setLob(true);
+                    fieldData.setNullable(lob.nullable());
                     fieldData.setFieldType(FieldType.STRING);
                     fieldData.setLobAnnotation(lob);
                 } else if (annotation instanceof Reference reference) {

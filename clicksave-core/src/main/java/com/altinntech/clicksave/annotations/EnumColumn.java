@@ -23,5 +23,10 @@ public @interface EnumColumn {
      * @return the enumeration type.
      */
     EnumType value() default EnumType.STRING;
+
+    /**
+     * Specifies nullable option
+     */
+    boolean nullable() default false;
 }
 

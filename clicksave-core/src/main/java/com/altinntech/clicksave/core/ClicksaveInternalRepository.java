@@ -185,10 +185,10 @@ public class ClicksaveInternalRepository {
                         setFieldValue(entity, field, value, fieldData);
                     } else if (fieldData.getFieldType().equals(FieldType.DATE_TIME)) {
                         LocalDateTime timeField = (LocalDateTime) value;
-                        value = timeField != null ? timeField.format(formatter) : "";
+                        value = timeField != null ? timeField.format(formatter) : null;
                     } else if (fieldData.getFieldType().equals(FieldType.DATE_TIME6)) {
                         LocalDateTime timeField = (LocalDateTime) value;
-                        value = timeField != null ? timeField.format(formatter6) : "";
+                        value = timeField != null ? timeField.format(formatter6) : null;
                     } else if (fieldData.isEnum()) {
                         if (enumeratedOptional.isPresent()) {
                             EnumColumn enumeratedAnnotation = enumeratedOptional.get();
@@ -208,7 +208,9 @@ public class ClicksaveInternalRepository {
     }
 
     private Object getValueFromEnum(EnumColumn enumeratedAnnotation, Object value) {
-        if (enumeratedAnnotation.value() == EnumType.STRING) {
+        if (value == null) {
+            return null;
+        } else if (enumeratedAnnotation.value() == EnumType.STRING) {
             value = value.toString();
         } else if (enumeratedAnnotation.value() == EnumType.ORDINAL) {
             Enum<?> enumValue = (Enum<?>) value;

@@ -94,18 +94,14 @@ public class QueryExecutor {
                 Connection connection = connectionManager.getConnection();
                 PreparedStatement statement = connection.prepareStatement(query.getQueryBody())
         ) {
-            int paramCount = countParameters(query.getQueryBody());
+            int paramCount = countParameters(query.getQueryBody(), argumentsList);
             if (query.getIsQueryFromAnnotation()) {
-                for (int i = 1; i < argumentsList.size() + 1; i++) {
-                    if (i <= paramCount) {
-                        statement.setObject(i, argumentsList.get(i - 1));
-                    }
+                for (int i = 0; i < paramCount; i++) {
+                    statement.setObject(i + 1, argumentsList.get(i));
                 }
             } else {
-                for (int i = 1; i < argumentsList.size() + 1; i++) {
-                    if (i <= paramCount) {
-                        setStatementArgument(argumentsList, query, statement, i);
-                    }
+                for (int i = 0; i < paramCount; i++) {
+                    setStatementArgument(argumentsList, query, statement, i);
                 }
             }
 
@@ -156,36 +152,37 @@ public class QueryExecutor {
     }
 
     private static void setStatementArgument(List<Object> arguments, CustomQueryMetadata query, PreparedStatement statement, int i) throws SQLException {
-        FieldDataCache currentFieldData = query.getFields().get(i - 1);
+        FieldDataCache currentFieldData = query.getFields().get(i);
         Optional<EnumColumn> enumColumnOptional = currentFieldData.getEnumColumnAnnotation();
         if (enumColumnOptional.isPresent()) {
             EnumColumn enumColumn = enumColumnOptional.get();
             switch (enumColumn.value()) {
                 case STRING -> {
-                    Enum<?> enumValue = (Enum<?>) arguments.get(i - 1);
-                    statement.setObject(i, enumValue.toString());
+                    Enum<?> enumValue = (Enum<?>) arguments.get(i);
+                    statement.setObject(i + 1, enumValue.toString());
                 }
                 case ORDINAL -> {
-                    Enum<?> enumValue = (Enum<?>) arguments.get(i - 1);
-                    statement.setObject(i, enumValue.ordinal());
+                    Enum<?> enumValue = (Enum<?>) arguments.get(i);
+                    statement.setObject(i + 1, enumValue.ordinal());
                 }
                 case BY_ID -> {
-                    EnumId enumValue = (EnumId) arguments.get(i - 1);
-                    statement.setObject(i, enumValue.getId());
+                    EnumId enumValue = (EnumId) arguments.get(i);
+                    statement.setObject(i + 1, enumValue.getId());
                 }
             }
         } else {
-            statement.setObject(i, arguments.get(i - 1));
+            statement.setObject(i + 1, arguments.get(i));
         }
     }
 
-    private static int countParameters(String query) {
+    private static int countParameters(String query, List<Object> args) {
         int count = 0;
         int index = 0;
         while ((index = query.indexOf("?", index)) != -1) {
             count++;
             index += 1;
         }
+        assert count == args.size();
         return count;
     }
 }

@@ -13,7 +13,7 @@
 
     <groupId>com.altinntech.clicksave</groupId>
     <artifactId>clicksave-sping-boot-starter</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.1-SNAPSHOT</version>
 
     <properties>
         <java.version>17</java.version>
@@ -31,6 +31,21 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <distributionManagement>
+        <!--<snapshotRepository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>libs-snapshot</name>
+            <url>http://217.25.90.14:8081/artifactory/libs-snapshot</url>
+        </snapshotRepository>-->
+        <repository>
+            <snapshots />
+            <id>nexus-server</id>
+            <name>maven-snapshots</name>
+            <url>https://maven.altinntech.com/repository/maven-snapshots/</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <!-- CORE -->
