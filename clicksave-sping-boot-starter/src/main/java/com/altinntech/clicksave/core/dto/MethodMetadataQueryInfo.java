@@ -25,6 +25,11 @@ public class MethodMetadataQueryInfo implements QueryInfo {
         this.args = Arrays.asList(args);
     }
 
+    public MethodMetadataQueryInfo(MethodMetadata methodMetadata, List<Object> args) {
+        this.methodMetadata = methodMetadata;
+        this.args = args;
+    }
+
     @Override
     public String methodName() {
         return methodMetadata.getSourceMethod().getName();
@@ -70,7 +75,7 @@ public class MethodMetadataQueryInfo implements QueryInfo {
 
     @Override
     public boolean isParsedByMethodName() {
-        return query() != null && queryString() == null;
+        return "".equals(queryString());
     }
 
     private Query query() {

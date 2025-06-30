@@ -1,5 +1,7 @@
 package com.altinntech.clicksave.core;
 
+import com.altinntech.clicksave.annotations.Query;
+import com.altinntech.clicksave.annotations.SettableQuery;
 import com.altinntech.clicksave.core.dto.MethodMetadataQueryInfo;
 import com.altinntech.clicksave.core.dto.MethodMetadataSettableQueryInfo;
 import com.altinntech.clicksave.core.query.executor.QueryExecutor;
@@ -166,7 +168,10 @@ public class CSRequestHandler implements MethodHandler {
         repository.deleteAll(entityType);
     }
 
-    private Object handleCustomQuery(MethodMetadata methodMetadata, Object ... args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+    /**
+     * args like (List, List, ...) not supported
+     */
+    private Object handleCustomQuery(MethodMetadata methodMetadata, Object[] args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
         Class<?> returnClass = (Class<?>) args[0];
         String queryString = (String) args[1];
         List<?> argsList;
@@ -180,11 +185,18 @@ public class CSRequestHandler implements MethodHandler {
         return queryExecutor.processQuery(new MethodMetadataSettableQueryInfo(methodMetadata, returnClass, queryString, argsList));
     }
 
-    private Object handleQuery(MethodMetadata methodMetadata, Object ... args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+    private Object handleQuery(MethodMetadata methodMetadata, Object[] args) throws SQLException, ClassCacheNotFoundException, IllegalAccessException, InvocationTargetException {
+        if (isSettableQuery(methodMetadata)) {
+            return handleCustomQuery(methodMetadata, args);
+        }
         return queryExecutor.processQuery(new MethodMetadataQueryInfo(methodMetadata, Arrays.asList(args)));
     }
 
     private void handleSaveBatch(Class<?> entityType) throws SQLException, ClassCacheNotFoundException, InvocationTargetException, IllegalAccessException {
         repository.saveBatch(entityType);
+    }
+
+    private static boolean isSettableQuery(MethodMetadata methodMetadata) {
+        return methodMetadata.getSourceMethod().getAnnotation(SettableQuery.class) != null;
     }
 }

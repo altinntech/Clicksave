@@ -20,10 +20,8 @@ import com.altinntech.clicksave.interfaces.QueryInfo;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.Instant;
 import java.util.*;
 
 import static com.altinntech.clicksave.core.ClicksaveInternalRepository.executePostLoadedMethods;
@@ -182,7 +180,6 @@ public class QueryExecutor {
             count++;
             index += 1;
         }
-        assert count == args.size();
         return count;
     }
 }

@@ -252,7 +252,7 @@ public class ClicksaveTests {
         assertEquals(personResponse, fetched.get());
     }
 
-
+    // TODO: Research problems
     @Test
     @SneakyThrows
     void testBigDecimalOverflow_FailedBatchSave() {
@@ -526,6 +526,7 @@ public class ClicksaveTests {
         assertEquals(TEST_PERSON_1.getTimestamp().toLocalDate(), fetched.get(0).getLocalDate());
     }
 
+    // TODO: Research problems
     @Test
     void customReplaceableQuery_paramsOverload() {
         jpaPersonRepository.save(TEST_PERSON_1);
@@ -535,7 +536,8 @@ public class ClicksaveTests {
         jpaPersonRepository.save(TEST_PERSON_5);
 
         String query = "SELECT * FROM person WHERE position(name, ?) > 0";
-        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, List.of(null, "Jo", TEST_PERSON_1.getLastName(), TEST_PERSON_1.getGender(), null, null, null));
+        List<Person> fetched = jpaPersonRepository.findAllCustomQuery(Person.class, query, null, "Jo", TEST_PERSON_1.getLastName(), TEST_PERSON_1.getGender(), null, null, null);
+        assertFalse(fetched.isEmpty());
         assertEquals(TEST_PERSON_1, fetched.get(0));
     }
 
