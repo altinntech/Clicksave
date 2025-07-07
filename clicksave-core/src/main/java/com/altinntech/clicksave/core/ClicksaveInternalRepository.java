@@ -5,6 +5,7 @@ import com.altinntech.clicksave.annotations.EnumColumn;
 import com.altinntech.clicksave.core.dto.*;
 import com.altinntech.clicksave.core.pipelines.insert.InsertQueryBuilder;
 import com.altinntech.clicksave.core.pipelines.insert.InsertQueryBuilderFactory;
+import com.altinntech.clicksave.core.utils.gson.GsonProvider;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.enums.Metrics;
@@ -167,7 +168,7 @@ public class ClicksaveInternalRepository {
                 Object value;
                 try {
                     value = field.get(entity);
-                    Gson gson = new Gson();
+                    Gson gson = GsonProvider.gson();;
                     String json = gson.toJson(value);
                     fieldValues.add(json);
                     insertQuery.append(columnName).append(", ");
@@ -283,7 +284,7 @@ public class ClicksaveInternalRepository {
                 Object value;
                 try {
                     value = field.get(entity);
-                    Gson gson = new Gson();
+                    Gson gson = GsonProvider.gson();
                     String json = gson.toJson(value);
                     updateQuery.append(columnName).append(" = ").append("'" + json + "'").append(", ");
                 } catch (IllegalAccessException e) {

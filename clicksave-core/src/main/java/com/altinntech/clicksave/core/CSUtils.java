@@ -6,6 +6,7 @@ import com.altinntech.clicksave.annotations.method.PrePersist;
 import com.altinntech.clicksave.annotations.method.PreUpdate;
 import com.altinntech.clicksave.core.caches.ProjectionClassDataCache;
 import com.altinntech.clicksave.core.dto.*;
+import com.altinntech.clicksave.core.utils.gson.GsonProvider;
 import com.altinntech.clicksave.enums.EnumType;
 import com.altinntech.clicksave.enums.FieldType;
 import com.altinntech.clicksave.exceptions.ClassCacheNotFoundException;
@@ -221,7 +222,7 @@ public class CSUtils {
     }
 
     private static void setLobValue(Object entity, Field field, String value, FieldDataCache fieldData) {
-        Gson gson = new Gson();
+        Gson gson = GsonProvider.gson();
 
         Type genericType = field.getGenericType();
 
