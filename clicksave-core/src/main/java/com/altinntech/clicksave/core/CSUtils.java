@@ -229,10 +229,13 @@ public class CSUtils {
         if (genericType instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType) genericType;
             Type[] typeArguments = parameterizedType.getActualTypeArguments();
-
-            if (typeArguments.length > 0) {
-                Type listType = typeArguments[0];
-                Type entityType = TypeToken.getParameterized((Class<?>) parameterizedType.getRawType(), listType).getType();
+            /// TODO: Varying number of parameters
+            if (typeArguments.length == 1) { /// List, Set
+                Type entityType = TypeToken.getParameterized((Class<?>) parameterizedType.getRawType(), typeArguments[0]).getType();
+                Object deserializedValue = gson.fromJson(value, entityType);
+                setField(entity, field, deserializedValue);
+            } else if (typeArguments.length == 2) { /// Map
+                Type entityType = TypeToken.getParameterized((Class<?>) parameterizedType.getRawType(), typeArguments[0], typeArguments[1]).getType();
                 Object deserializedValue = gson.fromJson(value, entityType);
                 setField(entity, field, deserializedValue);
             }
