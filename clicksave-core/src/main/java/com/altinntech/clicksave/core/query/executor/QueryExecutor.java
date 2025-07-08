@@ -95,7 +95,11 @@ public class QueryExecutor {
             int paramCount = countParameters(query.getQueryBody(), argumentsList);
             if (query.getIsQueryFromAnnotation()) {
                 for (int i = 0; i < paramCount; i++) {
-                    statement.setObject(i + 1, argumentsList.get(i));
+                    if (argumentsList.get(i) instanceof Array arr) {
+                        statement.setArray(i + 1, arr);
+                    } else {
+                        statement.setObject(i + 1, argumentsList.get(i));
+                    }
                 }
             } else {
                 for (int i = 0; i < paramCount; i++) {
@@ -169,7 +173,11 @@ public class QueryExecutor {
                 }
             }
         } else {
-            statement.setObject(i + 1, arguments.get(i));
+            if (arguments.get(i) instanceof Array arr) {
+                statement.setArray(i + 1, arr);
+            } else {
+                statement.setObject(i + 1, arguments.get(i));
+            }
         }
     }
 

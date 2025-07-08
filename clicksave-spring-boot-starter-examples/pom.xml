@@ -13,7 +13,7 @@
 
     <groupId>com.altinntech.clicksave</groupId>
     <artifactId>clicksave-spring-boot-starter-examples</artifactId>
-    <version>1.2.4-SNAPSHOT</version>
+    <version>1.2.5-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -40,12 +40,12 @@
         <dependency>
             <groupId>com.altinntech.clicksave</groupId>
             <artifactId>clicksave-core</artifactId>
-            <version>1.2.4-SNAPSHOT</version>
+            <version>1.2.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.altinntech.clicksave</groupId>
             <artifactId>clicksave-sping-boot-starter</artifactId>
-            <version>1.2.4-SNAPSHOT</version>
+            <version>1.2.5-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
